@@ -1,0 +1,900 @@
+﻿@model Pidar.Models.Metadata
+@using Pidar.Areas.Identity.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<PidarUser> SignInManager
+@inject UserManager<PidarUser> UserManager
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+@* <h1>Details for @Html.DisplayNameFor(model => model.DatasetId)</h1> *@
+
+
+<h4>Metadata</h4>
+<div>
+    <strong>Dataset ID:</strong>
+    @Html.DisplayFor(model => model.DatasetId)
+</div>
+<hr />
+<table class="table table-bordered table-striped">
+    <thead align="center">
+        <tr>
+            <th>Field</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var prop in Model.GetType().GetProperties())
+        {
+            // Skip the DatasetId property
+            if (prop.Name == "DatasetId")
+            {
+                continue;
+            }
+            var value = prop.GetValue(Model);
+            if (value != null && !string.IsNullOrEmpty(value.ToString()))
+            {
+
+                <tr>
+                    <th>@prop.Name</th>
+                    <td>@value</td>
+                </tr>
+            }
+        }
+    </tbody>
+@*     <tbody> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.StudyDesignBackground)</td> *@
+@*             <td>@Html.DisplayFor(model => model.StudyDesignBackground)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.StudyDescription)</td> *@
+@*             <td>@Html.DisplayFor(model => model.StudyDescription)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.StudyType)</td> *@
+@*             <td>@Html.DisplayFor(model => model.StudyType)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.StudySubtype)</td> *@
+@*             <td>@Html.DisplayFor(model => model.StudySubtype)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PaperLinked)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PaperLinked)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PaperTitle)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PaperTitle)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PaperAuthors)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PaperAuthors)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Affiliation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Affiliation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PaperJournal)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PaperJournal)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PaperYear)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PaperYear)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PaperDoi)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PaperDoi)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.OpenAccess)</td> *@
+@*             <td>@Html.DisplayFor(model => model.OpenAccess)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.MultiModalityImages)</td> *@
+@*             <td>@Html.DisplayFor(model => model.MultiModalityImages)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImagingModality)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImagingModality)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImagingSubModality)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImagingSubModality)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Radiation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Radiation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImagingCoverage)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImagingCoverage)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImagingTarget)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImagingTarget)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Institution)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Institution)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Pi)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Pi)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CoPi)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CoPi)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CountryOfInstitution)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CountryOfInstitution)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImagingFacility)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImagingFacility)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.EuroBioImagingNode)</td> *@
+@*             <td>@Html.DisplayFor(model => model.EuroBioImagingNode)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CountryOfImagingFacility)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CountryOfImagingFacility)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.LinkToDataset)</td> *@
+@*             <td>@Html.DisplayFor(model => model.LinkToDataset)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Funding)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Funding)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FundingAgency)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FundingAgency)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.GrantNumber)</td> *@
+@*             <td>@Html.DisplayFor(model => model.GrantNumber)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DatasetAccess)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DatasetAccess)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.License)</td> *@
+@*             <td>@Html.DisplayFor(model => model.License)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.LicenseFile)</td> *@
+@*             <td>@Html.DisplayFor(model => model.LicenseFile)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DuoDataUsePermission)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DuoDataUsePermission)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DuoDataUseModifier)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DuoDataUseModifier)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DuoInvestigation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DuoInvestigation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ContactPerson)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ContactPerson)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NumberOfGroups)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NumberOfGroups)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TypesOfGroups)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TypesOfGroups)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.OverallSampleSize)</td> *@
+@*             <td>@Html.DisplayFor(model => model.OverallSampleSize)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DiseaseModel)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DiseaseModel)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.OrganOrTissue)</td> *@
+@*             <td>@Html.DisplayFor(model => model.OrganOrTissue)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.SampleSizeForEachGroup)</td> *@
+@*             <td>@Html.DisplayFor(model => model.SampleSizeForEachGroup)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PowerCalculation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PowerCalculation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InclusionCriteria)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InclusionCriteria)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ExclusionCriteria)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ExclusionCriteria)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Randomization)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Randomization)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Blinding)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Blinding)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ProceduresToKeepTreatmentsBlind)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ProceduresToKeepTreatmentsBlind)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ProceduresToKeepExperimenterBlind)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ProceduresToKeepExperimenterBlind)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.OutcomeMeasures)</td> *@
+@*             <td>@Html.DisplayFor(model => model.OutcomeMeasures)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.StatisticalMethods)</td> *@
+@*             <td>@Html.DisplayFor(model => model.StatisticalMethods)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Species)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Species)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Strain)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Strain)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImmuneStatus)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImmuneStatus)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Sex)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Sex)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Age)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Age)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AgeAtStartExperiment)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AgeAtStartExperiment)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AgeAtScanningExperimentS)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AgeAtScanningExperimentS)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Weight)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Weight)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.WeightAtStartExperiment)</td> *@
+@*             <td>@Html.DisplayFor(model => model.WeightAtStartExperiment)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.WeightAtEndExperiment)</td> *@
+@*             <td>@Html.DisplayFor(model => model.WeightAtEndExperiment)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Genotype)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Genotype)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.GeneticManipulation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.GeneticManipulation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Gene)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Gene)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.SourceOfAnimals)</td> *@
+@*             <td>@Html.DisplayFor(model => model.SourceOfAnimals)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.RegistryNumberOfAnimalAuthorization)</td> *@
+@*             <td>@Html.DisplayFor(model => model.RegistryNumberOfAnimalAuthorization)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PharmacologicalProceduresInterventionAndControl)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PharmacologicalProceduresInterventionAndControl)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PharmacologicalDrug)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PharmacologicalDrug)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Company)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Company)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Formulation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Formulation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DrugDose)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DrugDose)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Volume)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Volume)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Concentration)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Concentration)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.SiteRouteOfAdministration)</td> *@
+@*             <td>@Html.DisplayFor(model => model.SiteRouteOfAdministration)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FrequencyOfAdministration)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FrequencyOfAdministration)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.VehicleOrCarrierSolutionFormulation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.VehicleOrCarrierSolutionFormulation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DrugBatchSampleNumber)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DrugBatchSampleNumber)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.BloodSampling)</td> *@
+@*             <td>@Html.DisplayFor(model => model.BloodSampling)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.BloodSamplingMethod)</td> *@
+@*             <td>@Html.DisplayFor(model => model.BloodSamplingMethod)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.BloodSampleVolume)</td> *@
+@*             <td>@Html.DisplayFor(model => model.BloodSampleVolume)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.BloodTiming)</td> *@
+@*             <td>@Html.DisplayFor(model => model.BloodTiming)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.SurgicalProceduresIncludingShamSurgery)</td> *@
+@*             <td>@Html.DisplayFor(model => model.SurgicalProceduresIncludingShamSurgery)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DescriptionOfTheSurgicalProcedure)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DescriptionOfTheSurgicalProcedure)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ReferenceToProtocol)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ReferenceToProtocol)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TargetOrganTissue)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TargetOrganTissue)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PathogenInfectionInterventionAndControl)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PathogenInfectionInterventionAndControl)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InfectiousType)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InfectiousType)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InfectiousAgent)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InfectiousAgent)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DoseLoad)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DoseLoad)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.SiteAndRouteOfInfection)</td> *@
+@*             <td>@Html.DisplayFor(model => model.SiteAndRouteOfInfection)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TimingOrFrequencyOfInfection)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TimingOrFrequencyOfInfection)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnalgesicPlanToRelievePainSufferingAndDistress)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnalgesicPlanToRelievePainSufferingAndDistress)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnalgesicName)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnalgesicName)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Route)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Route)</td> *@
+@*         </tr> *@
+       
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnalgesicDose)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnalgesicDose)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnesthesiaForImaging)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnesthesiaForImaging)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnesthesiaType)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnesthesiaType)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Duration)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Duration)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnesthesiaDrugs)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnesthesiaDrugs)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnesthesiaDose)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnesthesiaDose)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.MonitoringRegime)</td> *@
+@*             <td>@Html.DisplayFor(model => model.MonitoringRegime)</td> *@
+@*         </tr> *@
+        
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Euthanasia)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Euthanasia)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Method)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Method)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Histology)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Histology)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TissuesCollectedPostEuthanasia)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TissuesCollectedPostEuthanasia)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TimingOfCollection)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TimingOfCollection)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.HistologicalProcedure)</td> *@
+@*             <td>@Html.DisplayFor(model => model.HistologicalProcedure)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NameOfReagentS)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NameOfReagentS)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CatalogueNumber)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CatalogueNumber)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.LengthOfFixation)</td> *@
+@*             <td>@Html.DisplayFor(model => model.LengthOfFixation)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Imaging)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Imaging)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FrequencyOfImaging)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FrequencyOfImaging)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TimingOfImaging)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TimingOfImaging)</td> *@
+@*         </tr> *@
+
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.OverallScanLength)</td> *@
+@*             <td>@Html.DisplayFor(model => model.OverallScanLength)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ContrastAgentCommercialDrug)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ContrastAgentCommercialDrug)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ContrastAgentChemicalDrug)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ContrastAgentChemicalDrug)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ContrastAgentDose)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ContrastAgentDose)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InjectionVolume)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InjectionVolume)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InjectionTime)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InjectionTime)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Vehicle)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Vehicle)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.RouteOfAdministration)</td> *@
+@*             <td>@Html.DisplayFor(model => model.RouteOfAdministration)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CellLines)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CellLines)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CellLine)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CellLine)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Provenance)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Provenance)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ModifiedCellLine)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ModifiedCellLine)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TypeOfGeneticModification)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TypeOfGeneticModification)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.GeneModified)</td> *@
+@*             <td>@Html.DisplayFor(model => model.GeneModified)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.VerificationAndAuthentication)</td> *@
+@*             <td>@Html.DisplayFor(model => model.VerificationAndAuthentication)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CellInjectionRoute)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CellInjectionRoute)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NumberOfCells)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NumberOfCells)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Reagents)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Reagents)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NameOfReagent)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NameOfReagent)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CatalogueNumbers)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CatalogueNumbers)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.EquipmentAndSoftware)</td> *@
+@*             <td>@Html.DisplayFor(model => model.EquipmentAndSoftware)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Manufacturer)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Manufacturer)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ModelVersionNumber)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ModelVersionNumber)</td> *@
+@*         </tr> *@
+     
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FrequencyOfExperimentalProcedures)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FrequencyOfExperimentalProcedures)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TimingOfExperimentalProcedures)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TimingOfExperimentalProcedures)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FrequencyOfExperimentalMeasurements)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FrequencyOfExperimentalMeasurements)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TimingOfExperimentalMeasurements)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TimingOfExperimentalMeasurements)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.HousingRoom)</td> *@
+@*             <td>@Html.DisplayFor(model => model.HousingRoom)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DietaryIntervention)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DietaryIntervention)</td> *@
+@*         </tr> *@
+
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.RespirationRate)</td> *@
+@*             <td>@Html.DisplayFor(model => model.RespirationRate)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.BodyTempuratureEtc)</td> *@
+@*             <td>@Html.DisplayFor(model => model.BodyTempuratureEtc)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FoodIntakeMeasured)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FoodIntakeMeasured)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InstrumentVendor)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InstrumentVendor)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InstrumentVendor)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InstrumentVendor)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InstrumentType)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InstrumentType)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.InstrumentSpecifics)</td> *@
+@*             <td>@Html.DisplayFor(model => model.InstrumentSpecifics)</td> *@
+@*         </tr> *@
+
+
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImageAcquisitionParameters)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImageAcquisitionParameters)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Correction)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Correction)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.RawData)</td> *@
+@*             <td>@Html.DisplayFor(model => model.RawData)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.QaQc)</td> *@
+@*             <td>@Html.DisplayFor(model => model.QaQc)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImageType)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImageType)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImageScale)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImageScale)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FormatCompression)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FormatCompression)</td> *@
+@*         </tr> *@
+
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Dimensions)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Dimensions)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.OverallNumberOfImages)</td> *@
+@*             <td>@Html.DisplayFor(model => model.OverallNumberOfImages)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FieldOfView)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FieldOfView)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.QaQc)</td> *@
+@*             <td>@Html.DisplayFor(model => model.QaQc)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DimensionExtents)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DimensionExtents)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.SizeDescription)</td> *@
+@*             <td>@Html.DisplayFor(model => model.SizeDescription)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.PixelVoxelSizeDescription)</td> *@
+@*             <td>@Html.DisplayFor(model => model.PixelVoxelSizeDescription)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImageProcessingMethods)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImageProcessingMethods)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImageReconstructionAlgorithm)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImageReconstructionAlgorithm)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.QualityControl)</td> *@
+@*             <td>@Html.DisplayFor(model => model.QualityControl)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImageSmoothingOrFilteringAlgorithm)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImageSmoothingOrFilteringAlgorithm)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ImageRegistrationAlgorithm)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ImageRegistrationAlgorithm)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AiEnhancedAlgorithm)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AiEnhancedAlgorithm)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.QcInfo)</td> *@
+@*             <td>@Html.DisplayFor(model => model.QcInfo)</td> *@
+@*         </tr> *@
+
+
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Corrections)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Corrections)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.SpatialAndTemporalAlignment)</td> *@
+@*             <td>@Html.DisplayFor(model => model.SpatialAndTemporalAlignment)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FiducialsUsed)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FiducialsUsed)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.CoregisteredImages)</td> *@
+@*             <td>@Html.DisplayFor(model => model.CoregisteredImages)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.TransformationMatrixOtherInfo)</td> *@
+@*             <td>@Html.DisplayFor(model => model.TransformationMatrixOtherInfo)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.RelatedImagesAndRelationship)</td> *@
+@*             <td>@Html.DisplayFor(model => model.RelatedImagesAndRelationship)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnalysisResultType)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnalysisResultType)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.DataUsedForAnalysis)</td> *@
+@*             <td>@Html.DisplayFor(model => model.DataUsedForAnalysis)</td> *@
+@*         </tr> *@
+
+
+@*              <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.AnalysisMethodAndDetails)</td> *@
+@*             <td>@Html.DisplayFor(model => model.AnalysisMethodAndDetails)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.FileFormatOfResultFileCsvJsonTxtXlsx)</td> *@
+@*             <td>@Html.DisplayFor(model => model.FileFormatOfResultFileCsvJsonTxtXlsx)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Status)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Status)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NcitImaging)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NcitImaging)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NcitImagingSubmodality)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NcitImagingSubmodality)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Doid)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Doid)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NcitAnatomy)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NcitAnatomy)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NcitSpecies)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NcitSpecies)</td> *@
+@*         </tr> *@
+
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NcitStrain)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NcitStrain)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ChebiPharmaco)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ChebiPharmaco)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ChebiAnesthesia)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ChebiAnesthesia)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ChebiContrastAgentCommercialName)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ChebiContrastAgentCommercialName)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.ChebiContrastAgentChemicalName)</td> *@
+@*             <td>@Html.DisplayFor(model => model.ChebiContrastAgentChemicalName)</td> *@
+@*         </tr> *@
+
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.Clo)</td> *@
+@*             <td>@Html.DisplayFor(model => model.Clo)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.NcitGene)</td> *@
+@*             <td>@Html.DisplayFor(model => model.NcitGene)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.UpdatedYear)</td> *@
+@*             <td>@Html.DisplayFor(model => model.UpdatedYear)</td> *@
+@*         </tr> *@
+@*         <tr> *@
+@*             <td>@Html.DisplayNameFor(model => model.LinkToDataset1)</td> *@
+@*             <td>@Html.DisplayFor(model => model.LinkToDataset1)</td> *@
+@*         </tr> *@
+
+        
+@* </tbody> *@
+
+</table>
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model?.DatasetId">Edit</a> |
+        <a asp-action="Index">Back to List</a>
+    </div>
+}
+else
+{
+    <div>
+        
+        <a asp-action="Index">Back to List</a>
+    </div>
+}
+
+
