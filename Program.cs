@@ -2,9 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Pidar.Areas.Identity.Data;
 using Pidar.Data;
 using Microsoft.AspNetCore.Identity;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Set EPPlus license context
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // For non-commercial use
+// ExcelPackage.LicenseContext = LicenseContext.Commercial; // For commercial use
 
 // Register ApplicationDbContext for Identity
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");

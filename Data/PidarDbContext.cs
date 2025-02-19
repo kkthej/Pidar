@@ -18,9 +18,13 @@ namespace Pidar.Data
 
             modelBuilder.Entity<Metadata>(entity =>
             {
-                entity.HasKey(e => e.DatasetId); // Explicit primary key
+                entity.HasKey(e => e.DatasetId);
                 entity.Property(e => e.DatasetId)
-                      .ValueGeneratedNever(); // Disable auto-increment
+                      .ValueGeneratedOnAdd(); // Auto-generate DatasetId
+
+                entity.Property(e => e.DisplayId)
+                      .IsRequired()
+                      .ValueGeneratedNever(); // Manual input for DisplayId
             });
         }
     }

@@ -16,6 +16,15 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="row mb-3">
                 <div class="col-sm-4">
+                    <label asp-for="DisplayId" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DisplayId" class="form-control" />
+                    <span asp-validation-for="DisplayId" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
                     <label asp-for="StudyDesignBackground" class="control-label"></label>
                 </div>
                 <div class="col-sm-8">

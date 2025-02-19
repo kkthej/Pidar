@@ -4,8 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Models;
 using System.Data;
-using Microsoft.Extensions.Logging;
-
+using System.Text;
+using CsvHelper;
+using ClosedXML.Excel;
 namespace Pidar.Controllers
 {
     [Route("Metadatas")]
@@ -14,13 +15,64 @@ namespace Pidar.Controllers
         private readonly PidarDbContext _context;
         private readonly ILogger<MetadatasController> _logger;
 
+        [Route("Download")]
+        public async Task<IActionResult> Download(string format)
+        {
+            var metadataList = await _context.Metadata.ToListAsync();
+
+            switch (format.ToLower())
+            {
+                case "csv":
+                    return DownloadCsv(metadataList);
+                case "excel":
+                    return DownloadExcel(metadataList);
+                default:
+                    return NotFound();
+            }
+        }
+
+        private IActionResult DownloadCsv(List<Metadata> metadataList)
+        {
+            using (var memoryStream = new MemoryStream())
+            using (var streamWriter = new StreamWriter(memoryStream, Encoding.UTF8))
+            using (var csvWriter = new CsvWriter(streamWriter, System.Globalization.CultureInfo.InvariantCulture))
+            {
+                csvWriter.WriteRecords(metadataList);
+                streamWriter.Flush();
+                memoryStream.Position = 0;
+
+                return File(memoryStream.ToArray(), "text/csv", "Pidar_Metadata.csv");
+            }
+        }
+
+        private IActionResult DownloadExcel(List<Metadata> metadataList)
+        {
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Metadata");
+                worksheet.Cell(1, 1).InsertTable(metadataList);
+
+                using (var memoryStream = new MemoryStream())
+                {
+                    workbook.SaveAs(memoryStream);
+                    memoryStream.Position = 0;
+
+                    return File(memoryStream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Pidar_Metadata.xlsx");
+                }
+            }
+        }
+
+
+
+
+
         // Modify the existing Index method to handle both sorting and pagination
         [Route("")]
         [Route("Index")]
         public async Task<IActionResult> Index(string sortOrder, int pageNumber = 1)
         {
             // Sorting logic
-            ViewData["DatasetIdSortParam"] = sortOrder == "datasetid_asc" ? "datasetid_desc" : "datasetid_asc";
+            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
             ViewBag.CurrentSort = sortOrder;
 
             var query = _context.Metadata.AsQueryable();
@@ -28,13 +80,13 @@ namespace Pidar.Controllers
             // Determine the sorting order
             query = sortOrder switch
             {
-                "datasetid_asc" => query.OrderBy(m => m.DatasetId),
-                "datasetid_desc" => query.OrderByDescending(m => m.DatasetId),
-                _ => query.OrderBy(m => m.DatasetId) // Default sorting
+                "displayid_asc" => query.OrderBy(m => m.DisplayId),
+                "displayid_desc" => query.OrderByDescending(m => m.DisplayId),
+                _ => query.OrderBy(m => m.DisplayId) // Default sorting
             };
 
             // Pagination logic
-            int pageSize = 5;
+            int pageSize = 10;
             var paginatedData = await PaginatedList<Metadata>.CreateAsync(query, pageNumber, pageSize);
 
             return View(paginatedData);
@@ -54,7 +106,7 @@ namespace Pidar.Controllers
         [Route("Search")]
         public async Task<IActionResult> ShowSearchForm(int pageNumber = 1)
         {
-            int pageSize = 5; // Show 5 items per page
+            int pageSize = 10; // Show 10 items per page
             var query = _context.Metadata.AsQueryable(); // Adjust according to your DbSet
             var paginatedData = await PaginatedList<Metadata>.CreateAsync(query, pageNumber, pageSize);
 
@@ -65,7 +117,7 @@ namespace Pidar.Controllers
         [Route("SearchResults")]
         public async Task<IActionResult> ShowSearchResults(string SearchPhrase, int pageNumber = 1)
         {
-            int pageSize = 5;
+            int pageSize = 10;
 
             var query = _context.Metadata.AsQueryable(); // Stay in IQueryable
 
@@ -129,6 +181,11 @@ namespace Pidar.Controllers
         [Route("Create")]
         public IActionResult Create()
         {
+            // Get the maximum current DisplayId + 1
+            int? maxDisplayId = _context.Metadata.Max(m => (int?)m.DisplayId);
+            var suggestedDisplayId = (maxDisplayId ?? 0) + 1;
+
+            ViewBag.SuggestedDisplayId = suggestedDisplayId;
             return View();
         }
 
@@ -139,17 +196,24 @@ namespace Pidar.Controllers
         [ValidateAntiForgeryToken]
         [Authorize]
         [Route("Create")]
-        public async Task<IActionResult> Create(Metadata metadata)
+        
+        public async Task<IActionResult> Create([Bind("DisplayId,StudyDesignBackground,StudyDescription,StudyType,StudySubtype,PaperLinked,PaperTitle,PaperAuthors,Affiliation,PaperJournal,PaperYear,PaperDoi,OpenAccess,UpdatedPaperYear,MultiModalityImages,ImagingModality,ImagingSubModality,Radiation,ImagingCoverage,ImagingTarget,Institution,Pi,CoPi,CountryOfInstitution,ImagingFacility,EuroBioImagingNode,CountryOfImagingFacility,LinkToDataset,Funding,FundingAgency,GrantNumber,DatasetAccess,License,LicenseFile,DuoDataUsePermission,DuoDataUseModifier,DuoInvestigation,ContactPerson,NumberOfGroups,TypesOfGroups,OverallSampleSize,DiseaseModel,OrganOrTissue,SampleSizeForEachGroup,PowerCalculation,InclusionCriteria,ExclusionCriteria,Randomization,Blinding,ProceduresToKeepTreatmentsBlind,ProceduresToKeepExperimenterBlind,OutcomeMeasures,StatisticalMethods,Species,Strain,ImmuneStatus,Sex,Age,AgeAtStartExperiment,AgeAtScanningExperimentS,Weight,WeightAtStartExperiment,WeightAtEndExperiment,Genotype,GeneticManipulation,Gene,SourceOfAnimals,RegistryNumberOfAnimalAuthorization,PharmacologicalProceduresInterventionAndControl,PharmacologicalDrug,Company,Formulation,DrugDose,Volume,Concentration,SiteRouteOfAdministration,FrequencyOfAdministration,VehicleOrCarrierSolutionFormulation,DrugBatchSampleNumber,BloodSampling,BloodSamplingMethod,BloodSampleVolume,BloodTiming,SurgicalProceduresIncludingShamSurgery,DescriptionOfTheSurgicalProcedure,ReferenceToProtocol,TargetOrganTissue,PathogenInfectionInterventionAndControl,InfectiousType,InfectiousAgent,DoseLoad,SiteAndRouteOfInfection,TimingOrFrequencyOfInfection,AnalgesicPlanToRelievePainSufferingAndDistress,AnalgesicName,Route,AnalgesicDose,AnesthesiaForImaging,AnesthesiaType,Duration,AnesthesiaDrugs,AnesthesiaDose,MonitoringRegime,Euthanasia,Method,Histology,TissuesCollectedPostEuthanasia,TimingOfCollection,HistologicalProcedure,NameOfReagentS,CatalogueNumber,LengthOfFixation,Imaging,FrequencyOfImaging,TimingOfImaging,OverallScanLength,ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule,ContrastAgentCommercialDrug,ContrastAgentChemicalDrug,ContrastAgentDose,InjectionVolume,InjectionTime,Vehicle,RouteOfAdministration,CellLines,CellLine,Provenance,ModifiedCellLine,TypeOfGeneticModification,GeneModified,VerificationAndAuthentication,CellInjectionRoute,NumberOfCells,Reagents,NameOfReagent,CatalogueNumbers,EquipmentAndSoftware,Manufacturer,ModelVersionNumber,FrequencyOfExperimentalProcedures,TimingOfExperimentalProcedures,FrequencyOfExperimentalMeasurements,TimingOfExperimentalMeasurements,HousingRoom,DietaryIntervention,RespirationRate,BodyTempuratureEtc,FoodIntakeMeasured,InstrumentVendor,InstrumentType,InstrumentSpecifics,ImageAcquisitionParameters,Correction,RawData,QaQc,ImageType,ImageScale,FormatCompression,Dimensions,OverallNumberOfImages,FieldOfView,DimensionExtents,SizeDescription,PixelVoxelSizeDescription,ImageProcessingMethods,ImageReconstructionAlgorithm,QualityControl,ImageSmoothingOrFilteringAlgorithm,ImageRegistrationAlgorithm,AiEnhancedAlgorithm,QcInfo,Corrections,SpatialAndTemporalAlignment,FiducialsUsed,CoregisteredImages,TransformationMatrixOtherInfo,RelatedImagesAndRelationship,AnalysisResultType,DataUsedForAnalysis,AnalysisMethodAndDetails,FileFormatOfResultFileCsvJsonTxtXlsx,Status,NcitImaging,NcitImagingSubmodality,Doid,NcitAnatomy,NcitSpecies,NcitStrain,ChebiPharmaco,ChebiAnesthesia,ChebiContrastAgentCommercialName,ChebiContrastAgentChemicalName,Clo,NcitGene,UpdatedYear,LinkToDataset1")] Metadata metadata)
         {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogError("ModelState is invalid: " + string.Join("; ", ModelState.Values
+                                        .SelectMany(v => v.Errors)
+                                        .Select(e => e.ErrorMessage)));
+
+                return View(metadata);
+            }
+
             if (ModelState.IsValid)
             {
                 using var transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
                 try
                 {
-                    // Get current max ID safely
-                    int maxId = await _context.Metadata.MaxAsync(m => (int?)m.DatasetId) ?? 0;
-                    metadata.DatasetId = maxId + 1;
-
+                    // Do NOT manually set DatasetId or DisplayId
                     _context.Add(metadata);
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -159,8 +223,17 @@ namespace Pidar.Controllers
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    _logger.LogError(ex, "Error creating metadata");
-                    ModelState.AddModelError("", "An error occurred while saving.");
+
+                    // Log full error details
+                    _logger.LogError(ex, "Error creating metadata: " + ex.Message);
+
+                    // Extract inner exception details
+                    var innerMessage = ex.InnerException?.Message ?? "No inner exception details available.";
+
+                    // Show error message in the UI
+                    ModelState.AddModelError("", $"An error occurred while saving: {innerMessage}");
+
+                    return View(metadata);
                 }
             }
             return View(metadata);
@@ -192,7 +265,7 @@ namespace Pidar.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Edit/{id}")]
-        public async Task<IActionResult> Edit(int id, [Bind("DatasetId,StudyDesignBackground,StudyDescription,StudyType,StudySubtype,PaperLinked,PaperTitle,PaperAuthors,Affiliation,PaperJournal,PaperYear,PaperDoi,OpenAccess,UpdatedPaperYear,MultiModalityImages,ImagingModality,ImagingSubModality,Radiation,ImagingCoverage,ImagingTarget,Institution,Pi,CoPi,CountryOfInstitution,ImagingFacility,EuroBioImagingNode,CountryOfImagingFacility,LinkToDataset,Funding,FundingAgency,GrantNumber,DatasetAccess,License,LicenseFile,DuoDataUsePermission,DuoDataUseModifier,DuoInvestigation,ContactPerson,NumberOfGroups,TypesOfGroups,OverallSampleSize,DiseaseModel,OrganOrTissue,SampleSizeForEachGroup,PowerCalculation,InclusionCriteria,ExclusionCriteria,Randomization,Blinding,ProceduresToKeepTreatmentsBlind,ProceduresToKeepExperimenterBlind,OutcomeMeasures,StatisticalMethods,Species,Strain,ImmuneStatus,Sex,Age,AgeAtStartExperiment,AgeAtScanningExperimentS,Weight,WeightAtStartExperiment,WeightAtEndExperiment,Genotype,GeneticManipulation,Gene,SourceOfAnimals,RegistryNumberOfAnimalAuthorization,PharmacologicalProceduresInterventionAndControl,PharmacologicalDrug,Company,Formulation,DrugDose,Volume,Concentration,SiteRouteOfAdministration,FrequencyOfAdministration,VehicleOrCarrierSolutionFormulation,DrugBatchSampleNumber,BloodSampling,BloodSamplingMethod,BloodSampleVolume,BloodTiming,SurgicalProceduresIncludingShamSurgery,DescriptionOfTheSurgicalProcedure,ReferenceToProtocol,TargetOrganTissue,PathogenInfectionInterventionAndControl,InfectiousType,InfectiousAgent,DoseLoad,SiteAndRouteOfInfection,TimingOrFrequencyOfInfection,AnalgesicPlanToRelievePainSufferingAndDistress,AnalgesicName,Route,AnalgesicDose,AnesthesiaForImaging,AnesthesiaType,Duration,AnesthesiaDrugs,AnesthesiaDose,MonitoringRegime,Euthanasia,Method,Histology,TissuesCollectedPostEuthanasia,TimingOfCollection,HistologicalProcedure,NameOfReagentS,CatalogueNumber,LengthOfFixation,Imaging,FrequencyOfImaging,TimingOfImaging,OverallScanLength,ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule,ContrastAgentCommercialDrug,ContrastAgentChemicalDrug,ContrastAgentDose,InjectionVolume,InjectionTime,Vehicle,RouteOfAdministration,CellLines,CellLine,Provenance,ModifiedCellLine,TypeOfGeneticModification,GeneModified,VerificationAndAuthentication,CellInjectionRoute,NumberOfCells,Reagents,NameOfReagent,CatalogueNumbers,EquipmentAndSoftware,Manufacturer,ModelVersionNumber,FrequencyOfExperimentalProcedures,TimingOfExperimentalProcedures,FrequencyOfExperimentalMeasurements,TimingOfExperimentalMeasurements,HousingRoom,DietaryIntervention,RespirationRate,BodyTempuratureEtc,FoodIntakeMeasured,InstrumentVendor,InstrumentType,InstrumentSpecifics,ImageAcquisitionParameters,Correction,RawData,QaQc,ImageType,ImageScale,FormatCompression,Dimensions,OverallNumberOfImages,FieldOfView,DimensionExtents,SizeDescription,PixelVoxelSizeDescription,ImageProcessingMethods,ImageReconstructionAlgorithm,QualityControl,ImageSmoothingOrFilteringAlgorithm,ImageRegistrationAlgorithm,AiEnhancedAlgorithm,QcInfo,Corrections,SpatialAndTemporalAlignment,FiducialsUsed,CoregisteredImages,TransformationMatrixOtherInfo,RelatedImagesAndRelationship,AnalysisResultType,DataUsedForAnalysis,AnalysisMethodAndDetails,FileFormatOfResultFileCsvJsonTxtXlsx,Status,NcitImaging,NcitImagingSubmodality,Doid,NcitAnatomy,NcitSpecies,NcitStrain,ChebiPharmaco,ChebiAnesthesia,ChebiContrastAgentCommercialName,ChebiContrastAgentChemicalName,Clo,NcitGene,UpdatedYear,LinkToDataset1")] Metadata metadata)
+        public async Task<IActionResult> Edit(int id, [Bind("DisplayId,StudyDesignBackground,StudyDescription,StudyType,StudySubtype,PaperLinked,PaperTitle,PaperAuthors,Affiliation,PaperJournal,PaperYear,PaperDoi,OpenAccess,UpdatedPaperYear,MultiModalityImages,ImagingModality,ImagingSubModality,Radiation,ImagingCoverage,ImagingTarget,Institution,Pi,CoPi,CountryOfInstitution,ImagingFacility,EuroBioImagingNode,CountryOfImagingFacility,LinkToDataset,Funding,FundingAgency,GrantNumber,DatasetAccess,License,LicenseFile,DuoDataUsePermission,DuoDataUseModifier,DuoInvestigation,ContactPerson,NumberOfGroups,TypesOfGroups,OverallSampleSize,DiseaseModel,OrganOrTissue,SampleSizeForEachGroup,PowerCalculation,InclusionCriteria,ExclusionCriteria,Randomization,Blinding,ProceduresToKeepTreatmentsBlind,ProceduresToKeepExperimenterBlind,OutcomeMeasures,StatisticalMethods,Species,Strain,ImmuneStatus,Sex,Age,AgeAtStartExperiment,AgeAtScanningExperimentS,Weight,WeightAtStartExperiment,WeightAtEndExperiment,Genotype,GeneticManipulation,Gene,SourceOfAnimals,RegistryNumberOfAnimalAuthorization,PharmacologicalProceduresInterventionAndControl,PharmacologicalDrug,Company,Formulation,DrugDose,Volume,Concentration,SiteRouteOfAdministration,FrequencyOfAdministration,VehicleOrCarrierSolutionFormulation,DrugBatchSampleNumber,BloodSampling,BloodSamplingMethod,BloodSampleVolume,BloodTiming,SurgicalProceduresIncludingShamSurgery,DescriptionOfTheSurgicalProcedure,ReferenceToProtocol,TargetOrganTissue,PathogenInfectionInterventionAndControl,InfectiousType,InfectiousAgent,DoseLoad,SiteAndRouteOfInfection,TimingOrFrequencyOfInfection,AnalgesicPlanToRelievePainSufferingAndDistress,AnalgesicName,Route,AnalgesicDose,AnesthesiaForImaging,AnesthesiaType,Duration,AnesthesiaDrugs,AnesthesiaDose,MonitoringRegime,Euthanasia,Method,Histology,TissuesCollectedPostEuthanasia,TimingOfCollection,HistologicalProcedure,NameOfReagentS,CatalogueNumber,LengthOfFixation,Imaging,FrequencyOfImaging,TimingOfImaging,OverallScanLength,ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule,ContrastAgentCommercialDrug,ContrastAgentChemicalDrug,ContrastAgentDose,InjectionVolume,InjectionTime,Vehicle,RouteOfAdministration,CellLines,CellLine,Provenance,ModifiedCellLine,TypeOfGeneticModification,GeneModified,VerificationAndAuthentication,CellInjectionRoute,NumberOfCells,Reagents,NameOfReagent,CatalogueNumbers,EquipmentAndSoftware,Manufacturer,ModelVersionNumber,FrequencyOfExperimentalProcedures,TimingOfExperimentalProcedures,FrequencyOfExperimentalMeasurements,TimingOfExperimentalMeasurements,HousingRoom,DietaryIntervention,RespirationRate,BodyTempuratureEtc,FoodIntakeMeasured,InstrumentVendor,InstrumentType,InstrumentSpecifics,ImageAcquisitionParameters,Correction,RawData,QaQc,ImageType,ImageScale,FormatCompression,Dimensions,OverallNumberOfImages,FieldOfView,DimensionExtents,SizeDescription,PixelVoxelSizeDescription,ImageProcessingMethods,ImageReconstructionAlgorithm,QualityControl,ImageSmoothingOrFilteringAlgorithm,ImageRegistrationAlgorithm,AiEnhancedAlgorithm,QcInfo,Corrections,SpatialAndTemporalAlignment,FiducialsUsed,CoregisteredImages,TransformationMatrixOtherInfo,RelatedImagesAndRelationship,AnalysisResultType,DataUsedForAnalysis,AnalysisMethodAndDetails,FileFormatOfResultFileCsvJsonTxtXlsx,Status,NcitImaging,NcitImagingSubmodality,Doid,NcitAnatomy,NcitSpecies,NcitStrain,ChebiPharmaco,ChebiAnesthesia,ChebiContrastAgentCommercialName,ChebiContrastAgentChemicalName,Clo,NcitGene,UpdatedYear,LinkToDataset1")] Metadata metadata)
         {
 
             if (id != metadata.DatasetId)  
@@ -261,23 +334,31 @@ namespace Pidar.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Delete the target record
+                // 1. Find the record to delete
                 var metadata = await _context.Metadata.FindAsync(id);
                 if (metadata == null) return NotFound();
 
+                // 2. Store the DisplayId of the deleted record
+                int deletedDisplayId = metadata.DisplayId;
+                _logger.LogInformation($"Deleting record with DisplayId: {deletedDisplayId}");
+
+                // 3. Delete the record
                 _context.Metadata.Remove(metadata);
                 await _context.SaveChangesAsync();
 
-                // 2. Renumber subsequent records
+                // 4. Decrement DisplayId for all records with DisplayId > deletedDisplayId
                 var recordsToUpdate = await _context.Metadata
-                    .Where(m => m.DatasetId > id)
-                    .OrderBy(m => m.DatasetId)
+                    .Where(m => m.DisplayId > deletedDisplayId)
+                    .OrderBy(m => m.DisplayId)
                     .ToListAsync();
+
+                _logger.LogInformation($"Found {recordsToUpdate.Count} records to update.");
 
                 foreach (var record in recordsToUpdate)
                 {
-                    record.DatasetId -= 1;
+                    record.DisplayId -= 1;
                     _context.Update(record);
+                    _logger.LogInformation($"Updated record with DatasetId: {record.DatasetId} to DisplayId: {record.DisplayId}");
                 }
 
                 await _context.SaveChangesAsync();
@@ -285,14 +366,21 @@ namespace Pidar.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw;
+                _logger.LogError(ex, "Error deleting metadata");
+                ModelState.AddModelError("", "An error occurred while deleting.");
+                return View("Error"); // Or handle the error appropriately
             }
         }
 
+        
     }
+
+
+
+
 }
 
 

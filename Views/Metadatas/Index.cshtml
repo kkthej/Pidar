@@ -16,40 +16,55 @@
 
 @if (SignInManager.IsSignedIn(User))
 {
-    <p>
-        <a asp-action="Create">Create New</a>
-    </p>
+    <div class="row justify-content-between align-items-center  mb-2">
+        <div class="col-auto">
+            <a asp-action="Create" class="btn btn-primary">Create New Dataset</a>
+        </div>
+        <div class="col-auto">
+            <form asp-action="ShowSearchResults" class="form-inline">
+                <div class="input-group">
+                    <input name="SearchPhrase" id="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+}else{
+<!-- Search box -->
+
+    <div class="row justify-content-lg-end justify-content-center">
+        <div class="col-md-4 col-12">
+            <form asp-action="ShowSearchResults">
+                <div class="form-group mb-2 form-inline">
+                    <label for="SearchPhrase" class="control-label"></label>
+                    <div class="input-group">
+                        <input for="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 }
 
 
-<!-- Search box -->
 
-<div class="row justify-content-lg-end justify-content-center">
-    <div class="col-md-4 col-12">
-        <form asp-action="ShowSearchResults">
-            <div class="form-group mb-2 form-inline">
-                <label for="SearchPhrase" class="control-label"></label>
-                <div class="input-group">
-                    <input name="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
-                    <button type="submit" value="Search" class="btn btn-primary">Search</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 
 
 <!-- table starts here -->
 
 <div class="table-responsive">
-    <table class="table table-bordered table-striped mx-auto" style="min-width: 700px;">
+    <table class="table table-bordered table-striped mx-auto text-center" style="min-width: 800px;">
         <thead>
             <tr>
                 <th>
-                    <a asp-action="Index" asp-route-sortOrder="@ViewData["DatasetIdSortParam"]">
-                        @Html.DisplayNameFor(model => model.FirstOrDefault().DatasetId)
-                        @if (ViewBag.CurrentSort == "datasetid_desc")
+                    <a asp-action="Index" asp-route-sortOrder="@ViewData["DisplayIdSortParam"]">
+                        Dataset ID
+                        @* we show DisplayId instead of DatasetID *@
+                        @if (ViewBag.CurrentSort == "displayid_desc")
                         {
                             <i class="fas fa-sort-down"></i>
                         }
@@ -59,19 +74,16 @@
                         }
                     </a>
                 </th>
-
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().StudyType)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().ImagingModality)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Institution)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().ImagingFacility)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Species)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().OverallSampleSize)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().DiseaseModel)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().OrganOrTissue)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().License)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().Status)</th>
-                <th>@Html.DisplayNameFor(model => model.FirstOrDefault().UpdatedYear)</th>
-                
+                <th>Imaging Modality</th>
+                <th>Institution</th>
+                <th>Imaging Facility</th>
+                <th>Species</th>
+                <th>Sample Size</th>
+                <th>Disease Model</th>
+                <th>Organ/Tissue</th>
+                <th>License</th>
+                <th>Status</th>
+                <th>Year</th>
             </tr>
         </thead>
         <tbody>
@@ -79,11 +91,11 @@
             {
                 <tr style="text-align: center; vertical-align: middle;">
                     <td >
-                        <a asp-action="Details" asp-route-id="@item.DatasetId" class="text-decoration-none text-primary fw-bold hover-effect">
-                            @item.DatasetId
+                        <a asp-action="Details" asp-route-id="@item.DisplayId" class="text-decoration-none text-primary fw-bold hover-effect">
+                            @item.DisplayId
                         </a>
                     </td>
-                    <td>@item.StudyType</td>
+                    
                     <td>@item.ImagingModality</td>
                     <td>@item.Institution</td>
                     <td>@item.ImagingFacility</td>

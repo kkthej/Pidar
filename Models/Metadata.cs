@@ -6,8 +6,10 @@ namespace Pidar.Models
     public class Metadata
     {
         [Key]
-        //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int DatasetId { get; set; }
+
+        public int DisplayId { get; set; } 
 
         //Study Design
         public string? StudyDesignBackground { get; set; }

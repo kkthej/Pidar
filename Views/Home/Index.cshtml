@@ -8,7 +8,47 @@
         <img src="images/Sfondo.png" class="img-fluid" alt="Background Image">
     </div>
 </div>
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+
+
+
+@* Center the content vertically and horizontally *@
+<div class="container" style="min-height: 100vh;">
+    <div class="row justify-content-center align-items-center h-100">
+        <div class="col-md-6 text-center">
+            <h4 class="mb-4">Download Metadata</h4>
+            <form asp-controller="Metadatas" asp-action="Download" method="get" id="downloadForm">
+                <div class="form-group">
+                    <label for="format" class="h5">Select Format:</label>
+                    <select id="format" name="format" class="form-control form-control-lg">
+                        <option value="csv">CSV</option>
+                        <option value="excel">Excel</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg mt-3" id="downloadBtn">Download</button>
+            </form>
+        </div>
+    </div>
 </div>
+
+
+@* Hover effect for the download button *@
+<style>
+    .btn-primary {
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+        }
+</style>
+
+@* Show toast on form submission (requires Bootstrap 5 JS; adjust if using Bootstrap 4) *@
+<script>
+    document.getElementById('downloadForm').addEventListener('submit', function(event) {
+        // Show toast notification. Note: In a normal file download, the page may reload.
+        var toastEl = document.getElementById('downloadToast');
+        var toast = new bootstrap.Toast(toastEl);
+        toast.show();
+    });
+</script>
