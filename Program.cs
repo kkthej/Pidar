@@ -25,13 +25,34 @@ builder.Services.AddDbContext<PidarDbContext>(options =>
 builder.Services.AddDefaultIdentity<PidarUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+//Adding Swagger services:
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(x =>
+        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "PIDAR Metadata API",
+        Version = "v1",
+        Description = "A Web API for managing Metadata",
+    });
+});
+
+
+
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI();
     app.UseMigrationsEndPoint();
 }
 else
@@ -47,6 +68,9 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication(); // Ensure this is called before UseAuthorization
 app.UseAuthorization();
+
+
+
 
 
 

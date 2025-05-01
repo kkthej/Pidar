@@ -39,7 +39,7 @@
                 <div class="form-group mb-2 form-inline">
                     <label for="SearchPhrase" class="control-label"></label>
                     <div class="input-group">
-                        <input for="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
+                        <input name="SearchPhrase" id="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
                         <button type="submit" class="btn btn-primary">Search</button>
                     </div>
                 </div>
@@ -47,10 +47,6 @@
         </div>
     </div>
 }
-
-
-
-
 
 
 
@@ -186,6 +182,11 @@
 <div style="display: flex; justify-content: center; margin-top: 20px;">
     <button id="downloadButton" class="btn btn-primary" disabled>Download</button>
 </div>
+
+<div style="display: flex; justify-content: center; margin-top: 20px;">
+    <button id="downloadButton" class="btn btn-primary" onclick="location.href='/swagger'">Go to Swagger</button>
+</div>
+
 
 <div style="display: flex; justify-content: center; margin-top: 10px;">
     <span id="progressText" style="font-size: 14px; color: green;"></span>

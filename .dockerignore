@@ -1,30 +1,99 @@
-**/.classpath
-**/.dockerignore
-**/.env
-**/.git
-**/.gitignore
-**/.project
-**/.settings
-**/.toolstarget
-**/.vs
-**/.vscode
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/azds.yaml
-**/bin
-**/charts
-**/docker-compose*
-**/Dockerfile*
-**/node_modules
-**/npm-debug.log
-**/obj
-**/secrets.dev.yaml
-**/values.dev.yaml
-LICENSE
-README.md
-!**/.gitignore
-!.git/HEAD
-!.git/config
-!.git/packed-refs
-!.git/refs/heads/**
+# .dockerignore for C# (.NET) + Node.js web project
+# 1. Version control
+.git/
+.gitignore
+.hg/
+.svn/
+
+# 2. IDE and editor folders/files
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+
+# 3. Build outputs and intermediate files
+bin/
+obj/
+dist/
+build/
+out/
+
+# 4. Node.js dependencies and artifacts
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# 5. Temporary and cache files
+*.tmp
+tmp/
+temp/
+.cache/
+*.vsidx
+*.db
+*.bin
+*.log
+*.bak
+*.backup
+*.futdcache*
+*.dtbcache*
+*.wsuo
+
+# 6. Test and debug folders/files
+test/
+tests/
+debug/
+coverage/
+
+# 7. Environment and secrets
+.env*
+*.env
+*.pem
+*.key
+*.crt
+config.local.*
+*.local.yml
+serviceDependencies.local.json
+
+# 8. Documentation and meta
+*.md
+README*
+docs/
+
+# 9. Docker and compose files
+Dockerfile*
+docker-compose*
+
+# 10. Miscellaneous
+*.DS_Store
+Thumbs.db
+*.sqlite
+*.docx
+*.xlsx
+
+# 11. Project-specific: Visual Studio workspace state
+VSWorkspaceState.json
+
+# 12. Exclude files/folders that should be included (negate if needed)
+!wwwroot/
+!Areas/
+!Controllers/
+!Data/
+!Helpers/
+!Migrations/
+!Models/
+!Properties/
+!Views/
+!appsettings.json
+!appsettings.Development.json
+!package.json
+!package-lock.json
+!Pidar.csproj
+!Pidar.sln
+
+# End of .dockerignore

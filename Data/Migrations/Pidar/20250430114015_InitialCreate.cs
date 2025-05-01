@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace Pidar.Migrations
+namespace Pidar.Data.Migrations.Pidar
 {
     /// <inheritdoc />
-    public partial class AddDisplayId_NonIdentity : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

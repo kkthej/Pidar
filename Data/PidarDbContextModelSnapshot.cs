@@ -16,7 +16,7 @@ namespace Pidar.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.1")
+                .HasAnnotation("ProductVersion", "9.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -24,7 +24,10 @@ namespace Pidar.Migrations
             modelBuilder.Entity("Pidar.Models.Metadata", b =>
                 {
                     b.Property<int>("DatasetId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DatasetId"));
 
                     b.Property<string>("Affiliation")
                         .HasColumnType("nvarchar(max)");

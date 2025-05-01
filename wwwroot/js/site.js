@@ -8,7 +8,7 @@
         downloadTypeDropdown.addEventListener('change', function () {
             downloadButton.disabled = !this.value;
             updateButtonState('Download', 'btn-primary');
-        });
+        }); 
 
         // Handle download button click
         downloadButton.addEventListener('click', async function (event) {
@@ -89,4 +89,34 @@
         downloadButton.disabled = false; // Enable the button after download
         updateButtonState('Download', 'btn-primary');
     }
+});
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('download-template').addEventListener('click', function (event) {
+        event.preventDefault(); // Prevent default behavior
+
+        // Fetch the file and trigger download using FileSaver.js
+        fetch("/contribution_files/metadata_template.xlsx")
+            .then(response => response.blob())
+            .then(blob => {
+                saveAs(blob, "metadata_template.xlsx");
+            })
+            .catch(error => console.error('Error downloading the file:', error));
+    });
+
+    document.getElementById('download-guidelines').addEventListener('click', function (event) {
+        event.preventDefault(); // Prevent default behavior
+
+        // Fetch the file and trigger download using FileSaver.js
+        fetch("/contribution_files/guidelines.docx")
+            .then(response => response.blob())
+            .then(blob => {
+                saveAs(blob, "guidelines.docx");
+            })
+            .catch(error => console.error('Error downloading the file:', error));
+    });
 });
