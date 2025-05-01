@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG DOTNET_VERSION=9.0
+ARG DOTNET_VERSION=8.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS builder
 WORKDIR /src
 
