@@ -34,4 +34,4 @@ Added features:
 1. download metadata in excel, PDF Json and csv formats
 2. contribution page added.
 3. Admin login for add, edit and delete metadatas
-4. 
+4. Swagger support added
