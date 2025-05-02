@@ -35,3 +35,4 @@ Added features:
 2. contribution page added.
 3. Admin login for add, edit and delete metadatas
 4. Swagger support added
+5. Added index page (only stastic page left for now 02/05/2025)
