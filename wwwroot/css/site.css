@@ -198,3 +198,30 @@ footer {
 }
 
 
+/* CSS for Highlighting top nav */
+
+.nav-link.active {
+    color: blue !important; /* Change color to blue */
+    font-weight: bold; /* Optional: Add bold font for emphasis */
+}
+
+
+
+/* CSS for Highlighting: */
+
+.highlight {
+    background-color: #fffde7; /* light yellow */
+    font-weight: bold;
+    padding: 0 2px;
+}
+
+.search-result-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.matched-property {
+    margin: 5px 0;
+}

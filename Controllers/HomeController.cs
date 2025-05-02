@@ -15,15 +15,18 @@ namespace Pidar.Controllers
 
         public IActionResult Index()
         {
+            ViewData["ActivePage"] = "Home";
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult Statistic()
         {
+            ViewData["ActivePage"] = "Statistic";
             return View();
         }
         public IActionResult Contribute()
         {
+            ViewData["ActivePage"] = "Contribute";
             return View();
         }
 

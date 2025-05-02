@@ -16,36 +16,38 @@
 
 @if (SignInManager.IsSignedIn(User))
 {
-    <div class="row justify-content-between align-items-center  mb-2">
-        <div class="col-auto">
-            <a asp-action="Create" class="btn btn-primary">Create New Dataset</a>
-        </div>
-        <div class="col-auto">
-            <form asp-action="ShowSearchResults" class="form-inline">
-                <div class="input-group">
-                    <input name="SearchPhrase" id="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
-                    <button type="submit" class="btn btn-primary">Search</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-}else{
-<!-- Search box -->
-
-    <div class="row justify-content-lg-end justify-content-center">
-        <div class="col-md-4 col-12">
-            <form asp-action="ShowSearchResults">
-                <div class="form-group mb-2 form-inline">
-                    <label for="SearchPhrase" class="control-label"></label>
+        <div class="row justify-content-between align-items-center  mb-2">
+            <div class="col-auto">
+                <a asp-action="Create" class="btn btn-primary">Create New Dataset</a>
+            </div>
+            <div class="col-auto">
+                <form asp-action="ShowSearchResults" class="form-inline">
                     <div class="input-group">
                         <input name="SearchPhrase" id="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
                         <button type="submit" class="btn btn-primary">Search</button>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
-    </div>
+
+}
+else
+{
+    <!-- Search box -->
+
+        <div class="row justify-content-lg-end justify-content-center">
+            <div class="col-md-4 col-12">
+                <form asp-action="ShowSearchResults">
+                    <div class="form-group mb-2 form-inline">
+                        <label for="SearchPhrase" class="control-label"></label>
+                        <div class="input-group">
+                            <input name="SearchPhrase" id="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
 }
 
 
@@ -62,11 +64,11 @@
                         @* we show DisplayId instead of DatasetID *@
                         @if (ViewBag.CurrentSort == "displayid_desc")
                         {
-                            <i class="fas fa-sort-down"></i>
+                                <i class="fas fa-sort-down"></i>
                         }
                         else
                         {
-                            <i class="fas fa-sort-up"></i>
+                                <i class="fas fa-sort-up"></i>
                         }
                     </a>
                 </th>
@@ -85,33 +87,33 @@
         <tbody>
             @foreach (var item in Model)
             {
-                <tr style="text-align: center; vertical-align: middle;">
-                    <td >
-                        <a asp-action="Details" asp-route-id="@item.DisplayId" class="text-decoration-none text-primary fw-bold hover-effect">
+                    <tr style="text-align: center; vertical-align: middle;">
+                        <td >
+                            <a asp-action="Details" asp-route-id="@item.DisplayId" class="text-decoration-none text-primary fw-bold hover-effect">
                             @item.DisplayId
-                        </a>
-                    </td>
-                    
-                    <td>@item.ImagingModality</td>
-                    <td>@item.Institution</td>
-                    <td>@item.ImagingFacility</td>
-                    <td>@item.Species</td>
-                    <td>@item.OverallSampleSize</td>
-                    <td>@item.DiseaseModel</td>
-                    <td>@item.OrganOrTissue</td>
-                    <td>@item.License</td>
-                    <td>@item.Status</td>
-                    <td>@item.UpdatedYear</td>
+                            </a>
+                        </td>
+
+                        <td>@item.ImagingModality</td>
+                        <td>@item.Institution</td>
+                        <td>@item.ImagingFacility</td>
+                        <td>@item.Species</td>
+                        <td>@item.OverallSampleSize</td>
+                        <td>@item.DiseaseModel</td>
+                        <td>@item.OrganOrTissue</td>
+                        <td>@item.License</td>
+                        <td>@item.Status</td>
+                        <td>@item.UpdatedYear</td>
                     @if (SignInManager.IsSignedIn(User))
                     {
-                        <td>
-                            <a asp-action="Edit" asp-route-id="@item.DatasetId">Edit</a> |
-                            
-                            <a asp-action="Delete" asp-route-id="@item.DatasetId">Delete</a>
-                        </td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@item.DatasetId">Edit</a> |
+
+                                    <a asp-action="Delete" asp-route-id="@item.DatasetId">Delete</a>
+                                </td>
                     }
-                    
-                </tr>
+
+                    </tr>
             }
         </tbody>
     </table>
@@ -125,42 +127,42 @@
             <!-- Previous Button -->
             @if (Model.HasPreviousPage)
             {
-                <li class="page-item">
-                    <a class="page-link"
-                       asp-action="Index"
-                       asp-route-pageNumber="@(Model.PageIndex - 1)"
-                       asp-route-sortOrder="@ViewBag.CurrentSort"
-                       aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                           asp-action="Index"
+                           asp-route-pageNumber="@(Model.PageIndex - 1)"
+                           asp-route-sortOrder="@ViewBag.CurrentSort"
+                           aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
             }
 
             <!-- Page Numbers -->
             @for (int i = 1; i <= Model.TotalPages; i++)
             {
-                <li class="page-item @(i == Model.PageIndex ? "active" : "")">
-                    <a class="page-link"
-                       asp-action="Index"
-                       asp-route-pageNumber="@i"
-                       asp-route-sortOrder="@ViewBag.CurrentSort">
+                    <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="Index"
+                           asp-route-pageNumber="@i"
+                           asp-route-sortOrder="@ViewBag.CurrentSort">
                         @i
-                    </a>
-                </li>
+                        </a>
+                    </li>
             }
 
             <!-- Next Button -->
             @if (Model.HasNextPage)
             {
-                <li class="page-item">
-                    <a class="page-link"
-                       asp-action="Index"
-                       asp-route-pageNumber="@(Model.PageIndex + 1)"
-                       asp-route-sortOrder="@ViewBag.CurrentSort"
-                       aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                           asp-action="Index"
+                           asp-route-pageNumber="@(Model.PageIndex + 1)"
+                           asp-route-sortOrder="@ViewBag.CurrentSort"
+                           aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
             }
         </ul>
     </nav>
@@ -193,6 +195,6 @@
 </div>
 
 @section scripts {
-    <script src="~/js/site.js"></script>
+        <script src="~/js/site.js"></script>
 }
 

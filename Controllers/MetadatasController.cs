@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Models;
 using System.Data;
+using System.Dynamic;
 
 namespace Pidar.Controllers
 {
@@ -29,6 +30,7 @@ namespace Pidar.Controllers
         [Route("Index")]
         public async Task<IActionResult> Index(string sortOrder, int pageNumber = 1)
         {
+            ViewData["ActivePage"] = "Metadata";
             // Sorting logic
             ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
             ViewBag.CurrentSort = sortOrder;
@@ -66,6 +68,7 @@ namespace Pidar.Controllers
 
             return View(paginatedData);
         }
+
 
         // POST: Metadatas/ShowSearchResults
         [Route("SearchResults")]
@@ -107,7 +110,7 @@ namespace Pidar.Controllers
         }
 
 
-        
+
 
 
 
