@@ -5,7 +5,7 @@ This project includes Docker support for easy deployment and development. The pr
 ### Requirements
 - Docker and Docker Compose installed
 - No external database or cache service is required by default
-- .NET version: 9.0 (as specified in the Dockerfile)
+- .NET version: 8.0 (as specified in the Dockerfile)
 
 ### Build and Run Instructions
 
@@ -34,4 +34,4 @@ Added features:
 1. download metadata in excel, PDF Json and csv formats
 2. contribution page added.
 3. Admin login for add, edit and delete metadatas
-4. 
+4. Swagger support added
