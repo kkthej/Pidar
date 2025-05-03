@@ -1,0 +1,19 @@
+services:
+  csharp-pidar:
+    build:
+      context: .
+    container_name: csharp-pidar
+    restart: unless-stopped
+    init: true
+    ports:
+      - "8080:8080"  # Exposes the ASP.NET Core app on port 8080
+    # env_file: ./.env  # Uncomment if .env file exists
+    # Add depends_on here if you add a database or other services
+    # networks: [default]  # Uncomment if you add more services/networks
+
+# No external database or cache service detected in the project files or README.
+# If you add a database (e.g., PostgreSQL, MySQL), add it here and configure connection strings accordingly.
+
+# No volumes section needed as there are no persistent data requirements for this service.
+
+# The default network is sufficient for a single service. Add custom networks if you add more services.

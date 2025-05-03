@@ -1,0 +1,84 @@
+﻿@model Pidar.Models.Metadata
+@using Pidar.Areas.Identity.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<PidarUser> SignInManager
+@inject UserManager<PidarUser> UserManager
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+
+
+
+<h4>Metadata</h4>
+<div>
+    <strong>Dataset ID:</strong>
+    @Html.DisplayFor(model => model.DisplayId)
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model?.DatasetId">Edit</a> |
+            <a asp-action="Index">Back to List</a>
+        </div>
+    }
+    else
+    {
+        <div>
+
+            <a asp-action="Index">Back to List</a>
+        </div>
+    }
+</div>
+<hr />
+<table class="table table-bordered table-striped">
+    <thead align="center">
+        <tr>
+            <th>Field</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var prop in Model.GetType().GetProperties())
+        {
+            // Skip the DatasetId property
+            if (prop.Name == "DatasetId" )
+            {
+                continue;
+            }
+            if (prop.Name == "DisplayId")
+            {
+                continue;
+            }
+            var value = prop.GetValue(Model);
+            if (value != null && !string.IsNullOrEmpty(value.ToString()))
+            {
+
+                <tr>
+                    <th>@prop.Name</th>
+                    <td>@value</td>
+                </tr>
+            }
+        }
+    </tbody>
+
+
+</table>
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model?.DatasetId">Edit</a> |
+        <a asp-action="Index">Back to List</a>
+    </div>
+}
+else
+{
+    <div>
+        
+        <a asp-action="Index">Back to List</a>
+    </div>
+}
+
+

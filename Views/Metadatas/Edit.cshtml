@@ -1,0 +1,1798 @@
+﻿@model Pidar.Models.Metadata
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-8 mx-auto rounded border p-3">
+        <h2 class="text-center mb-5">Edit Metadata</h2>
+        <form asp-action="Edit" asp-route-id="@Model.DatasetId" method="post">
+            @Html.AntiForgeryToken()
+            
+            <input type="hidden" asp-for="DatasetId" /> <!-- Add hidden field for DatasetId -->
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DisplayId" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DisplayId" class="form-control" />
+                    <span asp-validation-for="DisplayId" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="StudyDesignBackground" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="StudyDesignBackground" class="form-control" />
+                    <span asp-validation-for="StudyDesignBackground" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="StudyDescription" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="StudyDescription" class="form-control" />
+                    <span asp-validation-for="StudyDescription" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="StudyType" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="StudyType" class="form-control" />
+                    <span asp-validation-for="StudyType" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="StudySubtype" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="StudySubtype" class="form-control" />
+                    <span asp-validation-for="StudySubtype" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PaperLinked" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PaperLinked" class="form-control" />
+                    <span asp-validation-for="PaperLinked" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PaperTitle" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PaperTitle" class="form-control" />
+                    <span asp-validation-for="PaperTitle" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PaperAuthors" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PaperAuthors" class="form-control" />
+                    <span asp-validation-for="PaperAuthors" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Affiliation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Affiliation" class="form-control" />
+                    <span asp-validation-for="Affiliation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PaperJournal" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PaperJournal" class="form-control" />
+                    <span asp-validation-for="PaperJournal" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PaperYear" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PaperYear" class="form-control" />
+                    <span asp-validation-for="PaperYear" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PaperDoi" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PaperDoi" class="form-control" />
+                    <span asp-validation-for="PaperDoi" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="OpenAccess" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="OpenAccess" class="form-control" />
+                    <span asp-validation-for="OpenAccess" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="MultiModalityImages" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="MultiModalityImages" class="form-control" />
+                    <span asp-validation-for="MultiModalityImages" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImagingModality" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImagingModality" class="form-control" />
+                    <span asp-validation-for="ImagingModality" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImagingSubModality" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImagingSubModality" class="form-control" />
+                    <span asp-validation-for="ImagingSubModality" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Radiation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Radiation" class="form-control" />
+                    <span asp-validation-for="Radiation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImagingCoverage" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImagingCoverage" class="form-control" />
+                    <span asp-validation-for="ImagingCoverage" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImagingTarget" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImagingTarget" class="form-control" />
+                    <span asp-validation-for="ImagingTarget" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Institution" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Institution" class="form-control" />
+                    <span asp-validation-for="Institution" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Pi" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Pi" class="form-control" />
+                    <span asp-validation-for="Pi" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CoPi" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CoPi" class="form-control" />
+                    <span asp-validation-for="CoPi" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CountryOfInstitution" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CountryOfInstitution" class="form-control" />
+                    <span asp-validation-for="CountryOfInstitution" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImagingFacility" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImagingFacility" class="form-control" />
+                    <span asp-validation-for="ImagingFacility" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="EuroBioImagingNode" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="EuroBioImagingNode" class="form-control" />
+                    <span asp-validation-for="EuroBioImagingNode" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CountryOfImagingFacility" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CountryOfImagingFacility" class="form-control" />
+                    <span asp-validation-for="CountryOfImagingFacility" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="LinkToDataset" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="LinkToDataset" class="form-control" />
+                    <span asp-validation-for="LinkToDataset" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Funding" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Funding" class="form-control" />
+                    <span asp-validation-for="Funding" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FundingAgency" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FundingAgency" class="form-control" />
+                    <span asp-validation-for="FundingAgency" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="GrantNumber" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="GrantNumber" class="form-control" />
+                    <span asp-validation-for="GrantNumber" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DatasetAccess" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DatasetAccess" class="form-control" />
+                    <span asp-validation-for="DatasetAccess" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="License" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="License" class="form-control" />
+                    <span asp-validation-for="License" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="LicenseFile" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="LicenseFile" class="form-control" />
+                    <span asp-validation-for="LicenseFile" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DuoDataUsePermission" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DuoDataUsePermission" class="form-control" />
+                    <span asp-validation-for="DuoDataUsePermission" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DuoDataUseModifier" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DuoDataUseModifier" class="form-control" />
+                    <span asp-validation-for="DuoDataUseModifier" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DuoInvestigation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DuoInvestigation" class="form-control" />
+                    <span asp-validation-for="DuoInvestigation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ContactPerson" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ContactPerson" class="form-control" />
+                    <span asp-validation-for="ContactPerson" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NumberOfGroups" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NumberOfGroups" class="form-control" />
+                    <span asp-validation-for="NumberOfGroups" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TypesOfGroups" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TypesOfGroups" class="form-control" />
+                    <span asp-validation-for="TypesOfGroups" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="OverallSampleSize" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="OverallSampleSize" class="form-control" />
+                    <span asp-validation-for="OverallSampleSize" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DiseaseModel" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DiseaseModel" class="form-control" />
+                    <span asp-validation-for="DiseaseModel" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="OrganOrTissue" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="OrganOrTissue" class="form-control" />
+                    <span asp-validation-for="OrganOrTissue" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="SampleSizeForEachGroup" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="SampleSizeForEachGroup" class="form-control" />
+                    <span asp-validation-for="SampleSizeForEachGroup" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PowerCalculation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PowerCalculation" class="form-control" />
+                    <span asp-validation-for="PowerCalculation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InclusionCriteria" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InclusionCriteria" class="form-control" />
+                    <span asp-validation-for="InclusionCriteria" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ExclusionCriteria" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ExclusionCriteria" class="form-control" />
+                    <span asp-validation-for="ExclusionCriteria" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Randomization" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Randomization" class="form-control" />
+                    <span asp-validation-for="Randomization" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Blinding" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Blinding" class="form-control" />
+                    <span asp-validation-for="Blinding" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ProceduresToKeepTreatmentsBlind" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ProceduresToKeepTreatmentsBlind" class="form-control" />
+                    <span asp-validation-for="ProceduresToKeepTreatmentsBlind" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ProceduresToKeepExperimenterBlind" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ProceduresToKeepExperimenterBlind" class="form-control" />
+                    <span asp-validation-for="ProceduresToKeepExperimenterBlind" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="OutcomeMeasures" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="OutcomeMeasures" class="form-control" />
+                    <span asp-validation-for="OutcomeMeasures" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="StatisticalMethods" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="StatisticalMethods" class="form-control" />
+                    <span asp-validation-for="StatisticalMethods" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Species" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Species" class="form-control" />
+                    <span asp-validation-for="Species" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Strain" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Strain" class="form-control" />
+                    <span asp-validation-for="Strain" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImmuneStatus" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImmuneStatus" class="form-control" />
+                    <span asp-validation-for="ImmuneStatus" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Sex" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Sex" class="form-control" />
+                    <span asp-validation-for="Sex" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Age" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Age" class="form-control" />
+                    <span asp-validation-for="Age" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AgeAtStartExperiment" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AgeAtStartExperiment" class="form-control" />
+                    <span asp-validation-for="AgeAtStartExperiment" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AgeAtScanningExperimentS" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AgeAtScanningExperimentS" class="form-control" />
+                    <span asp-validation-for="AgeAtScanningExperimentS" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Weight" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Weight" class="form-control" />
+                    <span asp-validation-for="Weight" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="WeightAtStartExperiment" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="WeightAtStartExperiment" class="form-control" />
+                    <span asp-validation-for="WeightAtStartExperiment" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="WeightAtEndExperiment" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="WeightAtEndExperiment" class="form-control" />
+                    <span asp-validation-for="WeightAtEndExperiment" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Genotype" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Genotype" class="form-control" />
+                    <span asp-validation-for="Genotype" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="GeneticManipulation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="GeneticManipulation" class="form-control" />
+                    <span asp-validation-for="GeneticManipulation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Gene" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Gene" class="form-control" />
+                    <span asp-validation-for="Gene" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="SourceOfAnimals" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="SourceOfAnimals" class="form-control" />
+                    <span asp-validation-for="SourceOfAnimals" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="RegistryNumberOfAnimalAuthorization" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="RegistryNumberOfAnimalAuthorization" class="form-control" />
+                    <span asp-validation-for="RegistryNumberOfAnimalAuthorization" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PharmacologicalProceduresInterventionAndControl" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PharmacologicalProceduresInterventionAndControl" class="form-control" />
+                    <span asp-validation-for="PharmacologicalProceduresInterventionAndControl" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PharmacologicalDrug" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PharmacologicalDrug" class="form-control" />
+                    <span asp-validation-for="PharmacologicalDrug" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Company" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Company" class="form-control" />
+                    <span asp-validation-for="Company" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Formulation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Formulation" class="form-control" />
+                    <span asp-validation-for="Formulation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DrugDose" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DrugDose" class="form-control" />
+                    <span asp-validation-for="DrugDose" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Volume" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Volume" class="form-control" />
+                    <span asp-validation-for="Volume" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Concentration" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Concentration" class="form-control" />
+                    <span asp-validation-for="Concentration" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="SiteRouteOfAdministration" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="SiteRouteOfAdministration" class="form-control" />
+                    <span asp-validation-for="SiteRouteOfAdministration" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FrequencyOfAdministration" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FrequencyOfAdministration" class="form-control" />
+                    <span asp-validation-for="FrequencyOfAdministration" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="VehicleOrCarrierSolutionFormulation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="VehicleOrCarrierSolutionFormulation" class="form-control" />
+                    <span asp-validation-for="VehicleOrCarrierSolutionFormulation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DrugBatchSampleNumber" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DrugBatchSampleNumber" class="form-control" />
+                    <span asp-validation-for="DrugBatchSampleNumber" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="BloodSampling" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="BloodSampling" class="form-control" />
+                    <span asp-validation-for="BloodSampling" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="BloodSamplingMethod" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="BloodSamplingMethod" class="form-control" />
+                    <span asp-validation-for="BloodSamplingMethod" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="BloodSampleVolume" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="BloodSampleVolume" class="form-control" />
+                    <span asp-validation-for="BloodSampleVolume" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="BloodTiming" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="BloodTiming" class="form-control" />
+                    <span asp-validation-for="BloodTiming" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="SurgicalProceduresIncludingShamSurgery" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="SurgicalProceduresIncludingShamSurgery" class="form-control" />
+                    <span asp-validation-for="SurgicalProceduresIncludingShamSurgery" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DescriptionOfTheSurgicalProcedure" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DescriptionOfTheSurgicalProcedure" class="form-control" />
+                    <span asp-validation-for="DescriptionOfTheSurgicalProcedure" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ReferenceToProtocol" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ReferenceToProtocol" class="form-control" />
+                    <span asp-validation-for="ReferenceToProtocol" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TargetOrganTissue" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TargetOrganTissue" class="form-control" />
+                    <span asp-validation-for="TargetOrganTissue" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PathogenInfectionInterventionAndControl" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PathogenInfectionInterventionAndControl" class="form-control" />
+                    <span asp-validation-for="PathogenInfectionInterventionAndControl" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InfectiousType" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InfectiousType" class="form-control" />
+                    <span asp-validation-for="InfectiousType" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InfectiousAgent" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InfectiousAgent" class="form-control" />
+                    <span asp-validation-for="InfectiousAgent" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DoseLoad" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DoseLoad" class="form-control" />
+                    <span asp-validation-for="DoseLoad" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="SiteAndRouteOfInfection" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="SiteAndRouteOfInfection" class="form-control" />
+                    <span asp-validation-for="SiteAndRouteOfInfection" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TimingOrFrequencyOfInfection" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TimingOrFrequencyOfInfection" class="form-control" />
+                    <span asp-validation-for="TimingOrFrequencyOfInfection" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnalgesicPlanToRelievePainSufferingAndDistress" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnalgesicPlanToRelievePainSufferingAndDistress" class="form-control" />
+                    <span asp-validation-for="AnalgesicPlanToRelievePainSufferingAndDistress" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnalgesicName" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnalgesicName" class="form-control" />
+                    <span asp-validation-for="AnalgesicName" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Route" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Route" class="form-control" />
+                    <span asp-validation-for="Route" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnalgesicDose" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnalgesicDose" class="form-control" />
+                    <span asp-validation-for="AnalgesicDose" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnesthesiaForImaging" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnesthesiaForImaging" class="form-control" />
+                    <span asp-validation-for="AnesthesiaForImaging" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnesthesiaType" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnesthesiaType" class="form-control" />
+                    <span asp-validation-for="AnesthesiaType" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Duration" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Duration" class="form-control" />
+                    <span asp-validation-for="Duration" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnesthesiaDrugs" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnesthesiaDrugs" class="form-control" />
+                    <span asp-validation-for="AnesthesiaDrugs" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnesthesiaDose" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnesthesiaDose" class="form-control" />
+                    <span asp-validation-for="AnesthesiaDose" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="MonitoringRegime" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="MonitoringRegime" class="form-control" />
+                    <span asp-validation-for="MonitoringRegime" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Euthanasia" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Euthanasia" class="form-control" />
+                    <span asp-validation-for="Euthanasia" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Method" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Method" class="form-control" />
+                    <span asp-validation-for="Method" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Histology" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Histology" class="form-control" />
+                    <span asp-validation-for="Histology" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TissuesCollectedPostEuthanasia" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TissuesCollectedPostEuthanasia" class="form-control" />
+                    <span asp-validation-for="TissuesCollectedPostEuthanasia" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TimingOfCollection" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TimingOfCollection" class="form-control" />
+                    <span asp-validation-for="TimingOfCollection" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="HistologicalProcedure" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="HistologicalProcedure" class="form-control" />
+                    <span asp-validation-for="HistologicalProcedure" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NameOfReagentS" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NameOfReagentS" class="form-control" />
+                    <span asp-validation-for="NameOfReagentS" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CatalogueNumber" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CatalogueNumber" class="form-control" />
+                    <span asp-validation-for="CatalogueNumber" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="LengthOfFixation" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="LengthOfFixation" class="form-control" />
+                    <span asp-validation-for="LengthOfFixation" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Imaging" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Imaging" class="form-control" />
+                    <span asp-validation-for="Imaging" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FrequencyOfImaging" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FrequencyOfImaging" class="form-control" />
+                    <span asp-validation-for="FrequencyOfImaging" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TimingOfImaging" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TimingOfImaging" class="form-control" />
+                    <span asp-validation-for="TimingOfImaging" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="OverallScanLength" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="OverallScanLength" class="form-control" />
+                    <span asp-validation-for="OverallScanLength" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule" class="form-control" />
+                    <span asp-validation-for="ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ContrastAgentCommercialDrug" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ContrastAgentCommercialDrug" class="form-control" />
+                    <span asp-validation-for="ContrastAgentCommercialDrug" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ContrastAgentChemicalDrug" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ContrastAgentChemicalDrug" class="form-control" />
+                    <span asp-validation-for="ContrastAgentChemicalDrug" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ContrastAgentDose" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ContrastAgentDose" class="form-control" />
+                    <span asp-validation-for="ContrastAgentDose" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InjectionVolume" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InjectionVolume" class="form-control" />
+                    <span asp-validation-for="InjectionVolume" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InjectionTime" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InjectionTime" class="form-control" />
+                    <span asp-validation-for="InjectionTime" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Vehicle" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Vehicle" class="form-control" />
+                    <span asp-validation-for="Vehicle" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="RouteOfAdministration" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="RouteOfAdministration" class="form-control" />
+                    <span asp-validation-for="RouteOfAdministration" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CellLines" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CellLines" class="form-control" />
+                    <span asp-validation-for="CellLines" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CellLine" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CellLine" class="form-control" />
+                    <span asp-validation-for="CellLine" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Provenance" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Provenance" class="form-control" />
+                    <span asp-validation-for="Provenance" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ModifiedCellLine" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ModifiedCellLine" class="form-control" />
+                    <span asp-validation-for="ModifiedCellLine" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TypeOfGeneticModification" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TypeOfGeneticModification" class="form-control" />
+                    <span asp-validation-for="TypeOfGeneticModification" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="GeneModified" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="GeneModified" class="form-control" />
+                    <span asp-validation-for="GeneModified" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="VerificationAndAuthentication" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="VerificationAndAuthentication" class="form-control" />
+                    <span asp-validation-for="VerificationAndAuthentication" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CellInjectionRoute" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CellInjectionRoute" class="form-control" />
+                    <span asp-validation-for="CellInjectionRoute" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NumberOfCells" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NumberOfCells" class="form-control" />
+                    <span asp-validation-for="NumberOfCells" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Reagents" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Reagents" class="form-control" />
+                    <span asp-validation-for="Reagents" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NameOfReagent" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NameOfReagent" class="form-control" />
+                    <span asp-validation-for="NameOfReagent" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CatalogueNumbers" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CatalogueNumbers" class="form-control" />
+                    <span asp-validation-for="CatalogueNumbers" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="EquipmentAndSoftware" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="EquipmentAndSoftware" class="form-control" />
+                    <span asp-validation-for="EquipmentAndSoftware" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Manufacturer" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Manufacturer" class="form-control" />
+                    <span asp-validation-for="Manufacturer" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ModelVersionNumber" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ModelVersionNumber" class="form-control" />
+                    <span asp-validation-for="ModelVersionNumber" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FrequencyOfExperimentalProcedures" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FrequencyOfExperimentalProcedures" class="form-control" />
+                    <span asp-validation-for="FrequencyOfExperimentalProcedures" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TimingOfExperimentalProcedures" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TimingOfExperimentalProcedures" class="form-control" />
+                    <span asp-validation-for="TimingOfExperimentalProcedures" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FrequencyOfExperimentalMeasurements" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FrequencyOfExperimentalMeasurements" class="form-control" />
+                    <span asp-validation-for="FrequencyOfExperimentalMeasurements" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TimingOfExperimentalMeasurements" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TimingOfExperimentalMeasurements" class="form-control" />
+                    <span asp-validation-for="TimingOfExperimentalMeasurements" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="HousingRoom" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="HousingRoom" class="form-control" />
+                    <span asp-validation-for="HousingRoom" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DietaryIntervention" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DietaryIntervention" class="form-control" />
+                    <span asp-validation-for="DietaryIntervention" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="RespirationRate" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="RespirationRate" class="form-control" />
+                    <span asp-validation-for="RespirationRate" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="BodyTempuratureEtc" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="BodyTempuratureEtc" class="form-control" />
+                    <span asp-validation-for="BodyTempuratureEtc" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FoodIntakeMeasured" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FoodIntakeMeasured" class="form-control" />
+                    <span asp-validation-for="FoodIntakeMeasured" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InstrumentVendor" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InstrumentVendor" class="form-control" />
+                    <span asp-validation-for="InstrumentVendor" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InstrumentType" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InstrumentType" class="form-control" />
+                    <span asp-validation-for="InstrumentType" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="InstrumentSpecifics" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="InstrumentSpecifics" class="form-control" />
+                    <span asp-validation-for="InstrumentSpecifics" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImageAcquisitionParameters" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImageAcquisitionParameters" class="form-control" />
+                    <span asp-validation-for="ImageAcquisitionParameters" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Correction" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Correction" class="form-control" />
+                    <span asp-validation-for="Correction" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="RawData" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="RawData" class="form-control" />
+                    <span asp-validation-for="RawData" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="QaQc" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="QaQc" class="form-control" />
+                    <span asp-validation-for="QaQc" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImageType" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImageType" class="form-control" />
+                    <span asp-validation-for="ImageType" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImageScale" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImageScale" class="form-control" />
+                    <span asp-validation-for="ImageScale" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FormatCompression" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FormatCompression" class="form-control" />
+                    <span asp-validation-for="FormatCompression" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Dimensions" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Dimensions" class="form-control" />
+                    <span asp-validation-for="Dimensions" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="OverallNumberOfImages" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="OverallNumberOfImages" class="form-control" />
+                    <span asp-validation-for="OverallNumberOfImages" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FieldOfView" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FieldOfView" class="form-control" />
+                    <span asp-validation-for="FieldOfView" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DimensionExtents" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DimensionExtents" class="form-control" />
+                    <span asp-validation-for="DimensionExtents" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="SizeDescription" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="SizeDescription" class="form-control" />
+                    <span asp-validation-for="SizeDescription" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="PixelVoxelSizeDescription" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="PixelVoxelSizeDescription" class="form-control" />
+                    <span asp-validation-for="PixelVoxelSizeDescription" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImageProcessingMethods" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImageProcessingMethods" class="form-control" />
+                    <span asp-validation-for="ImageProcessingMethods" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImageReconstructionAlgorithm" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImageReconstructionAlgorithm" class="form-control" />
+                    <span asp-validation-for="ImageReconstructionAlgorithm" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="QualityControl" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="QualityControl" class="form-control" />
+                    <span asp-validation-for="QualityControl" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImageSmoothingOrFilteringAlgorithm" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImageSmoothingOrFilteringAlgorithm" class="form-control" />
+                    <span asp-validation-for="ImageSmoothingOrFilteringAlgorithm" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ImageRegistrationAlgorithm" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ImageRegistrationAlgorithm" class="form-control" />
+                    <span asp-validation-for="ImageRegistrationAlgorithm" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AiEnhancedAlgorithm" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AiEnhancedAlgorithm" class="form-control" />
+                    <span asp-validation-for="AiEnhancedAlgorithm" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="QcInfo" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="QcInfo" class="form-control" />
+                    <span asp-validation-for="QcInfo" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Corrections" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Corrections" class="form-control" />
+                    <span asp-validation-for="Corrections" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="SpatialAndTemporalAlignment" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="SpatialAndTemporalAlignment" class="form-control" />
+                    <span asp-validation-for="SpatialAndTemporalAlignment" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FiducialsUsed" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FiducialsUsed" class="form-control" />
+                    <span asp-validation-for="FiducialsUsed" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="CoregisteredImages" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CoregisteredImages" class="form-control" />
+                    <span asp-validation-for="CoregisteredImages" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="TransformationMatrixOtherInfo" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="TransformationMatrixOtherInfo" class="form-control" />
+                    <span asp-validation-for="TransformationMatrixOtherInfo" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="RelatedImagesAndRelationship" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="RelatedImagesAndRelationship" class="form-control" />
+                    <span asp-validation-for="RelatedImagesAndRelationship" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnalysisResultType" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnalysisResultType" class="form-control" />
+                    <span asp-validation-for="AnalysisResultType" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="DataUsedForAnalysis" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DataUsedForAnalysis" class="form-control" />
+                    <span asp-validation-for="DataUsedForAnalysis" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="AnalysisMethodAndDetails" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AnalysisMethodAndDetails" class="form-control" />
+                    <span asp-validation-for="AnalysisMethodAndDetails" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="FileFormatOfResultFileCsvJsonTxtXlsx" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="FileFormatOfResultFileCsvJsonTxtXlsx" class="form-control" />
+                    <span asp-validation-for="FileFormatOfResultFileCsvJsonTxtXlsx" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Status" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Status" class="form-control" />
+                    <span asp-validation-for="Status" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NcitImaging" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NcitImaging" class="form-control" />
+                    <span asp-validation-for="NcitImaging" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NcitImagingSubmodality" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NcitImagingSubmodality" class="form-control" />
+                    <span asp-validation-for="NcitImagingSubmodality" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Doid" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Doid" class="form-control" />
+                    <span asp-validation-for="Doid" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NcitAnatomy" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NcitAnatomy" class="form-control" />
+                    <span asp-validation-for="NcitAnatomy" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NcitSpecies" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NcitSpecies" class="form-control" />
+                    <span asp-validation-for="NcitSpecies" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NcitStrain" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NcitStrain" class="form-control" />
+                    <span asp-validation-for="NcitStrain" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ChebiPharmaco" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ChebiPharmaco" class="form-control" />
+                    <span asp-validation-for="ChebiPharmaco" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ChebiAnesthesia" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ChebiAnesthesia" class="form-control" />
+                    <span asp-validation-for="ChebiAnesthesia" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ChebiContrastAgentCommercialName" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ChebiContrastAgentCommercialName" class="form-control" />
+                    <span asp-validation-for="ChebiContrastAgentCommercialName" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="ChebiContrastAgentChemicalName" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ChebiContrastAgentChemicalName" class="form-control" />
+                    <span asp-validation-for="ChebiContrastAgentChemicalName" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="Clo" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Clo" class="form-control" />
+                    <span asp-validation-for="Clo" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="NcitGene" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="NcitGene" class="form-control" />
+                    <span asp-validation-for="NcitGene" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="UpdatedYear" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="UpdatedYear" class="form-control" />
+                    <span asp-validation-for="UpdatedYear" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label asp-for="LinkToDataset1" class="control-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="LinkToDataset1" class="form-control" />
+                    <span asp-validation-for="LinkToDataset1" class="text-danger"></span>
+                </div>
+            </div>
+
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="mx-auto">
+                    <!-- Center the submit button -->
+                    <input type="submit" value="Save" class="btn btn-primary" />
+                    <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+                </div>
+
+            </div>
+
+
+
+            
+        </form>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

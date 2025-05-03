@@ -1,0 +1,132 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Pidar.Areas.Identity.Data
+
+@inject SignInManager<PidarUser> SignInManager
+@inject UserManager<PidarUser> UserManager
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+    <title>@ViewData["Title"] - Pidar</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Pidar.styles.css" asp-append-version="true" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="d-flex flex-column min-vh-100">
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3">
+        <div class="container-fluid position-relative"> <!-- Added position-relative -->
+            <!-- Mobile brand and toggler -->
+            <a class="navbar-brand mx-auto d-lg-none" asp-area="" asp-controller="Home" asp-action="Index">
+                <img src="/images/logo1.png" alt="Pidar Logo" style="height: 40px;">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Main nav section -->
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <!-- Left nav items -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Home" ? "active" : "")"
+                           asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Metadata" || Context.Request.Path.StartsWithSegments("/Metadatas") ? "active" : "")"
+                           asp-area="" asp-controller="Metadatas" asp-action="Index">Metadata</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Statistic" ? "active" : "")"
+                           asp-area="" asp-controller="Home" asp-action="Statistic">Statistic</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Contribute" ? "active" : "")"
+                           asp-area="" asp-controller="Home" asp-action="Contribute">Contribute</a>
+                    </li>
+                </ul>
+
+                <!-- Centered brand (absolute positioning for perfect center) -->
+                <a class="navbar-brand position-absolute start-50 translate-middle-x d-none d-lg-block" 
+                   asp-area="" asp-controller="Home" asp-action="Index">
+                <img src="/images/logo1.png" alt="Pidar Logo" style="height: 40px;">
+                </a>
+
+
+                <!-- Right nav (login/logout) -->
+                <div class="d-flex align-items-center ms-auto">
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+
+
+
+    <div class="container py-5">
+        <main role="main" class="flex-fill">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="bg-white text-black-50 text-center py-3">
+        <section class="contributors">
+            <h2>Support for <strong>PIDAR</strong> provided by:</h2>
+
+            <div class="contributor image-1">
+                <a href="https://www.ibb.cnr.it/" target="_blank"><img src="/images/ibb.PNG" id="ibb" /></a>
+            </div>
+            <div class="contributor image-2">
+                <a href="https://www.unito.it/" target="_blank">
+                    <img src="/images/unito.png" id="unito" />
+                </a>
+            </div>
+            <div class="contributor image-3">
+                <a href="https://www.eurobioimaging.eu/" target="_blank"><img src="/images/Immagine1.png" id="euro" /></a>
+            </div>
+            <div class="contributor image-4">
+                <a href="https://www.cnr.it/" target="_blank"><img src="/images/cnr.PNG" id="cnr" /></a>
+            </div>
+            <h2>Funding sources</h2>
+            <div class="contributor image-5">
+                <a href="https://www.eosc-life.eu/" target="_blank">
+                    <img src="/images/eosc-life-transformed.png"
+                         id="eosc-life" />
+                </a>
+            </div>
+            <div class="contributor image-6">
+                <a href="https://european-union.europa.eu/index_en" target="_blank">
+                    <img src="/images/eulogo.jpeg"
+                         id="eu-logo" />
+                </a>
+            </div>
+        </section>
+        <div>
+            <p>&copy; <span id="year"></span> Universit&aacute; di Torino. All rights reserved.</p>
+        </div>
+    </footer>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // Get the current year and insert it into the span element
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
