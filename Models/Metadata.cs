@@ -13,7 +13,7 @@ namespace Pidar.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int DatasetId { get; set; }
 
-        public int DisplayId { get; set; }
+        public int DisplayId { get; set; } 
 
         //Study Design
         [Column(TypeName = "text")]
@@ -298,11 +298,6 @@ namespace Pidar.Models
         public string? UpdatedYear { get; set; }
 
         public string? LinkToDataset1 { get; set; }
-
-        
-
-       
-  
 
         public Metadata()
         {

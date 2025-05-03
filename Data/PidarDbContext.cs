@@ -28,12 +28,12 @@ namespace Pidar.Data
 
                 entity.Property(e => e.DatasetId)
                     .HasColumnName("dataset_id")
-                    .ValueGeneratedOnAdd(); // Auto-generate DatasetId
+                      .ValueGeneratedOnAdd(); // Auto-generate DatasetId
 
                 entity.Property(e => e.DisplayId)
                     .HasColumnName("display_id")
-                    .IsRequired()
-                    .ValueGeneratedNever(); // Manual input for DisplayId
+                      .IsRequired()
+                      .ValueGeneratedNever(); // Manual input for DisplayId
 
                 // Configure all string properties to use 'text' type in PostgreSQL
                 var stringProperties = entity.Metadata.GetProperties()
