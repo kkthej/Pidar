@@ -21,7 +21,7 @@ This command will build the Docker image and start the PIDAR service. The applic
 - If you add a database or other services, update the `docker-compose.yml` accordingly
 
 ### Ports
-- The PIDAR service is exposed on port **8080**
+- The PIDAR service is exposed on **https://localhost:4430/**
 
 ---
 
@@ -35,4 +35,9 @@ Added features:
 2. contribution page added.
 3. Admin login for add, edit and delete metadatas
 4. Swagger support added
-5. Added index page (only stastic page left for now 02/05/2025)
+5. Added index page
+6. Major Changes:
+   Migration to Postgres (free for commercial purpose)
+7. DOCKERIZED the application with 3 services Pidar-web, Pidar-Db and Pidar-PgAdmin
+8. Modified Metadata Details, Edit, Create pages for better Readability (categorized)
+9. (only stastic page left for now 05/05/2025)
