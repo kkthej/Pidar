@@ -67,6 +67,7 @@ node_modules/
 appsettings.Development.json
 appsettings.Local.json
 secrets.json
+.env
 
 # macOS/Linux system files
 .DS_Store

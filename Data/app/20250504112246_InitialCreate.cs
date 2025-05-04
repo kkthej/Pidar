@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Pidar.Data.Migrations.Application
+namespace Pidar.data.app
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

@@ -1,47 +1,39 @@
-# syntax=docker/dockerfile:1
-
-ARG DOTNET_VERSION=8.0
-FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS builder
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore as distinct layers
-COPY --link Pidar.csproj ./
-# Copy any Directory.Build.props or Directory.Packages.props if present (not in this project, but good practice)
-# COPY --link Directory.*.props ./
+# Copy solution/project files
+COPY *.csproj ./
+RUN dotnet restore
 
-# Restore dependencies using cache mounts for nuget and msbuild
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    --mount=type=cache,target=/root/.cache/msbuild \
-    dotnet restore "Pidar.csproj"
+# Copy everything else
+COPY . .
 
-# Copy the rest of the source code
-COPY --link . .
+# Build (keep Debug for development)
+RUN dotnet build -c Debug -o /app/build
 
-# Publish the application to the /app/publish directory
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    --mount=type=cache,target=/root/.cache/msbuild \
-    dotnet publish "Pidar.csproj" -c Release -o /app/publish --no-restore
+# Publish (for production)
+RUN dotnet publish -c Release -o /app/publish
 
-# --- Final image ---
-FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS final
+# Stage 2: Run (Development)
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS development
 WORKDIR /app
+EXPOSE 80
+EXPOSE 443
 
-# Create a non-root user and group
-RUN addgroup --system --gid 10001 appgroup && \
-    adduser --system --uid 10001 --ingroup appgroup appuser
+# Copy build output (Debug)
+COPY --from=build /app/build .
 
-# Copy published output from builder
-COPY --from=builder /app/publish .
+# For development, we'll use dotnet run with mounted volumes
+ENTRYPOINT ["dotnet", "watch", "run", "--no-restore"]
 
-# Set permissions for the non-root user
-RUN chown -R appuser:appgroup /app
-USER appuser
+# Stage 3: Run (Production)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS production
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
 
-# Expose the default ASP.NET Core port
-EXPOSE 8080
-
-# Set environment variables for ASP.NET Core
-ENV ASPNETCORE_URLS="http://+:8080"
-ENV DOTNET_RUNNING_IN_CONTAINER=true
+# Copy publish output (Release)
+COPY --from=build /app/publish .
 
 ENTRYPOINT ["dotnet", "Pidar.dll"]
