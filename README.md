@@ -1,6 +1,10 @@
 ## Running PIDAR with Docker
 
+<<<<<<< HEAD
 This project includes Docker support for easy deployment and development. The provided Dockerfile builds the application using .NET 9.0 and runs it in a secure, non-root environment. The Docker Compose file exposes the application on port 8080.
+=======
+This project includes Docker support for easy deployment and development. The provided Dockerfile builds the application using .NET 8.0 and runs it in a secure, non-root environment. The Docker Compose file exposes the application on port 4430.
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
 
 ### Requirements
 - Docker and Docker Compose installed
@@ -13,7 +17,11 @@ This project includes Docker support for easy deployment and development. The pr
 docker compose up --build
 ```
 
+<<<<<<< HEAD
 This command will build the Docker image and start the PIDAR service. The application will be available at [http://localhost:8080](http://localhost:8080).
+=======
+This command will build the Docker image and start the PIDAR service. The application will be available at [https://localhost:4430](https://localhost:4430).
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
 
 ### Configuration
 - The application runs as a non-root user for security

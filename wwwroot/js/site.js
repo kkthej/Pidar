@@ -1,6 +1,7 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     const downloadTypeDropdown = document.getElementById('downloadType');
     const downloadButton = document.getElementById('downloadButton');
+<<<<<<< HEAD
     const templateDownloadBtn = document.getElementById('download-template');
     const guidelinesDownloadBtn = document.getElementById('download-guidelines');
     const logoutForm = document.getElementById('logoutForm');
@@ -49,12 +50,42 @@
 
     async function handleDownload(format) {
         const url = getDownloadUrl(format);
+=======
+    let isDownloading = false; // Prevent multiple downloads
+
+    if (downloadTypeDropdown && downloadButton) {
+        // Enable/disable download button based on selection
+        downloadTypeDropdown.addEventListener('change', function () {
+            downloadButton.disabled = !this.value;
+            updateButtonState('Download', 'btn-primary');
+        }); 
+
+        // Handle download button click
+        downloadButton.addEventListener('click', async function (event) {
+            event.preventDefault();
+            if (isDownloading) return;
+
+            const selectedValue = downloadTypeDropdown.value;
+            if (!selectedValue) return;
+
+            isDownloading = true;
+            downloadButton.disabled = true; // Disable the button after first click
+            updateButtonState('0%', 'btn-primary');
+
+            await startDownload(selectedValue);
+        });
+    }
+
+    async function startDownload(selectedValue) {
+        const url = getDownloadUrl(selectedValue);
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
         if (!url) return;
 
         await simulateProgress();
 
         try {
             const response = await fetch(url);
+<<<<<<< HEAD
             if (!response.ok) throw new Error('Download failed');
 
             const blob = await response.blob();
@@ -75,6 +106,26 @@
             updateButtonState('Download Failed', 'btn-danger');
         } finally {
             setTimeout(resetButtonState, 1500);
+=======
+            if (!response.ok) throw new Error('Network error');
+            const blob = await response.blob();
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `metadata.${selectedValue}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            updateButtonState('Download Complete', 'btn-success');
+        } catch (error) {
+            alert('Download failed, please try again.');
+            console.error(error);
+            updateButtonState('Download Failed', 'btn-danger');
+        } finally {
+            setTimeout(() => resetButtonState(), 1500);
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
         }
     }
 
@@ -93,12 +144,17 @@
         });
     }
 
+<<<<<<< HEAD
     function getDownloadUrl(format) {
+=======
+    function getDownloadUrl(selectedValue) {
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
         return {
             csv: '/Download/DownloadCsv',
             pdf: '/Download/DownloadPdf',
             json: '/Download/DownloadJson',
             xlsx: '/Download/DownloadXlsx'
+<<<<<<< HEAD
         }[format] || '';
     }
 
@@ -107,10 +163,19 @@
             downloadButton.textContent = text;
             downloadButton.className = `btn ${className}`;
         }
+=======
+        }[selectedValue] || '';
+    }
+
+    function updateButtonState(text, className) {
+        downloadButton.textContent = text;
+        downloadButton.className = `btn ${className}`;
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
     }
 
     function resetButtonState() {
         isDownloading = false;
+<<<<<<< HEAD
         if (downloadButton) {
             downloadButton.disabled = false;
             updateButtonState('Download', 'btn-primary');
@@ -133,7 +198,42 @@
                 URL.revokeObjectURL(link.href);
             })
             .catch(error => console.error(`Error downloading ${filename}:`, error));
+=======
+        downloadButton.disabled = false; // Enable the button after download
+        updateButtonState('Download', 'btn-primary');
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
     }
 });
 
 
+<<<<<<< HEAD
+=======
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('download-template').addEventListener('click', function (event) {
+        event.preventDefault(); // Prevent default behavior
+
+        // Fetch the file and trigger download using FileSaver.js
+        fetch("/contribution_files/metadata_template.xlsx")
+            .then(response => response.blob())
+            .then(blob => {
+                saveAs(blob, "metadata_template.xlsx");
+            })
+            .catch(error => console.error('Error downloading the file:', error));
+    });
+
+    document.getElementById('download-guidelines').addEventListener('click', function (event) {
+        event.preventDefault(); // Prevent default behavior
+
+        // Fetch the file and trigger download using FileSaver.js
+        fetch("/contribution_files/guidelines.docx")
+            .then(response => response.blob())
+            .then(blob => {
+                saveAs(blob, "guidelines.docx");
+            })
+            .catch(error => console.error('Error downloading the file:', error));
+    });
+});
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d

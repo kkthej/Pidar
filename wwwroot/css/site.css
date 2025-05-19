@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Reset and base styles */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -40,6 +41,19 @@ body {
 }
 
 /* Button styles */
+=======
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
 .btn-primary {
     transition: transform 0.2s ease-in-out;
 }
@@ -48,6 +62,7 @@ body {
         transform: scale(1.05);
     }
 
+<<<<<<< HEAD
 .btn:focus,
 .btn:active:focus,
 .btn-link.nav-link:focus,
@@ -129,11 +144,103 @@ footer {
     .image-5,
     .image-6 {
         grid-column: auto;
+=======
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+.btn-primary {
+    transition: transform 0.2s ease-in-out;
+}
+
+    .btn-primary:hover {
+        transform: scale(1.05);
+    }
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}
+
+
+
+/* Footer - Contributors Section */
+footer {
+    text-align: center;
+    background-color: #f8f9fa; /* Light background color */
+    border-top: 1px solid #e0e0e0; /* Add a border at the top */
+    padding: 2rem 1rem; /* Responsive padding */
+    width: 100%; /* Ensure footer spans the full width */
+}
+
+.contributors {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Default 4 columns */
+    background-color: rgb(93, 223, 225);
+    gap: 1rem; /* Responsive gap */
+    justify-items: center;
+    align-items: center;
+    padding: 1rem; /* Responsive padding */
+    max-width: 1200px; /* Limit maximum width for larger screens */
+    margin: 0 auto; /* Center the grid horizontally */
+}
+
+.contributor img {
+    height: auto; /* Maintain aspect ratio */
+    max-width: 100%; /* Ensure images don't overflow */
+    width: 100px; /* Default width for logos */
+    padding: 1rem 0; /* Responsive padding */
+}
+
+.contributors h2 {
+    grid-column: 1 / -1; /* Span all columns */
+    text-align: center;
+    padding: 1rem; /* Responsive padding */
+    margin: 0; /* Remove default margin */
+    font-size: 1.5rem; /* Responsive font size */
+}
+
+/* Positioning for Funding Sources */
+.image-5 {
+    grid-column: 2 / 3; /* Place in the second column */
+}
+
+.image-6 {
+    grid-column: 3 / 4; /* Place in the third column */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .contributors {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on medium screens */
+    }
+
+    .contributor img {
+        width: 80px; /* Smaller logos for medium screens */
+    }
+
+    .image-5, .image-6 {
+        grid-column: auto; /* Reset grid placement for smaller screens */
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
     }
 }
 
 @media (max-width: 480px) {
     .contributors {
+<<<<<<< HEAD
         grid-template-columns: 1fr;
     }
 
@@ -163,6 +270,40 @@ footer {
     }
 
 /* Table sorting icons */
+=======
+        grid-template-columns: 1fr; /* 1 column on small screens */
+    }
+
+    .contributor img {
+        width: 60px; /* Smaller logos for small screens */
+    }
+
+    .contributors h2 {
+        font-size: 1.2rem; /* Smaller font size for small screens */
+    }
+}
+
+
+
+/* Custom CSS for hover and click effects */
+.hover-effect {
+    transition: all 0.3s ease; /* Smooth transition for all properties */
+}
+
+    .hover-effect:hover {
+        color: #0056b3 !important; /* Darker blue on hover */
+        text-decoration: underline; /* Underline on hover */
+        transform: scale(1.05); /* Slightly enlarge on hover */
+    }
+
+    .hover-effect:active {
+        color: #004080 !important; /* Even darker blue on click */
+        transform: scale(0.95); /* Slightly shrink on click */
+    }
+
+
+
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
 th a {
     text-decoration: none;
     color: inherit;
@@ -180,6 +321,7 @@ th a {
     font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 /* Active nav link */
 .nav-link.active {
     color: blue !important;
@@ -189,6 +331,59 @@ th a {
 /* Highlighting */
 .highlight {
     background-color: #fffde7;
+=======
+
+
+
+
+/* Reset some default browser styles */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ensure the html and body take up at least the full viewport height */
+html, body {
+    height: 100%;
+}
+
+/* Set up the body as a flex container in column direction */
+body {
+    display: flex;
+    flex-direction: column;
+    /* Optional: a minimum height using viewport units */
+    min-height: 100vh;
+}
+
+/* The content area grows to fill available space */
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+/* Styling for the footer */
+footer {
+   
+   
+    padding: 15px 0;
+}
+
+
+/* CSS for Highlighting top nav */
+
+.nav-link.active {
+    color: blue !important; /* Change color to blue */
+    font-weight: bold; /* Optional: Add bold font for emphasis */
+}
+
+
+
+/* CSS for Highlighting: */
+
+.highlight {
+    background-color: #fffde7; /* light yellow */
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
     font-weight: bold;
     padding: 0 2px;
 }
@@ -202,6 +397,7 @@ th a {
 
 .matched-property {
     margin: 5px 0;
+<<<<<<< HEAD
 }
 
 
@@ -232,3 +428,6 @@ th a {
         transform: scale(1.05);
         z-index: 1;
     }
+=======
+}
+>>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
