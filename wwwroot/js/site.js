@@ -1,7 +1,7 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     const downloadTypeDropdown = document.getElementById('downloadType');
     const downloadButton = document.getElementById('downloadButton');
-<<<<<<< HEAD
+
     const templateDownloadBtn = document.getElementById('download-template');
     const guidelinesDownloadBtn = document.getElementById('download-guidelines');
     const logoutForm = document.getElementById('logoutForm');
@@ -50,7 +50,7 @@
 
     async function handleDownload(format) {
         const url = getDownloadUrl(format);
-=======
+
     let isDownloading = false; // Prevent multiple downloads
 
     if (downloadTypeDropdown && downloadButton) {
@@ -78,14 +78,14 @@
 
     async function startDownload(selectedValue) {
         const url = getDownloadUrl(selectedValue);
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
         if (!url) return;
 
         await simulateProgress();
 
         try {
             const response = await fetch(url);
-<<<<<<< HEAD
+
             if (!response.ok) throw new Error('Download failed');
 
             const blob = await response.blob();
@@ -106,7 +106,7 @@
             updateButtonState('Download Failed', 'btn-danger');
         } finally {
             setTimeout(resetButtonState, 1500);
-=======
+
             if (!response.ok) throw new Error('Network error');
             const blob = await response.blob();
 
@@ -125,7 +125,7 @@
             updateButtonState('Download Failed', 'btn-danger');
         } finally {
             setTimeout(() => resetButtonState(), 1500);
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
         }
     }
 
@@ -144,17 +144,17 @@
         });
     }
 
-<<<<<<< HEAD
+
     function getDownloadUrl(format) {
-=======
+
     function getDownloadUrl(selectedValue) {
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
         return {
             csv: '/Download/DownloadCsv',
             pdf: '/Download/DownloadPdf',
             json: '/Download/DownloadJson',
             xlsx: '/Download/DownloadXlsx'
-<<<<<<< HEAD
+
         }[format] || '';
     }
 
@@ -163,19 +163,19 @@
             downloadButton.textContent = text;
             downloadButton.className = `btn ${className}`;
         }
-=======
+
         }[selectedValue] || '';
     }
 
     function updateButtonState(text, className) {
         downloadButton.textContent = text;
         downloadButton.className = `btn ${className}`;
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
     }
 
     function resetButtonState() {
         isDownloading = false;
-<<<<<<< HEAD
+
         if (downloadButton) {
             downloadButton.disabled = false;
             updateButtonState('Download', 'btn-primary');
@@ -198,16 +198,16 @@
                 URL.revokeObjectURL(link.href);
             })
             .catch(error => console.error(`Error downloading ${filename}:`, error));
-=======
+
         downloadButton.disabled = false; // Enable the button after download
         updateButtonState('Download', 'btn-primary');
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
     }
 });
 
 
-<<<<<<< HEAD
-=======
+
+
 
 
 
@@ -236,4 +236,4 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(error => console.error('Error downloading the file:', error));
     });
 });
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+

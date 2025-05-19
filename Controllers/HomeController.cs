@@ -13,7 +13,7 @@ namespace Pidar.Controllers
             _logger = logger;
         }
 
-<<<<<<< HEAD
+
         //public IActionResult Index()
         //{
         //    ViewData["ActivePage"] = "Home";
@@ -23,12 +23,12 @@ namespace Pidar.Controllers
         public IActionResult Index()
         {
             return RedirectToAction("Index", "Metadatas");
-=======
+
         public IActionResult Index()
         {
             ViewData["ActivePage"] = "Home";
             return View();
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
         }
 
         public IActionResult Statistic()

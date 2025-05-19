@@ -21,13 +21,7 @@ namespace Pidar.Controllers
             _logger = logger;
         }
 
-<<<<<<< HEAD
-=======
 
-
-
-
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
         // Modify the existing Index method to handle both sorting and pagination
         [Route("")]
         [Route("Index")]
@@ -52,7 +46,7 @@ namespace Pidar.Controllers
             int pageSize = 10;
             var paginatedData = await PaginatedList<Metadata>.CreateAsync(query, pageNumber, pageSize);
 
-<<<<<<< HEAD
+
             // Adding count
             ViewData["MetadataCount"] = await _context.Metadata.CountAsync();
             var sampleSizeStats = GetTotalSampleSizeWithStats();
@@ -61,7 +55,7 @@ namespace Pidar.Controllers
             return View(paginatedData);
         }
 
-=======
+
             return View(paginatedData);
         }
 
@@ -71,7 +65,7 @@ namespace Pidar.Controllers
 
       
 
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
         // GET: Metadatas/ShowSearchForm
         [Route("Search")]
         public async Task<IActionResult> ShowSearchForm(int pageNumber = 1)
@@ -349,7 +343,7 @@ namespace Pidar.Controllers
             }
         }
 
-<<<<<<< HEAD
+
 
 
         //count the number of records in the database
@@ -388,9 +382,7 @@ namespace Pidar.Controllers
             // Include only regular properties (exclude navigations)
             return entityType?.GetProperties().Count() ?? 0;
         }
-=======
-        
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
     }
 
 

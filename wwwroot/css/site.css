@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 /* Reset and base styles */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -41,7 +41,7 @@ body {
 }
 
 /* Button styles */
-=======
+
 html {
   font-size: 14px;
 }
@@ -53,7 +53,7 @@ html {
 }
 
 
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
 .btn-primary {
     transition: transform 0.2s ease-in-out;
 }
@@ -62,7 +62,7 @@ html {
         transform: scale(1.05);
     }
 
-<<<<<<< HEAD
+
 .btn:focus,
 .btn:active:focus,
 .btn-link.nav-link:focus,
@@ -144,7 +144,7 @@ footer {
     .image-5,
     .image-6 {
         grid-column: auto;
-=======
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
@@ -234,13 +234,13 @@ footer {
 
     .image-5, .image-6 {
         grid-column: auto; /* Reset grid placement for smaller screens */
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
     }
 }
 
 @media (max-width: 480px) {
     .contributors {
-<<<<<<< HEAD
+
         grid-template-columns: 1fr;
     }
 
@@ -270,7 +270,7 @@ footer {
     }
 
 /* Table sorting icons */
-=======
+
         grid-template-columns: 1fr; /* 1 column on small screens */
     }
 
@@ -303,7 +303,7 @@ footer {
 
 
 
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
 th a {
     text-decoration: none;
     color: inherit;
@@ -321,7 +321,7 @@ th a {
     font-size: 0.8em;
 }
 
-<<<<<<< HEAD
+
 /* Active nav link */
 .nav-link.active {
     color: blue !important;
@@ -331,7 +331,7 @@ th a {
 /* Highlighting */
 .highlight {
     background-color: #fffde7;
-=======
+
 
 
 
@@ -383,7 +383,7 @@ footer {
 
 .highlight {
     background-color: #fffde7; /* light yellow */
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
     font-weight: bold;
     padding: 0 2px;
 }
@@ -397,7 +397,7 @@ footer {
 
 .matched-property {
     margin: 5px 0;
-<<<<<<< HEAD
+
 }
 
 
@@ -428,6 +428,6 @@ footer {
         transform: scale(1.05);
         z-index: 1;
     }
-=======
+
 }
->>>>>>> ff7b67a29dae5852ca2d9357a1a76571532b6b7d
+
