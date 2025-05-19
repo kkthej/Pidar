@@ -1,0 +1,234 @@
+/* Reset and base styles */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
+    height: 100%;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-top: 30px;
+    height: 100%;
+    margin-bottom: 60px;
+}
+
+/* Typography */
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
+
+/* Button styles */
+.btn-primary {
+    transition: transform 0.2s ease-in-out;
+}
+
+    .btn-primary:hover {
+        transform: scale(1.05);
+    }
+
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+/* Top navbar */
+.navbar {
+    background-color: #808080;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* Main content and footer */
+.content {
+    flex: 1;
+    padding: 20px;
+    margin-top: 56px; /* Adjust based on navbar height */
+}
+
+footer {
+    text-align: center;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    padding: 2rem 1rem;
+    width: 100%;
+}
+
+/* Contributors grid */
+.contributors {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background-color: rgb(93, 223, 225);
+    gap: 1rem;
+    justify-items: center;
+    align-items: center;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+    .contributors h2 {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 1rem;
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+.contributor img {
+    height: auto;
+    max-width: 100%;
+    width: 100px;
+    padding: 1rem 0;
+}
+
+.image-5 {
+    grid-column: 2 / 3;
+}
+
+.image-6 {
+    grid-column: 3 / 4;
+}
+
+/* Responsive contributors */
+@media (max-width: 768px) {
+    .contributors {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .contributor img {
+        width: 80px;
+    }
+
+    .image-5,
+    .image-6 {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .contributors {
+        grid-template-columns: 1fr;
+    }
+
+    .contributor img {
+        width: 60px;
+    }
+
+    .contributors h2 {
+        font-size: 1.2rem;
+    }
+}
+
+/* Hover/click effects */
+.hover-effect {
+    transition: all 0.3s ease;
+}
+
+    .hover-effect:hover {
+        color: #0056b3 !important;
+        text-decoration: underline;
+        transform: scale(1.05);
+    }
+
+    .hover-effect:active {
+        color: #004080 !important;
+        transform: scale(0.95);
+    }
+
+/* Table sorting icons */
+th a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+    th a:hover {
+        color: #007bff;
+    }
+
+.fas.fa-sort-up,
+.fas.fa-sort-down {
+    font-size: 0.8em;
+}
+
+/* Active nav link */
+.nav-link.active {
+    color: blue !important;
+    font-weight: bold;
+}
+
+/* Highlighting */
+.highlight {
+    background-color: #fffde7;
+    font-weight: bold;
+    padding: 0 2px;
+}
+
+.search-result-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.matched-property {
+    margin: 5px 0;
+}
+
+
+
+/*cards on index page that shows datasets total sample size and no of metadata*/
+
+.card-icon {
+    font-size: 40px;
+    opacity: 0.2;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+.stat-card {
+    position: relative;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.zoom-card {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+    .zoom-card:hover {
+        transform: scale(1.05);
+        z-index: 1;
+    }

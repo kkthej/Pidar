@@ -1,0 +1,191 @@
+﻿@model Pidar.Models.Metadata
+@using Pidar.Areas.Identity.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<PidarUser> SignInManager
+@inject UserManager<PidarUser> UserManager
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h4>Metadata</h4>
+<div>
+    <strong>Dataset ID:</strong>
+    @Html.DisplayFor(model => model.DisplayId)
+    @if (SignInManager.IsSignedIn(User))
+    {
+            <div>
+                <a asp-action="Edit" asp-route-id="@Model?.DatasetId">Edit</a> |
+                <a asp-action="Index">Back to List</a>
+            </div>
+    }
+    else
+    {
+            <div>
+                <a asp-action="Index">Back to List</a>
+            </div>
+    }
+</div>
+<hr />
+
+@{
+    // Define categories and their properties
+    var categories = new Dictionary<string, List<string>>()
+            {
+                ["Study Design"] = new List<string>
+        {
+            "StudyDesignBackground", "StudyDescription", "StudyType", "StudySubtype"
+        },
+                ["Publication"] = new List<string>
+        {
+            "PaperLinked", "PaperTitle", "PaperAuthors", "Affiliation", "PaperJournal",
+            "PaperYear", "PaperDoi", "OpenAccess", "UpdatedYear"
+        },
+                ["Study Component"] = new List<string>
+        {
+            "MultiModalityImages", "ImagingModality", "ImagingSubModality", "Radiation",
+            "ImagingCoverage", "ImagingTarget"
+        },
+                ["Dataset Information"] = new List<string>
+        {
+            "Institution", "Pi", "CoPi", "CountryOfInstitution", "ImagingFacility",
+            "EuroBioImagingNode", "CountryOfImagingFacility", "LinkToDataset", "Funding",
+            "FundingAgency", "GrantNumber", "DatasetAccess", "License", "LicenseFile",
+            "DuoDataUsePermission", "DuoDataUseModifier", "DuoInvestigation", "ContactPerson",
+            "LinkToDataset1"
+        },
+                ["In Vivo Experimental Parameters"] = new List<string>
+        {
+            "NumberOfGroups", "TypesOfGroups", "OverallSampleSize", "DiseaseModel",
+            "OrganOrTissue", "SampleSizeForEachGroup", "PowerCalculation",
+            "InclusionCriteria", "ExclusionCriteria", "Randomization", "Blinding",
+            "ProceduresToKeepTreatmentsBlind", "ProceduresToKeepExperimenterBlind",
+            "OutcomeMeasures", "StatisticalMethods", "Species", "Strain",
+            "ImmuneStatus", "Sex", "Age", "AgeAtStartExperiment",
+            "AgeAtScanningExperimentS", "Weight", "WeightAtStartExperiment",
+            "WeightAtEndExperiment", "Genotype", "GeneticManipulation", "Gene",
+            "SourceOfAnimals", "RegistryNumberOfAnimalAuthorization"
+        },
+                ["Experimental Procedures"] = new List<string>
+        {
+            "PharmacologicalProceduresInterventionAndControl", "PharmacologicalDrug",
+            "Company", "Formulation", "DrugDose", "Volume", "Concentration",
+            "SiteRouteOfAdministration", "FrequencyOfAdministration",
+            "VehicleOrCarrierSolutionFormulation", "DrugBatchSampleNumber",
+            "BloodSampling", "BloodSamplingMethod", "BloodSampleVolume", "BloodTiming",
+            "SurgicalProceduresIncludingShamSurgery", "DescriptionOfTheSurgicalProcedure",
+            "ReferenceToProtocol", "TargetOrganTissue",
+            "PathogenInfectionInterventionAndControl", "InfectiousType",
+            "InfectiousAgent", "DoseLoad", "SiteAndRouteOfInfection",
+            "TimingOrFrequencyOfInfection", "AnalgesicPlanToRelievePainSufferingAndDistress",
+            "AnalgesicName", "Route", "AnalgesicDose", "AnesthesiaForImaging",
+            "AnesthesiaType", "Duration", "AnesthesiaDrugs", "AnesthesiaDose",
+            "MonitoringRegime", "Euthanasia", "Method", "Histology",
+            "TissuesCollectedPostEuthanasia", "TimingOfCollection",
+            "HistologicalProcedure", "NameOfReagentS", "CatalogueNumber",
+            "LengthOfFixation", "Imaging", "FrequencyOfImaging", "TimingOfImaging",
+            "OverallScanLength", "ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule",
+            "ContrastAgentCommercialDrug", "ContrastAgentChemicalDrug", "ContrastAgentDose",
+            "InjectionVolume", "InjectionTime", "Vehicle", "RouteOfAdministration",
+            "CellLines", "CellLine", "Provenance", "ModifiedCellLine",
+            "TypeOfGeneticModification", "GeneModified", "VerificationAndAuthentication",
+            "CellInjectionRoute", "NumberOfCells", "Reagents", "NameOfReagent",
+            "CatalogueNumbers", "EquipmentAndSoftware", "Manufacturer",
+            "ModelVersionNumber", "FrequencyOfExperimentalProcedures",
+            "TimingOfExperimentalProcedures", "FrequencyOfExperimentalMeasurements",
+            "TimingOfExperimentalMeasurements", "HousingRoom", "DietaryIntervention",
+            "RespirationRate", "BodyTempuratureEtc", "FoodIntakeMeasured"
+        },
+                ["Image Acquisition"] = new List<string>
+        {
+            "InstrumentVendor", "InstrumentType", "InstrumentSpecifics",
+            "ImageAcquisitionParameters", "Correction", "RawData", "QaQc"
+        },
+                ["Image Correlation"] = new List<string>
+        {
+            "ImageType", "ImageScale", "FormatCompression", "Dimensions",
+            "OverallNumberOfImages", "FieldOfView", "DimensionExtents",
+            "SizeDescription", "PixelVoxelSizeDescription", "ImageProcessingMethods",
+            "ImageReconstructionAlgorithm", "QualityControl", "ImageSmoothingOrFilteringAlgorithm",
+            "ImageRegistrationAlgorithm", "AiEnhancedAlgorithm", "QcInfo", "Corrections",
+            "SpatialAndTemporalAlignment", "FiducialsUsed", "CoregisteredImages",
+            "TransformationMatrixOtherInfo", "RelatedImagesAndRelationship"
+        },
+                ["Analyzed Data"] = new List<string>
+        {
+            "AnalysisResultType", "DataUsedForAnalysis", "AnalysisMethodAndDetails",
+            "FileFormatOfResultFileCsvJsonTxtXlsx", "Status"
+        },
+                ["Ontology Terms"] = new List<string>
+        {
+            "NcitImaging", "NcitImagingSubmodality", "Doid", "NcitAnatomy",
+            "NcitSpecies", "NcitStrain", "ChebiPharmaco", "ChebiAnesthesia",
+            "ChebiContrastAgentCommercialName", "ChebiContrastAgentChemicalName",
+            "Clo", "NcitGene"
+        }
+            };
+}
+
+@foreach (var category in categories)
+{
+    var hasValues = false;
+
+    // Check if any property in this category has a value
+    foreach (var propName in category.Value)
+    {
+        var propInfo = Model!.GetType().GetProperty(propName);
+        if (propInfo != null)
+        {
+            var value = propInfo.GetValue(Model);
+            if (value != null && !string.IsNullOrEmpty(value.ToString()))
+            {
+                hasValues = true;
+                break;
+            }
+        }
+    }
+
+    if (hasValues)
+    {
+                <h5 class="text-center fw-bold">@category.Key</h5>
+                <table class="table table-bordered table-striped">
+                <colgroup>
+                    <col style="width: 30%">
+                    <col style="width: 70%">
+                </colgroup>
+                    
+                    <tbody>
+                @foreach (var propName in category.Value)
+                {
+                    var propInfo = Model!.GetType().GetProperty(propName);
+                    if (propInfo != null)
+                    {
+                        var value = propInfo.GetValue(Model);
+                        if (value != null && !string.IsNullOrEmpty(value.ToString()))
+                        {
+                                                <tr>
+                                                    <th>@propName</th>
+                                                    <td>@value</td>
+                                                </tr>
+                        }
+                    }
+                }
+                    </tbody>
+                </table>
+    }
+}
+
+@if (SignInManager.IsSignedIn(User))
+{
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model?.DatasetId">Edit</a> |
+            <a asp-action="Index">Back to List</a>
+        </div>
+}
+else
+{
+        <div>
+            <a asp-action="Index">Back to List</a>
+        </div>
+}

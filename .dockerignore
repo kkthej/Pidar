@@ -1,0 +1,17 @@
+bin/
+obj/
+.git/
+.vs/
+.vscode/
+*.user
+*.suo
+*.db
+*.sqlite
+*.pdb
+*.back
+*.swp
+Dockerfile*
+docker-compose*
+**/.dockerignore
+**/.env
+**/.gitignore
