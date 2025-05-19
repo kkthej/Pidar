@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.EntityFrameworkCore;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Models;
 using System.Data;
-using System.Dynamic;
+
 
 namespace Pidar.Controllers
 {
@@ -56,9 +57,7 @@ namespace Pidar.Controllers
         }
 
 
-            return View(paginatedData);
-        }
-
+          
 
 
         
@@ -377,7 +376,8 @@ namespace Pidar.Controllers
         public int GetTableColumnCount()
         {
             // Correct way to get entity type in EF Core
-            var entityType = _context.Metadata.FindEntityType(typeof(Metadata));
+            var entityType = _context.Model.FindEntityType(typeof(Metadata));
+
 
             // Include only regular properties (exclude navigations)
             return entityType?.GetProperties().Count() ?? 0;

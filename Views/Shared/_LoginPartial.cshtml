@@ -11,15 +11,9 @@
     </li>
     <li class="nav-item">
 
-           <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-        <button type="submit" class="nav-link btn btn-danger rounded-pill px-3 mx-1">Logout</button>
-    </form>
-
-
-        <form  class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button  type="submit" class="nav-link btn btn-link text-dark">Logout</button>
+        <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit" class="nav-link btn btn-danger rounded-pill px-3 mx-1">Logout</button>
         </form>
-
     </li>
 }
 else
@@ -29,7 +23,7 @@ else
 
             <a class="nav-link btn btn-outline-primary rounded-pill px-3" asp-area="Identity" asp-page="/Account/Login">Admin Login</a>
 
-        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Admin Login</a>
+       
 
     </li>
 }

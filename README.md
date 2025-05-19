@@ -49,3 +49,5 @@ Added features:
 7. DOCKERIZED the application with 3 services Pidar-web, Pidar-Db and Pidar-PgAdmin
 8. Modified Metadata Details, Edit, Create pages for better Readability (categorized)
 9. (only stastic page left for now 05/05/2025)
+10. changed the index page to metadatas/index to display metadata table.
+11. added the cards to display the number of Datasets, total samples used and Total Metadatas.

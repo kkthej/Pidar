@@ -25,7 +25,7 @@
 
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3 fixed-top">
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3">
+    
 
         <div class="container-fluid position-relative"> <!-- Added position-relative -->
             <!-- Mobile brand and toggler -->
@@ -41,10 +41,7 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <!-- Left nav items -->
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Home" ? "active" : "")"
-                           asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
+                    
                     <li class="nav-item">
                         <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Metadata" || Context.Request.Path.StartsWithSegments("/Metadatas") ? "active" : "")"
                            asp-area="" asp-controller="Metadatas" asp-action="Index">Metadata</a>
@@ -56,6 +53,10 @@
                     <li class="nav-item">
                         <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Contribute" ? "active" : "")"
                            asp-area="" asp-controller="Home" asp-action="Contribute">Contribute</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Home" ? "active" : "")"
+                           asp-area="" asp-controller="Home" asp-action="Index">About Pidar</a>
                     </li>
                 </ul>
 

@@ -14,22 +14,18 @@ namespace Pidar.Controllers
         }
 
 
-        //public IActionResult Index()
-        //{
-        //    ViewData["ActivePage"] = "Home";
-        //    return View();
-        //}
+        
 
         public IActionResult Index()
         {
             return RedirectToAction("Index", "Metadatas");
-
-        public IActionResult Index()
-        {
-            ViewData["ActivePage"] = "Home";
-            return View();
-
         }
+        //public IActionResult Index()
+        //{
+        //    ViewData["ActivePage"] = "Home";
+        //    return View();
+
+        //}
 
         public IActionResult Statistic()
         {
