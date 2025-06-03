@@ -1,0 +1,37 @@
+﻿@{
+    ViewData["Title"] = "Download";
+}
+
+
+<h2 style="text-align: center;">Download Metadata</h2>
+
+<div style="display: flex; justify-content: center; margin-top: 20px;">
+    <select id="downloadType" class="form-select" style="width: 200px;">
+        <option value="">Download file Type</option>
+        <option value="csv">CSV</option>
+        <option value="pdf">PDF</option>
+        <option value="json">JSON</option>
+        <option value="xlsx">XLSX</option>
+    </select>
+</div>
+
+<div style="display: flex; justify-content: center; margin-top: 20px;">
+    <button id="downloadButton" class="btn btn-primary" disabled>Download</button>
+</div>
+
+<div style="display: flex; justify-content: center; margin-top: 20px;">
+
+    <button id="downloadButton" class="btn btn-primary" onclick="location.href='/swagger'">Go to API</button>
+
+
+
+</div>
+
+
+<div style="display: flex; justify-content: center; margin-top: 10px;">
+    <span id="progressText" style="font-size: 14px; color: green;"></span>
+</div>
+
+@section scripts {
+            <script src="~/js/site.js"></script>
+}

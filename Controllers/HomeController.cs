@@ -38,6 +38,20 @@ namespace Pidar.Controllers
             return View();
         }
 
+        public IActionResult About()
+        {
+            
+            ViewData["ActivePage"] = "About";
+            return View();
+        }
+
+        public IActionResult Download()
+        {
+
+            ViewData["ActivePage"] = "Download";
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

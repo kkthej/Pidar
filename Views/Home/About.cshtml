@@ -1,0 +1,97 @@
+﻿@{
+    ViewData["Title"] = "About";
+}
+<div class="container-fluid text-center p-0">
+    <div id="sfondo" class="d-flex justify-content-center align-items-start">
+        <img src="/images/sfondo.png" class="img-fluid" alt="Background Image">
+    </div>
+</div>
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn more about our PIDAR repository below.</p>
+</div>
+
+<section class="mt-5">
+    <h2 class="text-center">About PIDAR</h2>
+    <p>
+        The Preclinical Image DAtaset Repository (PIDAR) is a public repository of metadata information of preclinical image datasets from any imaging modality associated to peer-reviewed publications. The imaging metadata are organized as “collections” defined by a common disease, image modality or sub type (MRI, CT, PET, etc) or research focus.
+    </p>
+    <p>
+        An emphasis is made to provide supporting data related to the images such as outcomes, treatment details, genomics and expert analyses. The main aim of this repository is to make the dataset FAIR: Findable, Accessible, Interoperable and Reusable inside the scientific community. All the datasets are supposed to be accessible through a license.
+    </p>
+</section>
+
+<section class="mt-4">
+    <h2 class="text-center">Download PIDAR</h2>
+    <p>
+        PIDAR allows the access to the full repository and the download of all the datasets in CSV,PDF,JSON and XLSX formats. The files are always updated through the database and contains all the metadata list with references to the ontology.
+    </p>
+</section>
+
+<section class="mt-4">
+    
+    <h2 class="text-center">Ontology references and Metadata</h2>
+    <p>
+        Ontologies are widely used in biological and biomedical research. The goal is to make the research easier with the use of synonyms which are coded by the ontology of each field. Six principal metadata have been treated with the use of ontology:
+    </p>
+    <ul>
+        <li>
+            <strong>Imaging modality and sub modality:</strong> Analyzed with the NCIT ontology (NCI Thesaurus), which includes broad coverage of scientific fields. The NCIt OBO Edition aims to increase integration with OBO Library ontologies and should be considered experimental.
+        </li>
+        <li>
+            <strong>Pharmacological and anesthetic drugs, and contrast agents:</strong> Coded via ChEBI ontology. ChEBI is a dictionary of molecular entities focused on small chemical compounds. These drugs are also linked with the European Chemical Biology Database (ECBD), developed under FAIR principles.
+        </li>
+        <li>
+            <strong>Disease models:</strong> Supported by DOID codes from the Disease Ontology, which describes human diseases organized by etiology.
+        </li>
+        <li>
+            <strong>Cell lines:</strong> Classified using the Cell Line Ontology (CLO), a community-based ontology that standardizes publicly available cell line data.
+        </li>
+        <li>
+            <strong>Strains repository:</strong> Disease models are linked to EMMA strains carrying transgenes or mutant alleles, annotated by Mouse Genomic Informatics (MGI) and supported by expert-reviewed publications.
+        </li>
+    </ul>
+    <p>
+        For easier research management, a drop-down menu is implemented allowing search for specific metadata. The metadata selectable from the menu are the principal ones described above, supported with ontology codes.
+    </p>
+</section>
+
+<section class="mt-4">
+    <h2 class="text-center">Acknowledgements</h2>
+    <p class="text-center">
+        We thank funding from the European Union’s Horizon 2020 programme under grant agreement number 824087 - EOSC-LIFE project.
+    </p>
+   <div class="d-flex justify-content-center mt-3">
+        <div class="row row-cols-1 row-cols-sm-2 justify-content-center align-items-center g-3">
+            <div class="col text-center">
+                <a href="https://www.eosc-life.eu/" target="_blank">
+                    <img src="/images/eosc-life.png" alt="EOSC logo" class="img-fluid" style="max-width: 35%; height: auto;" />
+                </a>
+            </div>
+            <div class="col text-center">
+                <a href="https://european-union.europa.eu/index_it" target="_blank">
+                    <img src="/images/eulogo.jpeg" alt="EU logo" class="img-fluid" style="max-width: 35%; height: auto;" />
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mt-5">
+    <h2 class="text-center">License</h2>
+    <div class="text-center">
+        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">
+            <img src="/images/license.png" alt="license" class="img-fluid" style="max-width: 50%; height: auto;" />
+        </a>
+    </div>
+   
+    <p class="text-center">This work is shared with License Creative Commons Attribuzione 4.0 Internazionale.</p>
+</section>
+
+<section class="mt-4 mb-5">
+    <h2 class="text-center">Cite us</h2>
+    <p class="text-center">PIDAR is also mentioned inside the <a href="https://fairsharing.org/" target="_blank">FAIRsharing</a> website.</p>
+    <p class="text-center">You can cite us under the DOI of FAIRsharing: <a href="https://doi.org/10.25504/FAIRsharing.f64055" target="_blank">10.25504/FAIRsharing.f64055</a></p>
+    <p class="text-center">You can also see inside the Re3data page and cite us under the DOI: <a href="http://doi.org/10.17616/R31NJNGK" target="_blank">http://doi.org/10.17616/R31NJNGK</a></p>
+</section>
+

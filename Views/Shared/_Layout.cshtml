@@ -51,12 +51,16 @@
                            asp-area="" asp-controller="Home" asp-action="Statistic">Statistic</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Download" ? "active" : "")"
+                            asp-area="" asp-controller="Home" asp-action="Download">Download</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Contribute" ? "active" : "")"
                            asp-area="" asp-controller="Home" asp-action="Contribute">Contribute</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Home" ? "active" : "")"
-                           asp-area="" asp-controller="Home" asp-action="Index">About Pidar</a>
+                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "About" ? "active" : "")"
+                            asp-area="" asp-controller="Home" asp-action="About">About Pidar</a>
                     </li>
                 </ul>
 
