@@ -51,3 +51,4 @@ Added features:
 9. (only stastic page left for now 05/05/2025)
 10. changed the index page to metadatas/index to display metadata table.
 11. added the cards to display the number of Datasets, total samples used and Total Metadatas.
+12. Added graphs to Statistics page and search updates the metadata cards
