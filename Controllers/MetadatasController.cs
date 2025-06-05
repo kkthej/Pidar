@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pidar.Data;
 using Pidar.Models;
 using System.Data;
+
 
 
 namespace Pidar.Controllers
@@ -22,103 +22,91 @@ namespace Pidar.Controllers
             _logger = logger;
         }
 
-
-        // Modify the existing Index method to handle both sorting and pagination
         [Route("")]
         [Route("Index")]
         public async Task<IActionResult> Index(string sortOrder, int pageNumber = 1)
         {
             ViewData["ActivePage"] = "Metadata";
-            // Sorting logic
             ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
             ViewBag.CurrentSort = sortOrder;
 
             var query = _context.Metadata.AsQueryable();
 
-            // Determine the sorting order
             query = sortOrder switch
             {
                 "displayid_asc" => query.OrderBy(m => m.DisplayId),
                 "displayid_desc" => query.OrderByDescending(m => m.DisplayId),
-                _ => query.OrderBy(m => m.DisplayId) // Default sorting
+                _ => query.OrderBy(m => m.DisplayId)
             };
 
-            // Pagination logic
             int pageSize = 10;
             var paginatedData = await PaginatedList<Metadata>.CreateAsync(query, pageNumber, pageSize);
 
-
-            // Adding count
             ViewData["MetadataCount"] = await _context.Metadata.CountAsync();
-            var sampleSizeStats = GetTotalSampleSizeWithStats();
-            ViewData["TotalSampleSize"] = sampleSizeStats.Total;
+            ViewData["TotalSampleSize"] = await CalculateTotalSampleSizeAsync();
             ViewData["TableColumnCount"] = GetTableColumnCount();
+
             return View(paginatedData);
         }
 
-
-          
-
-
-        
-
-      
 
 
         // GET: Metadatas/ShowSearchForm
         [Route("Search")]
         public async Task<IActionResult> ShowSearchForm(int pageNumber = 1)
         {
-            int pageSize = 10; // Show 10 items per page
-            var query = _context.Metadata.AsQueryable(); // Adjust according to your DbSet
+            int pageSize = 10;
+            var query = _context.Metadata.AsQueryable();
             var paginatedData = await PaginatedList<Metadata>.CreateAsync(query, pageNumber, pageSize);
-
             return View(paginatedData);
         }
 
-
         // POST: Metadatas/ShowSearchResults
         [Route("SearchResults")]
-        public async Task<IActionResult> ShowSearchResults(string SearchPhrase, int pageNumber = 1)
+        public async Task<IActionResult> ShowSearchResults(string SearchPhrase, string sortOrder, int pageNumber = 1)
         {
+           
             int pageSize = 10;
 
-            var query = _context.Metadata.AsQueryable(); // Stay in IQueryable
+            // Maintain sorting parameters
+            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
+            ViewBag.CurrentSort = sortOrder;
 
             if (!string.IsNullOrWhiteSpace(SearchPhrase))
             {
-                var allData = await query.ToListAsync(); // Load data into memory
+                var allData = await _context.Metadata.ToListAsync();
 
+                // Perform case-insensitive search across all string properties
                 var results = allData.Where(m =>
                     typeof(Metadata).GetProperties()
-                        .Where(p => p.PropertyType == typeof(string)) // Only string properties
-                        .Select(p => p.GetValue(m) as string) // Get values
-                        .Any(value => value != null && value.Contains(SearchPhrase, StringComparison.OrdinalIgnoreCase)) // Case-insensitive search
+                        .Where(p => p.PropertyType == typeof(string))
+                        .Select(p => p.GetValue(m)?.ToString())
+                        .Any(value => value != null &&
+                           value.Contains(SearchPhrase, StringComparison.OrdinalIgnoreCase))
                 ).ToList();
 
-                int totalRecords = results.Count;
+                // Apply sorting to search results
+                results = sortOrder switch
+                {
+                    "displayid_desc" => results.OrderByDescending(m => m.DisplayId).ToList(),
+                    _ => results.OrderBy(m => m.DisplayId).ToList() // Default ascending
+                };
 
+                int totalRecords = results.Count;
                 var paginatedResults = results
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
 
+                ViewData["MetadataCount"] = totalRecords;
+                ViewData["TotalSampleSize"] = CalculateSampleSize(results);
+                ViewData["TableColumnCount"] = GetTableColumnCount();
+
                 return View("Index", new PaginatedList<Metadata>(paginatedResults, totalRecords, pageNumber, pageSize));
             }
 
-            int totalRecordsDb = await query.CountAsync();
-            var paginatedData = await query
-                .OrderBy(m => m.DatasetId)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return View("Index", new PaginatedList<Metadata>(paginatedData, totalRecordsDb, pageNumber, pageSize));
+            return RedirectToAction(nameof(Index));
         }
-
-
-
-
 
 
         // GET: Metadatas/Details/5
@@ -267,7 +255,7 @@ namespace Pidar.Controllers
         }
         private bool MetadataExists(int id)
         {
-            return _context.Metadata.Any(e => e.DatasetId== id);
+            return _context.Metadata.Any(e => e.DatasetId == id);
         }
 
 
@@ -342,46 +330,52 @@ namespace Pidar.Controllers
             }
         }
 
+        #region Helper Methods
 
-
-
-        //count the number of records in the database
-        public async Task<int> GetMetadataCount()
+        private async Task<int> CalculateTotalSampleSizeAsync()
         {
-            return await _context.Metadata.CountAsync();
-        }
-        public (int Total, int InvalidEntries) GetTotalSampleSizeWithStats()
-        {
-            var sampleSizes = _context.Metadata
+            var sampleSizes = await _context.Metadata
                 .Select(x => x.OverallSampleSize)
-                .ToList();
+                .ToListAsync();
 
             int total = 0;
-            int invalid = 0;
-
             foreach (var size in sampleSizes)
             {
-                if (int.TryParse(size?.Replace(",", ""), out int parsedSize)) // Handles "1,000"
+                if (int.TryParse(size?.Replace(",", ""), out int parsedSize))
                 {
                     total += parsedSize;
                 }
-                else
+            }
+            return total;
+        }
+
+        private int CalculateSampleSize(List<Metadata> metadataItems)
+        {
+            int total = 0;
+            foreach (var item in metadataItems)
+            {
+                if (int.TryParse(item.OverallSampleSize?.Replace(",", ""), out int parsedSize))
                 {
-                    invalid++;
+                    total += parsedSize;
                 }
             }
-
-            return (total, invalid);
+            return total;
         }
-        public int GetTableColumnCount()
+
+        private int GetTableColumnCount()
         {
-            // Correct way to get entity type in EF Core
             var entityType = _context.Model.FindEntityType(typeof(Metadata));
-
-
-            // Include only regular properties (exclude navigations)
             return entityType?.GetProperties().Count() ?? 0;
         }
+
+        
+
+        #endregion
+
+
+
+
+
 
     }
 

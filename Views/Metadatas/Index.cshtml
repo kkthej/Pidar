@@ -52,32 +52,36 @@
 
 @if (SignInManager.IsSignedIn(User))
 {
-        <div class="row justify-content-between align-items-center  mb-2">
+        <div class="row justify-content-between align-items-center mb-2">
             <div class="col-auto">
                 <a asp-action="Create" class="btn btn-primary">Create New Dataset</a>
             </div>
             <div class="col-auto">
-                <form asp-action="ShowSearchResults" class="form-inline">
+                <form asp-action="ShowSearchResults" method="get" class="form-inline">
+                    <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />
                     <div class="input-group">
-                        <input name="SearchPhrase" id="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
+                        <input name="SearchPhrase" id="SearchPhrase" 
+                               class="form-control mr-2" 
+                               placeholder="Enter search phrase" 
+                               value="@Context.Request.Query["SearchPhrase"]" />
                         <button type="submit" class="btn btn-primary">Search</button>
                     </div>
                 </form>
             </div>
         </div>
-
 }
 else
 {
-    <!-- Search box -->
-
         <div class="row justify-content-lg-end justify-content-center">
             <div class="col-md-4 col-12">
-                <form asp-action="ShowSearchResults">
+                <form asp-action="ShowSearchResults" method="get">
+                    <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />
                     <div class="form-group mb-2 form-inline">
-                        <label for="SearchPhrase" class="control-label"></label>
                         <div class="input-group">
-                            <input name="SearchPhrase" id="SearchPhrase" class="form-control mr-2" placeholder="Enter search phrase" />
+                            <input name="SearchPhrase" id="SearchPhrase" 
+                                   class="form-control mr-2" 
+                                   placeholder="Enter search phrase" 
+                                   value="@Context.Request.Query["SearchPhrase"]" />
                             <button type="submit" class="btn btn-primary">Search</button>
                         </div>
                     </div>

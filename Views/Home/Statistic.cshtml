@@ -1,6 +1,421 @@
 ﻿@{
     ViewData["Title"] = "Statistic";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's Statistics.</p>
+<div class="container mt-4">
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card bg-success zoom-card">
+                <h3>@ViewData["MetadataCount"]</h3>
+                <p class="fw-semibold fst-italic">Datasets</p>
+                <div class="card-icon">💾</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card bg-primary zoom-card">
+                <h3>@ViewData["TotalSampleSize"]</h3>
+                <p class="fw-semibold fst-italic">Total Subjects</p>
+                <div class="card-icon">🔗</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card bg-danger zoom-card">
+                <h3>@ViewData["TableColumnCount"]</h3>
+                <p class="fw-semibold fst-italic">Metadata Fields</p>
+                <div class="card-icon">📝</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Row 1 -->
+    <div class="row mb-4">
+        <!-- Imaging Modality Chart -->
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Imaging Modality Distribution</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px; width:100%">
+                        <canvas id="modalityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Country Distribution Chart -->
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Top Imaging Facility Countries</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px; width:100%">
+                        <canvas id="countryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Row 2 -->
+    <div class="row mb-4">
+        <!-- Disease Model Chart -->
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Top Disease Models</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px; width:100%">
+                        <canvas id="diseaseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Organ/Tissue Chart -->
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">Top Organs/Tissues</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px; width:100%">
+                        <canvas id="organChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Chart Row 2.5 - Status Distribution -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow h-100">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Study Status Distribution</h4>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:400px; width:100%">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Chart Row 3 - Full width -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">Datasets Uploaded by Year</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px; width:100%">
+                        <canvas id="yearlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <!-- Add jQuery first -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Color palette
+                const colors = [
+                    'rgba(54, 162, 235, 0.7)',  // Blue
+                    'rgba(255, 99, 132, 0.7)',   // Red
+                    'rgba(75, 192, 192, 0.7)',   // Teal
+                    'rgba(255, 206, 86, 0.7)',   // Yellow
+                    'rgba(153, 102, 255, 0.7)',  // Purple
+                    'rgba(255, 159, 64, 0.7)',   // Orange
+                    'rgba(199, 199, 199, 0.7)',   // Gray
+                    'rgba(83, 102, 255, 0.7)',    // Indigo
+                    'rgba(40, 167, 69, 0.7)',    // Green
+                    'rgba(108, 117, 125, 0.7)'   // Gray-dark
+                ];
+
+                const borderColors = colors.map(color => color.replace('0.7', '1'));
+
+                // Helper function to safely parse JSON
+                function safeParseJson(jsonString) {
+                    try {
+                        return jsonString ? JSON.parse(jsonString) : [];
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        return [];
+                    }
+                }
+
+                // Imaging Modality Chart (Doughnut)
+                var modalityData = safeParseJson('@Html.Raw(ViewData["ModalityDistribution"])');
+                createDoughnutChart('modalityChart', 
+                    modalityData.map(x => x.Label), 
+                    modalityData.map(x => x.Count),
+                    'Distribution across the imaging modalities');
+
+                // Country Distribution Chart (Bar)
+                var countryData = safeParseJson('@Html.Raw(ViewData["CountryDistribution"])');
+                createBarChart('countryChart', 
+                    countryData.map(x => x.Country), 
+                    countryData.map(x => x.Count),
+                    'Top countries where imaging was performed',
+                    colors);
+
+               // Status Distribution Chart (Pie)
+                var statusData = safeParseJson('@Html.Raw(ViewData["StatusDistribution"])');
+                createPieChart('statusChart', 
+                    statusData.map(x => x.Status), 
+                    statusData.map(x => x.Count),
+                    'Distribution of study statuses');
+
+
+                // Disease Model Chart (Horizontal Bar)
+                var diseaseData = safeParseJson('@Html.Raw(ViewData["DiseaseModelDistribution"])');
+                createHorizontalBarChart('diseaseChart', 
+                    diseaseData.map(x => x.Disease), 
+                    diseaseData.map(x => x.Count),
+                    'Most studied disease models',
+                    colors);
+
+                // Organ/Tissue Chart (Pie)
+                var organData = safeParseJson('@Html.Raw(ViewData["OrganDistribution"])');
+                createPieChart('organChart', 
+                    organData.map(x => x.Organ), 
+                    organData.map(x => x.Count),
+                    'Most studied organs/tissues');
+
+                // Yearly Uploads Chart (Line)
+                var yearlyData = safeParseJson('@Html.Raw(ViewData["YearlyUploads"])');
+                createLineChart('yearlyChart', 
+                    yearlyData.map(x => x.Year), 
+                    yearlyData.map(x => x.Count),
+                    'Datasets uploaded by year',
+                    colors[0]);
+
+                // Chart creation functions
+                function createDoughnutChart(canvasId, labels, data, title) {
+                    var ctx = document.getElementById(canvasId).getContext('2d');
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: colors,
+                                borderColor: borderColors,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: getDoughnutOptions(title)
+                    });
+                }
+
+                function createBarChart(canvasId, labels, data, title, colors) {
+                    var ctx = document.getElementById(canvasId).getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Datasets',
+                                data: data,
+                                backgroundColor: colors,
+                                borderColor: borderColors,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: getBarOptions(title)
+                    });
+                }
+
+                function createHorizontalBarChart(canvasId, labels, data, title, colors) {
+                    var ctx = document.getElementById(canvasId).getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Datasets',
+                                data: data,
+                                backgroundColor: colors,
+                                borderColor: borderColors,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: getHorizontalBarOptions(title)
+                    });
+                }
+
+                function createPieChart(canvasId, labels, data, title) {
+                    var ctx = document.getElementById(canvasId).getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: colors,
+                                borderColor: borderColors,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: getPieOptions(title)
+                    });
+                }
+
+                function createLineChart(canvasId, labels, data, title, color) {
+                    var ctx = document.getElementById(canvasId).getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Datasets',
+                                data: data,
+                                backgroundColor: color,
+                                borderColor: color.replace('0.7', '1'),
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.1
+                            }]
+                        },
+                        options: getLineOptions(title)
+                    });
+                }
+
+                // Chart options
+                function getDoughnutOptions(title) {
+                    return {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 16 }
+                            }
+                        },
+                        cutout: '70%'
+                    };
+                }
+
+                function getBarOptions(title) {
+                    return {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 16 }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Datasets'
+                                }
+                            }
+                        }
+                    };
+                }
+
+                function getHorizontalBarOptions(title) {
+                    return {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 16 }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Datasets'
+                                }
+                            }
+                        }
+                    };
+                }
+
+                function getPieOptions(title) {
+                    return {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 16 }
+                            }
+                        }
+                    };
+                }
+
+                function getLineOptions(title) {
+                    return {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: title,
+                                font: { size: 16 }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Datasets'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Year'
+                                }
+                            }
+                        }
+                    };
+                }
+            });
+        </script>
+}
