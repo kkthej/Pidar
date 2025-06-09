@@ -129,11 +129,16 @@ app.UseAuthorization();
 
 
 
+app.MapControllerRoute(
+    name: "root",
+    pattern: "",
+    defaults: new { controller = "Metadatas", action = "Index" });
 
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 
 app.MapRazorPages();
 

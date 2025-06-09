@@ -19,6 +19,11 @@
     <link rel="stylesheet" href="~/Pidar.styles.css" asp-append-version="true" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     @RenderSection("Styles", required: false)
     @Html.Partial("_Favicons")
@@ -142,5 +147,34 @@
         document.getElementById('year').textContent = new Date().getFullYear();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
+    
+
+
+    <!-- Bootstrap JS Bundle (includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Floating Top Button -->
+<button id="topBtn" type="button" class="btn btn-primary btn-lg rounded-circle shadow" 
+        style="display: none; position: fixed; bottom: 40px; right: 40px; z-index: 1050;" 
+        title="Go to top">
+  <i class="bi bi-arrow-up"></i>
+</button>
+
+<script>
+  const topBtn = document.getElementById("topBtn");
+
+  window.addEventListener('scroll', function () {
+    if (document.documentElement.scrollTop > 100 || document.body.scrollTop > 100) {
+      topBtn.style.display = "block";
+    } else {
+      topBtn.style.display = "none";
+    }
+  });
+
+  topBtn.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+
 </body>
 </html>

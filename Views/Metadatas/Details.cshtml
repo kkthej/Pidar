@@ -8,7 +8,17 @@
 @{
     ViewData["Title"] = "Details";
 }
-
+@functions {
+    public string FormatPropertyName(string propertyName)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(
+            propertyName,
+            "([A-Z])",
+            " $1",
+            System.Text.RegularExpressions.RegexOptions.Compiled
+        ).Trim();
+    }
+}
 <h4>Metadata</h4>
 <div>
     <strong>Dataset ID:</strong>
@@ -165,7 +175,7 @@
                         if (value != null && !string.IsNullOrEmpty(value.ToString()))
                         {
                                                 <tr>
-                                                    <th>@propName</th>
+                                                    <th>@FormatPropertyName(propName)</th>
                                                     <td>@value</td>
                                                 </tr>
                         }

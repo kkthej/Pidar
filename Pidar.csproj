@@ -39,7 +39,20 @@
     <PackageReference Include="QuestPDF" Version="2025.1.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
 	<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.2" />
-	
+	<Watch Include="**/*" Exclude="
+      **/.git/**;
+      **/.vs/**;
+      **/.vscode/**;
+      **/bin/**;
+      **/obj/**;
+      **/node_modules/**;
+      **/packages/**;
+      **/logs/**;
+      *.user;
+      appsettings.*.json;
+      .env;
+      .env.local
+  " />
   </ItemGroup>
 
 </Project>
