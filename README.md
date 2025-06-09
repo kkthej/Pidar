@@ -50,4 +50,8 @@ Added features:
 8. Modified Metadata Details, Edit, Create pages for better Readability (categorized)
 9. (only stastic page left for now 05/05/2025)
 10. changed the index page to metadatas/index to display metadata table.
-11. added the cards to display the number of Datasets, total samples used and Total Metadatas.
+11. Added the cards to display the number of Datasets, total samples used and Total Metadatas.
+12. Added statistics page
+13. Fixed null exception error while Deleting a dataset
+14.  changed the configuration to work on pidar website
+15.  Added goto top button in _layout.cshtml
