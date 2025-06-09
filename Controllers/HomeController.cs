@@ -5,7 +5,8 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Linq;
 using Microsoft.EntityFrameworkCore; // Make sure this is present
-using System.Threading.Tasks;       // For Task<T> return types
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Diagnostics;       // For Task<T> return types
 
 namespace Pidar.Controllers
 {
@@ -126,10 +127,33 @@ namespace Pidar.Controllers
             return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        [Route("Error/{statusCode?}")]
+        public IActionResult Error(int? statusCode = null)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var errorModel = new ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            };
+
+            // Get the exception details if available
+            var exceptionHandlerPathFeature =
+                HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+
+            if (exceptionHandlerPathFeature?.Error != null)
+            {
+                errorModel.ErrorMessage = exceptionHandlerPathFeature.Error.Message;
+
+                // Log the error if needed
+                _logger.LogError(exceptionHandlerPathFeature.Error,
+                    "Unhandled exception occurred");
+            }
+
+            if (statusCode.HasValue)
+            {
+                errorModel.ErrorMessage ??= $"Status Code: {statusCode}";
+            }
+
+            return View(errorModel);
         }
     }
 }

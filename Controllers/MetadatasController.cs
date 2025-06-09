@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Pidar.Data;
 using Pidar.Models;
 using System.Data;
+using System.Diagnostics;
 
 
 
@@ -286,49 +287,72 @@ namespace Pidar.Controllers
         [Route("Delete/{id}")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+
+            IActionResult result = null;
+
             try
             {
-                // 1. Find the record to delete
-                var metadata = await _context.Metadata.FindAsync(id);
-                if (metadata == null) return NotFound();
-
-                // 2. Store the DisplayId of the deleted record
-                int deletedDisplayId = metadata.DisplayId;
-                _logger.LogInformation($"Deleting record with DisplayId: {deletedDisplayId}");
-
-                // 3. Delete the record
-                _context.Metadata.Remove(metadata);
-                await _context.SaveChangesAsync();
-
-                // 4. Decrement DisplayId for all records with DisplayId > deletedDisplayId
-                var recordsToUpdate = await _context.Metadata
-                    .Where(m => m.DisplayId > deletedDisplayId)
-                    .OrderBy(m => m.DisplayId)
-                    .ToListAsync();
-
-                _logger.LogInformation($"Found {recordsToUpdate.Count} records to update.");
-
-                foreach (var record in recordsToUpdate)
+                await executionStrategy.ExecuteAsync(async () =>
                 {
-                    record.DisplayId -= 1;
-                    _context.Update(record);
-                    _logger.LogInformation($"Updated record with DatasetId: {record.DatasetId} to DisplayId: {record.DisplayId}");
-                }
+                    using var transaction = await _context.Database.BeginTransactionAsync();
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                    try
+                    {
+                        var metadata = await _context.Metadata.FindAsync(id);
+                        if (metadata == null)
+                        {
+                            await transaction.RollbackAsync();
+                            result = NotFound(); // ✅ Set the result instead of returning
+                            return;
+                        }
 
-                return RedirectToAction(nameof(Index));
+                        int deletedDisplayId = metadata.DisplayId;
+                        _logger.LogInformation($"Deleting record with DisplayId: {deletedDisplayId}");
+
+                        _context.Metadata.Remove(metadata);
+                        await _context.SaveChangesAsync();
+
+                        var recordsToUpdate = await _context.Metadata
+                            .Where(m => m.DisplayId > deletedDisplayId)
+                            .OrderBy(m => m.DisplayId)
+                            .ToListAsync();
+
+                        _logger.LogInformation($"Found {recordsToUpdate.Count} records to update.");
+
+                        foreach (var record in recordsToUpdate)
+                        {
+                            record.DisplayId -= 1;
+                            _context.Update(record);
+                            _logger.LogInformation($"Updated record with DatasetId: {record.DatasetId} to DisplayId: {record.DisplayId}");
+                        }
+
+                        await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
+
+                        result = RedirectToAction(nameof(Index)); // ✅ Set the result here too
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        _logger.LogError(ex, "Error during transaction execution");
+                        throw;
+                    }
+                });
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error deleting metadata");
-                ModelState.AddModelError("", "An error occurred while deleting.");
-                return View("Error"); // Or handle the error appropriately
+                _logger.LogError(ex, "Error after retry attempts exhausted");
+                result = View("Error", new ErrorViewModel
+                {
+                    RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    ErrorMessage = "An error occurred while deleting the record. Please try again later."
+                });
             }
+
+            return result; // ✅ Final return here
         }
+
 
         #region Helper Methods
 

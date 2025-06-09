@@ -2,38 +2,38 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution/project files
-COPY *.csproj ./
+# Copy project files and restore dependencies
+COPY Pidar.csproj ./
 RUN dotnet restore
 
 # Copy everything else
-COPY . .
+COPY . ./
 
-# Build (keep Debug for development)
+# Build the project
 RUN dotnet build -c Debug -o /app/build
 
-# Publish (for production)
+# Publish the project (for production)
 RUN dotnet publish -c Release -o /app/publish
 
-# Stage 2: Run (Development)
+# Stage 2: Development
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS development
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-# Copy build output (Debug)
-COPY --from=build /app/build .
+# Copy source (optional if using volume mounts)
+COPY --from=build /src ./
 
-# For development, we'll use dotnet run with mounted volumes
-ENTRYPOINT ["dotnet", "watch", "run", "--no-restore"]
+# Run with dotnet watch
+ENTRYPOINT ["dotnet", "watch", "--project", "Pidar.csproj", "run", "--no-restore"]
 
-# Stage 3: Run (Production)
+# Stage 3: Production
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS production
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-# Copy publish output (Release)
-COPY --from=build /app/publish .
+# Copy published output
+COPY --from=build /app/publish ./
 
 ENTRYPOINT ["dotnet", "Pidar.dll"]
