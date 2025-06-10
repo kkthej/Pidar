@@ -53,5 +53,6 @@ Added features:
 11. Added the cards to display the number of Datasets, total samples used and Total Metadatas.
 12. Added statistics page
 13. Fixed null exception error while Deleting a dataset
-14.  changed the configuration to work on pidar website
-15.  Added goto top button in _layout.cshtml
+14. changed the configuration to work on pidar website
+15. Added goto top button in _layout.cshtml
+16. Fixed typos and removed cards in statistics page 

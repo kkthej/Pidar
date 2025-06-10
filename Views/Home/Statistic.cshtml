@@ -3,31 +3,7 @@
 }
 
 <div class="container mt-4">
-    <!-- Summary Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="stat-card bg-success zoom-card">
-                <h3>@ViewData["MetadataCount"]</h3>
-                <p class="fw-semibold fst-italic">Datasets</p>
-                <div class="card-icon">💾</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card bg-primary zoom-card">
-                <h3>@ViewData["TotalSampleSize"]</h3>
-                <p class="fw-semibold fst-italic">Total Subjects</p>
-                <div class="card-icon">🔗</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card bg-danger zoom-card">
-                <h3>@ViewData["TableColumnCount"]</h3>
-                <p class="fw-semibold fst-italic">Metadata Fields</p>
-                <div class="card-icon">📝</div>
-            </div>
-        </div>
-    </div>
-
+    
     <!-- Chart Row 1 -->
     <div class="row mb-4">
         <!-- Imaging Modality Chart -->
@@ -48,7 +24,7 @@
         <div class="col-md-6">
             <div class="card shadow h-100">
                 <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">Top Imaging Facility Countries</h4>
+                    <h4 class="mb-0">Imaging Facility Countries</h4>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height:400px; width:100%">
@@ -65,7 +41,7 @@
         <div class="col-md-6">
             <div class="card shadow h-100">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Top Disease Models</h4>
+                    <h4 class="mb-0">Disease Models</h4>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height:400px; width:100%">
@@ -79,7 +55,7 @@
         <div class="col-md-6">
             <div class="card shadow h-100">
                 <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">Top Organs/Tissues</h4>
+                    <h4 class="mb-0">Organs/Tissues</h4>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height:400px; width:100%">
@@ -166,7 +142,7 @@
                 createBarChart('countryChart', 
                     countryData.map(x => x.Country), 
                     countryData.map(x => x.Count),
-                    'Top countries where imaging was performed',
+                    'Countries where imaging was performed',
                     colors);
 
                // Status Distribution Chart (Pie)
