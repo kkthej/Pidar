@@ -5,8 +5,10 @@ using System.Diagnostics;
 
 namespace Pidar.Controllers
 {
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class ErrorController : Controller
     {
+        
         [Route("Error/{statusCode}")]
         public IActionResult HttpStatusCodeHandler(int statusCode)
         {
@@ -31,6 +33,7 @@ namespace Pidar.Controllers
             return View("Error", errorModel);
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
         [Route("Error")]
         public IActionResult Error()
         {
@@ -40,7 +43,7 @@ namespace Pidar.Controllers
                 ErrorMessage = "An unexpected error occurred"
             };
 
-            // You can retrieve the actual exception if needed
+            // Retrieve the actual exception if available
             var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
             if (exceptionHandlerPathFeature?.Error != null)
             {

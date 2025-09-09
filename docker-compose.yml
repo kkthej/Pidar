@@ -8,15 +8,13 @@ services:
       dockerfile: Dockerfile
       target: development
     ports:
-      - "9090:80"          # Changed from 8080 to avoid conflict with XNAT
-      
+      - "9090:80" # API exposed to host
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - ConnectionStrings__DefaultConnection=${CONNECTIONSTRINGS__DEFAULTCONNECTION}
     volumes:
-      - ./app:/var/www/html/
-      
+      - ./app:/var/www/html/ # Optional: map app source if needed for live reload
     depends_on:
       db:
         condition: service_healthy
@@ -25,7 +23,7 @@ services:
 
   db:
     container_name: PidarDB
-    image: postgres:10.5    # Matches your server version
+    image: postgres:10.5 # Matches your server version
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -40,8 +38,6 @@ services:
       retries: 5
     networks:
       - pidar-net
-    # Removed external port exposure to avoid conflict with XNAT's PostgreSQL
-    # Can access via internal network or through pgAdmin
 
   pgadmin:
     container_name: PidarPgAdmin
@@ -51,7 +47,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       SCRIPT_NAME: /pgadmin
     ports:
-      - "5050:80"          # No conflict with XNAT
+      - "5050:80"
     depends_on:
       - db
     volumes:
