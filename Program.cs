@@ -50,6 +50,9 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "A Web API for managing Metadata",
     });
+    // Ignore non-API controllers (e.g. MVC views)
+    c.DocInclusionPredicate((docName, apiDesc) =>
+        apiDesc.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) ?? false);
 });
 
 // Add to your services configuration
@@ -106,7 +109,7 @@ using (var scope = app.Services.CreateScope())
 
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging() || app.Environment.IsProduction())
 {
     app.UseSwagger();
     app.UseSwaggerUI();

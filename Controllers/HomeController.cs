@@ -126,7 +126,7 @@ namespace Pidar.Controllers
             ViewData["ActivePage"] = "Download";
             return View();
         }
-
+        [HttpGet]
         [Route("Error/{statusCode?}")]
         public IActionResult Error(int? statusCode = null)
         {
