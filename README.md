@@ -55,4 +55,6 @@ Added features:
 13. Fixed null exception error while Deleting a dataset
 14. changed the configuration to work on pidar website
 15. Added goto top button in _layout.cshtml
-16. Fixed typos and removed cards in statistics page 
+16. Fixed typos and removed cards in statistics page
+17. Fixed upload issue.
+18. Download -> Go to API 500 error fixed.
