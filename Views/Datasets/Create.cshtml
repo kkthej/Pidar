@@ -156,15 +156,7 @@
                             <span asp-validation-for="OpenAccess" class="text-danger"></span>
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4">
-                            <label asp-for="UpdatedYear" class="control-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="UpdatedYear" class="form-control" />
-                            <span asp-validation-for="UpdatedYear" class="text-danger"></span>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -248,11 +240,29 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-4">
+                            <label asp-for="RorCodeOwner" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="RorCodeOwner" class="form-control" />
+                            <span asp-validation-for="RorCodeOwner" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
                             <label asp-for="Pi" class="control-label"></label>
                         </div>
                         <div class="col-sm-8">
                             <input asp-for="Pi" class="form-control" />
                             <span asp-validation-for="Pi" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="PiOrchid" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="PiOrchid" class="form-control" />
+                            <span asp-validation-for="PiOrchid" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -338,6 +348,15 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-4">
+                            <label asp-for="FunderId" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="FunderId" class="form-control" />
+                            <span asp-validation-for="FunderId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
                             <label asp-for="DatasetAccess" class="control-label"></label>
                         </div>
                         <div class="col-sm-8">
@@ -409,8 +428,7 @@
                     <h5 class="mb-0">In Vivo Experimental Parameters</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Include all the in vivo experimental parameters fields here -->
-                    <!-- Follow the same pattern as above for each field -->
+                    
                     <div class="row mb-3">
                         <div class="col-sm-4">
                             <label asp-for="NumberOfGroups" class="control-label"></label>
@@ -420,8 +438,7 @@
                             <span asp-validation-for="NumberOfGroups" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Continue with all other fields in this category -->
-                    <!-- ... -->
+                    
                      <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="TypesOfGroups" class="control-label"></label>
@@ -440,6 +457,15 @@
                     <span asp-validation-for="OverallSampleSize" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="AnimalCondition" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="AnimalCondition" class="form-control" />
+                            <span asp-validation-for="AnimalCondition" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="DiseaseModel" class="control-label"></label>
@@ -693,8 +719,7 @@
                     <h5 class="mb-0">Experimental Procedures</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Include all the experimental procedures fields here -->
-                    <!-- Follow the same pattern as above for each field -->
+                    
                 <div class="row mb-3">
                         <div class="col-sm-4">
                             <label asp-for="PharmacologicalProceduresInterventionAndControl" class="control-label"></label>
@@ -703,9 +728,7 @@
                             <input asp-for="PharmacologicalProceduresInterventionAndControl" class="form-control" />
                             <span asp-validation-for="PharmacologicalProceduresInterventionAndControl" class="text-danger"></span>
                         </div>
-                    </div>
-                    <!-- Continue with all other fields in this category -->
-                    <!-- ... -->
+                    </div>         
                     <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="PharmacologicalDrug" class="control-label"></label>
@@ -832,6 +855,15 @@
                     <span asp-validation-for="BloodTiming" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="BloodCollectionTiming" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="BloodCollectionTiming" class="form-control" />
+                            <span asp-validation-for="BloodCollectionTiming" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="SurgicalProceduresIncludingShamSurgery" class="control-label"></label>
@@ -1057,6 +1089,33 @@
                     <span asp-validation-for="TimingOfCollection" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="TissueDescription" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="TissueDescription" class="form-control" />
+                            <span asp-validation-for="TissueDescription" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="TissuePerfused" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="TissuePerfused" class="form-control" />
+                            <span asp-validation-for="TissuePerfused" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="PerfusionMethod" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="PerfusionMethod" class="form-control" />
+                            <span asp-validation-for="PerfusionMethod" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="HistologicalProcedure" class="control-label"></label>
@@ -1093,6 +1152,15 @@
                     <span asp-validation-for="LengthOfFixation" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="SpecimenThickness" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="SpecimenThickness" class="form-control" />
+                            <span asp-validation-for="SpecimenThickness" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="Imaging" class="control-label"></label>
@@ -1228,6 +1296,16 @@
                     <span asp-validation-for="Provenance" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="CellCultureMedium" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="CellCultureMedium" class="form-control" />
+                            <span asp-validation-for="CellCultureMedium" class="text-danger"></span>
+                        </div>
+                    </div>
+
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="ModifiedCellLine" class="control-label"></label>
@@ -1255,6 +1333,15 @@
                     <span asp-validation-for="GeneModified" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="VirusLabelledOrModified" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="VirusLabelledOrModified" class="form-control" />
+                            <span asp-validation-for="VirusLabelledOrModified" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="VerificationAndAuthentication" class="control-label"></label>
@@ -1273,6 +1360,15 @@
                     <span asp-validation-for="CellInjectionRoute" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="CellInjectionProcedure" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="CellInjectionProcedure" class="form-control" />
+                            <span asp-validation-for="CellInjectionProcedure" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="NumberOfCells" class="control-label"></label>
@@ -1426,8 +1522,7 @@
                     <h5 class="mb-0">Image Acquisition</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Include all the image acquisition fields here -->
-                    <!-- Follow the same pattern as above for each field -->
+                    
                 <div class="row mb-3">
                         <div class="col-sm-4">
                             <label asp-for="InstrumentVendor" class="control-label"></label>
@@ -1437,8 +1532,7 @@
                             <span asp-validation-for="InstrumentVendor" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Continue with all other fields in this category -->
-                    <!-- ... -->
+                   
                     <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="InstrumentType" class="control-label"></label>
@@ -1496,10 +1590,10 @@
                 </div>
             </div>
 
-            <!-- Image Correlation -->
+            <!-- Image Data -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Image Correlation</h5>
+                    <h5 class="mb-0">Image Data</h5>
                 </div>
                 <div class="card-body">
                     <!-- Include all the image correlation fields here -->
@@ -1513,8 +1607,7 @@
                             <span asp-validation-for="ImageType" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Continue with all other fields in this category -->
-                    <!-- ... -->
+                    
                     <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="ImageScale" class="control-label"></label>
@@ -1605,6 +1698,15 @@
                     <span asp-validation-for="ImageReconstructionAlgorithm" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="ImageAttenuationCorrection" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="ImageAttenuationCorrection" class="form-control" />
+                            <span asp-validation-for="ImageAttenuationCorrection" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="QualityControl" class="control-label"></label>
@@ -1632,6 +1734,24 @@
                     <span asp-validation-for="ImageRegistrationAlgorithm" class="text-danger"></span>
                 </div>
             </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="RegistrationAlgorithms" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="RegistrationAlgorithms" class="form-control" />
+                            <span asp-validation-for="RegistrationAlgorithms" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <label asp-for="AiEnhanced" class="control-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="AiEnhanced" class="form-control" />
+                            <span asp-validation-for="AiEnhanced" class="text-danger"></span>
+                        </div>
+                    </div>
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="AiEnhancedAlgorithm" class="control-label"></label>
@@ -1659,6 +1779,19 @@
                     <span asp-validation-for="Corrections" class="text-danger"></span>
                 </div>
             </div>
+                </div>
+             </div>
+
+            <!-- Image CORRELATION -->
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                     <h5 class="mb-0">Image Correlation</h5>
+                     </div>
+                    <div class="card-body">
+                            
+                        
+                        
             <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="SpatialAndTemporalAlignment" class="control-label"></label>
@@ -1706,7 +1839,7 @@
             </div>
                 </div>
             </div>
-
+                
             <!-- Analyzed Data -->
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
@@ -1724,8 +1857,7 @@
                             <span asp-validation-for="AnalysisResultType" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Continue with all other fields in this category -->
-                    <!-- ... -->
+                   
                     <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="DataUsedForAnalysis" class="control-label"></label>
@@ -1762,6 +1894,16 @@
                     <span asp-validation-for="Status" class="text-danger"></span>
                 </div>
             </div>
+                       
+                        <div class="row mb-3">
+                            <div class="col-sm-4">
+                                <label asp-for="UpdatedYear" class="control-label"></label>
+                            </div>
+                            <div class="col-sm-8">
+                                <input asp-for="UpdatedYear" class="form-control" />
+                                <span asp-validation-for="UpdatedYear" class="text-danger"></span>
+                            </div>
+                        </div>
                 </div>
             </div>
 
@@ -1782,8 +1924,7 @@
                             <span asp-validation-for="NcitImaging" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Continue with all other fields in this category -->
-                    <!-- ... -->
+                    
                     <div class="row mb-3">
                 <div class="col-sm-4">
                     <label asp-for="NcitImagingSubmodality" class="control-label"></label>

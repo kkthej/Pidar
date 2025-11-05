@@ -268,34 +268,99 @@
                 }
 
                 // Chart options
-                function getDoughnutOptions(title) {
-                    return {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right',
+                // function getDoughnutOptions(title) {
+                //     return {
+                //         responsive: true,
+                //         maintainAspectRatio: false,
+                //         plugins: {
+                //             legend: {
+                //                 position: 'right',
+                //             },
+                //             tooltip: {
+                //                 callbacks: {
+                //                     label: function(context) {
+                //                         const label = context.label || '';
+                //                         const value = context.raw || 0;
+                //                         const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                //                         const percentage = Math.round((value / total) * 100);
+                //                         return `${label}: ${value} (${percentage}%)`;
+                //                     }
+                //                 }
+                //             },
+                //             title: {
+                //                 display: true,
+                //                 text: title,
+                //                 font: { size: 16 }
+                //             }
+                //         },
+                //         cutout: '70%'
+                //     };
+                // }
+                        function getDoughnutOptions(title) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (!data.labels.length) return [];
+
+                                const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+                                // Build label list with counts
+                                const labels = data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const bgColor = data.datasets[0].backgroundColor[i];
+                                    return {
+                                        text: `${label} (${value})`,
+                                        fillStyle: bgColor,
+                                        hidden: isNaN(value) || chart.getDataVisibility(i) === false,
+                                        index: i
+                                    };
+                                });
+
+                                // Add total count as final legend item (no color box)
+                                labels.push({
+                                    text: `Total: ${total}`,
+                                    fillStyle: 'transparent',
+                                    strokeStyle: 'transparent',
+                                    hidden: true
+                                });
+
+                                return labels;
                             },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.raw || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = Math.round((value / total) * 100);
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
+                            filter: function(item) {
+                                // Hide the box for the "Total" label
+                                return item.text.indexOf('Total:') === -1;
                             },
-                            title: {
-                                display: true,
-                                text: title,
-                                font: { size: 16 }
+                            // Reduce the color box size for readability
+                            boxWidth: 20,
+                            boxHeight: 12
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
                             }
-                        },
-                        cutout: '70%'
-                    };
-                }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: title,
+                        font: { size: 16 }
+                    }
+                },
+                cutout: '70%'
+            };
+        }
 
                 function getBarOptions(title) {
                     return {
@@ -346,22 +411,72 @@
                     };
                 }
 
-                function getPieOptions(title) {
-                    return {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right',
+                // function getPieOptions(title) {
+                //     return {
+                //         responsive: true,
+                //         maintainAspectRatio: false,
+                //         plugins: {
+                //             legend: {
+                //                 position: 'right',
+                //             },
+                //             title: {
+                //                 display: true,
+                //                 text: title,
+                //                 font: { size: 16 }
+                //             }
+                //         }
+                //     };
+                // }
+
+                        function getPieOptions(title) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (!data.labels.length) return [];
+
+                                const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+                                const labels = data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const bgColor = data.datasets[0].backgroundColor[i];
+                                    return {
+                                        text: `${label} (${value})`,
+                                        fillStyle: bgColor,
+                                        hidden: isNaN(value) || chart.getDataVisibility(i) === false,
+                                        index: i
+                                    };
+                                });
+
+                                labels.push({
+                                    text: `Total: ${total}`,
+                                    fillStyle: 'transparent',
+                                    strokeStyle: 'transparent',
+                                    hidden: true
+                                });
+
+                                return labels;
                             },
-                            title: {
-                                display: true,
-                                text: title,
-                                font: { size: 16 }
-                            }
+                            filter: function(item) {
+                                return item.text.indexOf('Total:') === -1;
+                            },
+                            boxWidth: 20,
+                            boxHeight: 12
                         }
-                    };
+                    },
+                    title: {
+                        display: true,
+                        text: title,
+                        font: { size: 16 }
+                    }
                 }
+            };
+        }
 
                 function getLineOptions(title) {
                     return {
