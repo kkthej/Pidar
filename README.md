@@ -58,3 +58,10 @@ Added features:
 16. Fixed typos and removed cards in statistics page
 17. Fixed upload issue.
 18. Download -> Go to API 500 error fixed.
+19. Changed table name from Metadata to Dataset and Changed all the references.
+20. Added more fields to Dataset model. 
+21. Changed Create and Edit pages to accommodate new fields.
+22. Changed the Details page to display new fields.
+	1. made the fields categorized for better readability.
+	2. Added links to publication DOI and Dataset URL.
+23. Modified the Statistics page for better understanding.
