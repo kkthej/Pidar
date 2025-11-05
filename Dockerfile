@@ -22,7 +22,10 @@ EXPOSE 80
 EXPOSE 443
 
 # Copy source (optional if using volume mounts)
-COPY --from=build /src ./
+#COPY --from=build /src ./
+COPY Pidar.csproj ./
+RUN dotnet restore
+COPY . ./
 
 # Run with dotnet watch
 ENTRYPOINT ["dotnet", "watch", "--project", "Pidar.csproj", "run", "--no-restore"]
@@ -36,4 +39,7 @@ EXPOSE 443
 # Copy published output
 COPY --from=build /app/publish ./
 
-ENTRYPOINT ["dotnet", "Pidar.dll"]
+#ENTRYPOINT ["dotnet", "Pidar.dll"]
+
+# Run with dotnet watch for Hot Reload
+ENTRYPOINT ["dotnet", "watch", "--project", "Pidar.csproj", "run", "--no-restore", "--urls", "http://+:80"]

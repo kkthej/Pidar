@@ -1,4 +1,4 @@
-version: '3.7'
+﻿version: '3.7'
 
 services:
   web:
@@ -14,7 +14,10 @@ services:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - ConnectionStrings__DefaultConnection=${CONNECTIONSTRINGS__DEFAULTCONNECTION}
     volumes:
-      - ./app:/var/www/html/ # Optional: map app source if needed for live reload
+      - .:/app                  # 👈 mount your source code
+      - ~/.nuget/packages:/root/.nuget/packages  # speeds up restores
+      #- ./app:/var/www/html/                    # Optional: map app source if needed for live reload
+      - ./keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       db:
         condition: service_healthy

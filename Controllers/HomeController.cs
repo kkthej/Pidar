@@ -53,13 +53,23 @@ namespace Pidar.Controllers
             ViewData["TableColumnCount"] = entityType?.GetProperties().Count() ?? 0;
 
             // Get data for charts
-            ViewData["ModalityDistribution"] = JsonSerializer.Serialize(
-                await _context.Dataset
-                    .Where(m => !string.IsNullOrEmpty(m.ImagingModality))
-                    .GroupBy(m => m.ImagingModality)
-                    .Select(g => new { Label = g.Key, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .ToListAsync());
+            // Fetch all imaging modality entries (non-empty)
+            var modalitiesRaw = await _context.Dataset
+                .Where(d => !string.IsNullOrEmpty(d.ImagingModality))
+                .Select(d => d.ImagingModality)
+                .ToListAsync();
+
+            // Split only by commas, trim, normalize, and count each modality
+            var modalityCounts = modalitiesRaw
+                .SelectMany(m => m.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(m => m.Trim().ToUpperInvariant())
+                .GroupBy(m => m)
+                .Select(g => new { Label = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .ToList();
+
+            ViewData["ModalityDistribution"] = JsonSerializer.Serialize(modalityCounts);
+
 
             ViewData["CountryDistribution"] = JsonSerializer.Serialize(
                 await _context.Dataset
@@ -79,14 +89,24 @@ namespace Pidar.Controllers
                     .Take(10)
                     .ToListAsync());
 
-            ViewData["OrganDistribution"] = JsonSerializer.Serialize(
-                await _context.Dataset
-                    .Where(m => !string.IsNullOrEmpty(m.OrganOrTissue))
-                    .GroupBy(m => m.OrganOrTissue)
-                    .Select(g => new { Organ = g.Key, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .Take(10)
-                    .ToListAsync());
+            // Fetch all OrganOrTissue entries (non-empty)
+            var organsRaw = await _context.Dataset
+                .Where(d => !string.IsNullOrEmpty(d.OrganOrTissue))
+                .Select(d => d.OrganOrTissue)
+                .ToListAsync();
+
+            // Split only by commas, trim, normalize, and count
+            var organCounts = organsRaw
+                .SelectMany(o => o.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                .Select(o => o.Trim())
+                .GroupBy(o => o)
+                .Select(g => new { Organ = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(10)
+                .ToList();
+
+            ViewData["OrganDistribution"] = JsonSerializer.Serialize(organCounts);
+
 
             ViewData["YearlyUploads"] = JsonSerializer.Serialize(
                 await _context.Dataset

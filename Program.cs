@@ -2,6 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Pidar.Areas.Identity.Data;
 using Pidar.Data;
 using OfficeOpenXml;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
+
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -39,6 +42,11 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddControllers()
     .AddJsonOptions(x =>
         x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+
+// Configure Data Protection to persist keys
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"))
+    .SetApplicationName("PidarWeb"); 
 
 // Swagger configuration
 builder.Services.AddEndpointsApiExplorer();
