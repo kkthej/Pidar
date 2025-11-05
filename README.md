@@ -29,7 +29,7 @@ This command will build the Docker image and start the PIDAR service. The applic
 - If you add a database or other services, update the `docker-compose.yml` accordingly
 
 ### Ports
-- The PIDAR service is exposed on **https://localhost:4430/**
+- The PIDAR service is available on **https://pidar.hpc4ai.unito.it/**
 
 ---
 
