@@ -1,4 +1,5 @@
-﻿@model Pidar.Models.Metadata
+﻿@model Pidar.Models.Dataset
+@using Microsoft.AspNetCore.Html
 @using Pidar.Areas.Identity.Data
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
@@ -9,17 +10,46 @@
     ViewData["Title"] = "Details";
 }
 @functions {
-    public string FormatPropertyName(string propertyName)
+
+    public IHtmlContent FormatValue(object value)
     {
-        return System.Text.RegularExpressions.Regex.Replace(
-            propertyName,
-            "([A-Z])",
-            " $1",
-            System.Text.RegularExpressions.RegexOptions.Compiled
+        var str = value?.ToString();
+
+
+        if (string.IsNullOrWhiteSpace(str))
+            return new HtmlString(string.Empty);
+
+
+        // Make links clickable
+        if (Uri.TryCreate(str, UriKind.Absolute, out var uri))
+        {
+            if (uri.Scheme == Uri.UriSchemeMailto || str.Contains("@"))
+            {
+                return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
+            }
+            return new HtmlString($"<a href=\"{str}\" target=\"_blank\">{str}</a>");
+        }
+
+
+        if (str.Contains("@") && str.Contains("."))
+        {
+            return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
+        }
+
+
+        // Insert space before each capital letter and replace slashes
+        var formatted = System.Text.RegularExpressions.Regex.Replace(
+        str.Replace("/", " "),
+        "([A-Z])",
+        " $1",
+        System.Text.RegularExpressions.RegexOptions.Compiled
         ).Trim();
+
+
+        return new HtmlString(System.Net.WebUtility.HtmlEncode(formatted));
     }
 }
-<h4>Metadata</h4>
+<h4>Dataset</h4>
 <div>
     <strong>Dataset ID:</strong>
     @Html.DisplayFor(model => model.DisplayId)
@@ -63,7 +93,7 @@
             "EuroBioImagingNode", "CountryOfImagingFacility", "LinkToDataset", "Funding",
             "FundingAgency", "GrantNumber", "DatasetAccess", "License", "LicenseFile",
             "DuoDataUsePermission", "DuoDataUseModifier", "DuoInvestigation", "ContactPerson",
-            "LinkToDataset1"
+            
         },
                 ["In Vivo Experimental Parameters"] = new List<string>
         {
@@ -81,8 +111,8 @@
         {
             "PharmacologicalProceduresInterventionAndControl", "PharmacologicalDrug",
             "Company", "Formulation", "DrugDose", "Volume", "Concentration",
-            "SiteRouteOfAdministration", "FrequencyOfAdministration",
-            "VehicleOrCarrierSolutionFormulation", "DrugBatchSampleNumber",
+            "SiteOrRouteOfAdministration", "FrequencyOfAdministration",
+            "VehicleOrCarrierSolutionFormulation", "DrugOrBatchSampleNumber",
             "BloodSampling", "BloodSamplingMethod", "BloodSampleVolume", "BloodTiming",
             "SurgicalProceduresIncludingShamSurgery", "DescriptionOfTheSurgicalProcedure",
             "ReferenceToProtocol", "TargetOrganTissue",
@@ -110,15 +140,21 @@
                 ["Image Acquisition"] = new List<string>
         {
             "InstrumentVendor", "InstrumentType", "InstrumentSpecifics",
-            "ImageAcquisitionParameters", "Correction", "RawData", "QaQc"
+            "ImageAcquisitionParameters", "Correction", "RawData", "QA/QC"
         },
-                ["Image Correlation"] = new List<string>
+                ["Image Data"] = new List<string>
         {
             "ImageType", "ImageScale", "FormatCompression", "Dimensions",
             "OverallNumberOfImages", "FieldOfView", "DimensionExtents",
             "SizeDescription", "PixelVoxelSizeDescription", "ImageProcessingMethods",
             "ImageReconstructionAlgorithm", "QualityControl", "ImageSmoothingOrFilteringAlgorithm",
             "ImageRegistrationAlgorithm", "AiEnhancedAlgorithm", "QcInfo", "Corrections",
+            "SpatialAndTemporalAlignment", "FiducialsUsed", "CoregisteredImages",
+            "TransformationMatrixOtherInfo", "RelatedImagesAndRelationship"
+        },
+                ["Image Correlation"] = new List<string>
+        {
+            
             "SpatialAndTemporalAlignment", "FiducialsUsed", "CoregisteredImages",
             "TransformationMatrixOtherInfo", "RelatedImagesAndRelationship"
         },
@@ -175,7 +211,7 @@
                         if (value != null && !string.IsNullOrEmpty(value.ToString()))
                         {
                                                 <tr>
-                                                    <th>@FormatPropertyName(propName)</th>
+                                                    <th>@FormatValue(propName)</th>
                                                     <td>@value</td>
                                                 </tr>
                         }

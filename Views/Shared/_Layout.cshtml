@@ -53,16 +53,16 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     
                     <li class="nav-item">
-                        <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Metadata" || Context.Request.Path.StartsWithSegments("/Metadatas") ? "active" : "")"
-                           asp-area="" asp-controller="Metadatas" asp-action="Index">Metadata</a>
+                            <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Dataset" || Context.Request.Path.StartsWithSegments("/Datasets") ? "active" : "")"
+                               asp-area="" asp-controller="Datasets" asp-action="Index">Datasets</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Statistic" ? "active" : "")"
-                           asp-area="" asp-controller="Home" asp-action="Statistic">Statistic</a>
+                           asp-area="" asp-controller="Home" asp-action="Statistic">Statistics</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Download" ? "active" : "")"
-                            asp-area="" asp-controller="Home" asp-action="Download">Download</a>
+                            asp-area="" asp-controller="Home" asp-action="Download">Download Datasets</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Contribute" ? "active" : "")"

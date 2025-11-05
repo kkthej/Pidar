@@ -1,4 +1,4 @@
-﻿@model Pidar.Models.Metadata
+﻿@model Pidar.Models.Dataset
 
 @{
     ViewData["Title"] = "Create";
@@ -9,7 +9,7 @@
 <hr />
 <div class="row">
     <div class="col-md-10 mx-auto rounded border p-3">
-        <h2 class="text-center mb-5">New Metadata</h2>
+        <h2 class="text-center mb-5">New Dataset</h2>
         <form asp-action="Create">
             @Html.AntiForgeryToken()
 
@@ -399,15 +399,7 @@
                             <span asp-validation-for="ContactPerson" class="text-danger"></span>
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4">
-                            <label asp-for="LinkToDataset1" class="control-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="LinkToDataset1" class="form-control" />
-                            <span asp-validation-for="LinkToDataset1" class="text-danger"></span>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
 

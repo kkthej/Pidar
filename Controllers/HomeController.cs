@@ -23,18 +23,18 @@ namespace Pidar.Controllers
 
         public IActionResult Index()
         {
-            return RedirectToAction("Index", "Metadatas");
+            return RedirectToAction("Index", "Datasets");
         }
 
         public async Task<IActionResult> Statistic()
         {
             ViewData["ActivePage"] = "Statistic";
 
-            // Get metadata count
-            ViewData["MetadataCount"] = await _context.Metadata.CountAsync();
+            // Get dataset count
+            ViewData["DatasetCount"] = await _context.Dataset.CountAsync();
 
             // Get total sample size with stats
-            var sampleSizes = await _context.Metadata
+            var sampleSizes = await _context.Dataset
                 .Select(x => x.OverallSampleSize)
                 .ToListAsync();
 
@@ -49,12 +49,12 @@ namespace Pidar.Controllers
             ViewData["TotalSampleSize"] = totalSampleSize;
 
             // Get table column count
-            var entityType = _context.Model.FindEntityType(typeof(Metadata));
+            var entityType = _context.Model.FindEntityType(typeof(Dataset));
             ViewData["TableColumnCount"] = entityType?.GetProperties().Count() ?? 0;
 
             // Get data for charts
             ViewData["ModalityDistribution"] = JsonSerializer.Serialize(
-                await _context.Metadata
+                await _context.Dataset
                     .Where(m => !string.IsNullOrEmpty(m.ImagingModality))
                     .GroupBy(m => m.ImagingModality)
                     .Select(g => new { Label = g.Key, Count = g.Count() })
@@ -62,7 +62,7 @@ namespace Pidar.Controllers
                     .ToListAsync());
 
             ViewData["CountryDistribution"] = JsonSerializer.Serialize(
-                await _context.Metadata
+                await _context.Dataset
                     .Where(m => !string.IsNullOrEmpty(m.CountryOfImagingFacility))
                     .GroupBy(m => m.CountryOfImagingFacility)
                     .Select(g => new { Country = g.Key, Count = g.Count() })
@@ -71,7 +71,7 @@ namespace Pidar.Controllers
                     .ToListAsync());
 
             ViewData["DiseaseModelDistribution"] = JsonSerializer.Serialize(
-                await _context.Metadata
+                await _context.Dataset
                     .Where(m => !string.IsNullOrEmpty(m.DiseaseModel))
                     .GroupBy(m => m.DiseaseModel)
                     .Select(g => new { Disease = g.Key, Count = g.Count() })
@@ -80,7 +80,7 @@ namespace Pidar.Controllers
                     .ToListAsync());
 
             ViewData["OrganDistribution"] = JsonSerializer.Serialize(
-                await _context.Metadata
+                await _context.Dataset
                     .Where(m => !string.IsNullOrEmpty(m.OrganOrTissue))
                     .GroupBy(m => m.OrganOrTissue)
                     .Select(g => new { Organ = g.Key, Count = g.Count() })
@@ -89,7 +89,7 @@ namespace Pidar.Controllers
                     .ToListAsync());
 
             ViewData["YearlyUploads"] = JsonSerializer.Serialize(
-                await _context.Metadata
+                await _context.Dataset
                     .Where(m => m.UpdatedYear != null)
                     .GroupBy(m => m.UpdatedYear)
                     .Select(g => new { Year = g.Key, Count = g.Count() })
@@ -97,7 +97,7 @@ namespace Pidar.Controllers
                     .ToListAsync());
 
             ViewData["StatusDistribution"] = JsonSerializer.Serialize(
-                await _context.Metadata
+                await _context.Dataset
                     .Where(m => !string.IsNullOrEmpty(m.Status))
                     .GroupBy(m => m.Status)
                     .Select(g => new { Status = g.Key, Count = g.Count() })
@@ -126,6 +126,8 @@ namespace Pidar.Controllers
             ViewData["ActivePage"] = "Download";
             return View();
         }
+
+
         [HttpGet]
         [Route("Error/{statusCode?}")]
         public IActionResult Error(int? statusCode = null)

@@ -1,0 +1,30 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Pidar.data.pidar
+{
+    /// <inheritdoc />
+    public partial class AddMissingDatasetFields1 : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<string>(
+                name: "BloodCollectionTiming",
+                schema: "public",
+                table: "dataset",
+                type: "text",
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "BloodCollectionTiming",
+                schema: "public",
+                table: "dataset");
+        }
+    }
+}

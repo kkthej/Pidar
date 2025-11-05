@@ -7,15 +7,17 @@ using System.Text.RegularExpressions;
 
 namespace Pidar.Models
 {
-    public class Metadata
+    [Table("dataset")] // explicitly map to the existing table
+    public class Dataset
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int DatasetId { get; set; }
 
-        public int DisplayId { get; set; } 
+        public int DisplayId { get; set; }
 
-        //Study Design
+        //Section Study Design
+        //Subsection Background
         [Column(TypeName = "text")]
         public string? StudyDesignBackground { get; set; }
         public string? StudyDescription { get; set; }
@@ -23,7 +25,7 @@ namespace Pidar.Models
         public string? StudySubtype { get; set; }
 
 
-        //Publication
+        //Subsection Publication
         public string? PaperLinked { get; set; }
         public string? PaperTitle { get; set; }
         public string? PaperAuthors { get; set; }
@@ -32,9 +34,10 @@ namespace Pidar.Models
         public string? PaperYear { get; set; }
         public string? PaperDoi { get; set; }
         public string? OpenAccess { get; set; }
-        //public string? UpdatedPaperYear { get; set; }
 
-        //Study Component
+
+        //Section Study Component
+        //Subsection Imaging Technique
         public string? MultiModalityImages { get; set; }
         public string? ImagingModality { get; set; }
         public string? ImagingSubModality { get; set; }
@@ -44,10 +47,12 @@ namespace Pidar.Models
 
 
 
-        //Dataset information
+        //Subsection Dataset Information
 
         public string? Institution { get; set; }
+        public string? RorCodeOwner { get; set; }
         public string? Pi { get; set; }
+        public string? PiOrchid { get; set; }
         public string? CoPi { get; set; }
         public string? CountryOfInstitution { get; set; }
         public string? ImagingFacility { get; set; }
@@ -57,6 +62,7 @@ namespace Pidar.Models
         public string? Funding { get; set; }
         public string? FundingAgency { get; set; }
         public string? GrantNumber { get; set; }
+        public string? FunderId { get; set; }
         public string? DatasetAccess { get; set; }
         public string? License { get; set; }
         public string? LicenseFile { get; set; }
@@ -67,10 +73,12 @@ namespace Pidar.Models
 
 
 
-        //IVEP-In vivo experimental parameters
+        //Section IVEP-In vivo experimental parameters
+        //Subsection Study design
         public string? NumberOfGroups { get; set; }
         public string? TypesOfGroups { get; set; }
         public string? OverallSampleSize { get; set; }
+        public string? AnimalCondition { get; set; }
         public string? DiseaseModel { get; set; }
         public string? OrganOrTissue { get; set; }
         public string? SampleSizeForEachGroup { get; set; }
@@ -83,6 +91,7 @@ namespace Pidar.Models
         public string? ProceduresToKeepExperimenterBlind { get; set; }
         public string? OutcomeMeasures { get; set; }
         public string? StatisticalMethods { get; set; }
+        //Subsection Subject Details
         public string? Species { get; set; }
         public string? Strain { get; set; }
         public string? ImmuneStatus { get; set; }
@@ -101,7 +110,9 @@ namespace Pidar.Models
 
 
 
-        //Experimental procedures
+        //Section Experimental procedures
+        //Subsection Procedures
+        //a
         public string? PharmacologicalProceduresInterventionAndControl { get; set; }
         [Column(TypeName = "text")]
         public string? PharmacologicalDrug { get; set; }
@@ -114,46 +125,52 @@ namespace Pidar.Models
         public string? FrequencyOfAdministration { get; set; }
         public string? VehicleOrCarrierSolutionFormulation { get; set; }
         public string? DrugBatchSampleNumber { get; set; }
+        //b
         public string? BloodSampling { get; set; }
         public string? BloodSamplingMethod { get; set; }
         public string? BloodSampleVolume { get; set; }
         public string? BloodTiming { get; set; }
+        public string? BloodCollectionTiming { get; set; }
+        //c
         public string? SurgicalProceduresIncludingShamSurgery { get; set; }
         public string? DescriptionOfTheSurgicalProcedure { get; set; }
         public string? ReferenceToProtocol { get; set; }
         public string? TargetOrganTissue { get; set; }
+        //d
         public string? PathogenInfectionInterventionAndControl { get; set; }
         public string? InfectiousType { get; set; }
         public string? InfectiousAgent { get; set; }
         public string? DoseLoad { get; set; }
         public string? SiteAndRouteOfInfection { get; set; }
-
         public string? TimingOrFrequencyOfInfection { get; set; }
-
+        //e
         public string? AnalgesicPlanToRelievePainSufferingAndDistress { get; set; }
-
         public string? AnalgesicName { get; set; }
-
         public string? Route { get; set; }
-
         public string? AnalgesicDose { get; set; }
-
+        //f
         public string? AnesthesiaForImaging { get; set; }
-
         public string? AnesthesiaType { get; set; }
         public string? Duration { get; set; }
         public string? AnesthesiaDrugs { get; set; }
         public string? AnesthesiaDose { get; set; }
         public string? MonitoringRegime { get; set; }
+        //g
         public string? Euthanasia { get; set; }
         public string? Method { get; set; }
+        //h
         public string? Histology { get; set; }
         public string? TissuesCollectedPostEuthanasia { get; set; }
         public string? TimingOfCollection { get; set; }
+        public string? TissueDescription { get; set; }
+        public string? TissuePerfused { get; set; }
+        public string? PerfusionMethod { get; set; }
         public string? HistologicalProcedure { get; set; }
         public string? NameOfReagentS { get; set; }
         public string? CatalogueNumber { get; set; }
         public string? LengthOfFixation { get; set; }
+        public string? SpecimenThickness { get; set; }
+        //i
         public string? Imaging { get; set; }
         public string? FrequencyOfImaging { get; set; }
         [Column(TypeName = "text")]
@@ -167,54 +184,45 @@ namespace Pidar.Models
         public string? InjectionTime { get; set; }
         public string? Vehicle { get; set; }
         public string? RouteOfAdministration { get; set; }
+
+        //Subsection Resources
+        //a
         public string? CellLines { get; set; }
         public string? CellLine { get; set; }
         public string? Provenance { get; set; }
+        public string? CellCultureMedium { get; set; }
         public string? ModifiedCellLine { get; set; }
-
         public string? TypeOfGeneticModification { get; set; }
-
         public string? GeneModified { get; set; }
-
+        public string? VirusLabelledOrModified { get; set; }
         public string? VerificationAndAuthentication { get; set; }
-
         public string? CellInjectionRoute { get; set; }
-
+        public string? CellInjectionProcedure { get; set; }
         public string? NumberOfCells { get; set; }
-
+        //b
         public string? Reagents { get; set; }
-
         public string? NameOfReagent { get; set; }
-
         public string? CatalogueNumbers { get; set; }
-
+        //c
         public string? EquipmentAndSoftware { get; set; }
-
         public string? Manufacturer { get; set; }
-
         public string? ModelVersionNumber { get; set; }
 
+
+        //Subsection Additional Information
         public string? FrequencyOfExperimentalProcedures { get; set; }
-
         public string? TimingOfExperimentalProcedures { get; set; }
-
         public string? FrequencyOfExperimentalMeasurements { get; set; }
-
         public string? TimingOfExperimentalMeasurements { get; set; }
-
         public string? HousingRoom { get; set; }
-
         public string? DietaryIntervention { get; set; }
-
         public string? RespirationRate { get; set; }
-
         public string? BodyTempuratureEtc { get; set; }
-
         public string? FoodIntakeMeasured { get; set; }
 
 
 
-        //Image acquisition
+        //Section Image acquisition
         public string? InstrumentVendor { get; set; }
         public string? InstrumentType { get; set; }
         public string? InstrumentSpecifics { get; set; }
@@ -225,7 +233,7 @@ namespace Pidar.Models
 
 
 
-        //Image Correlation
+        //Section Image Data
         public string? ImageType { get; set; }
         public string? ImageScale { get; set; }
         public string? FormatCompression { get; set; }
@@ -237,40 +245,36 @@ namespace Pidar.Models
         public string? PixelVoxelSizeDescription { get; set; }
         public string? ImageProcessingMethods { get; set; }
         public string? ImageReconstructionAlgorithm { get; set; }
-        public string? QualityControl { get; set; }
-
-
+        public string? ImageAttenuationCorrection { get; set; }
         public string? ImageSmoothingOrFilteringAlgorithm { get; set; }
         public string? ImageRegistrationAlgorithm { get; set; }
+        public string? RegistrationAlgorithms { get; set; }
+        public string? AiEnhanced { get; set; }
         public string? AiEnhancedAlgorithm { get; set; }
+        public string? QualityControl { get; set; }
         public string? QcInfo { get; set; }
         public string? Corrections { get; set; }
+
+        //Section IMAGE CORRELATION
         public string? SpatialAndTemporalAlignment { get; set; }
         public string? FiducialsUsed { get; set; }
-
         public string? CoregisteredImages { get; set; }
-
         public string? TransformationMatrixOtherInfo { get; set; }
-
         public string? RelatedImagesAndRelationship { get; set; }
 
 
-        //Analised Data
+        //Section ANALYSED DATA
 
         public string? AnalysisResultType { get; set; }
-
         public string? DataUsedForAnalysis { get; set; }
-
         public string? AnalysisMethodAndDetails { get; set; }
-
         public string? FileFormatOfResultFileCsvJsonTxtXlsx { get; set; }
-
         public string? Status { get; set; }
 
 
 
 
-
+        //Section Ontologies and Standards
         public string? NcitImaging { get; set; }
 
         public string? NcitImagingSubmodality { get; set; }
@@ -295,11 +299,14 @@ namespace Pidar.Models
 
         public string? NcitGene { get; set; }
 
+
+        //Section Dataset Versioning
+
         public string? UpdatedYear { get; set; }
 
-        public string? LinkToDataset1 { get; set; }
+       
 
-        public Metadata()
+        public Dataset()
         {
 
         }

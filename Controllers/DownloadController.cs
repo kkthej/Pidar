@@ -13,6 +13,7 @@ using iText.Layout.Properties;
 using iText.Kernel.Geom;
 using iText.IO.Font.Constants;
 using iText.Kernel.Font;
+using System.Data;
 
 
 namespace Pidar.Controllers
@@ -29,19 +30,19 @@ namespace Pidar.Controllers
         // CSV Download
         public IActionResult DownloadCsv()
         {
-            var metadataList = _context.Metadata.ToList();
-            var csvContent = GenerateCsv(metadataList);
-            return File(new System.Text.UTF8Encoding().GetBytes(csvContent), "text/csv", "metadata.csv");
+            var datasetList = _context.Dataset.ToList();
+            var csvContent = GenerateCsv(datasetList);
+            return File(new System.Text.UTF8Encoding().GetBytes(csvContent), "text/csv", "dataset.csv");
         }
 
         // PDF Download using iText7
         public IActionResult DownloadPdf()
         {
             // Fetch data from the database
-            var metadataList = _context.Metadata.ToList();
+            var datasetList = _context.Dataset.ToList();
 
             // Debug: Check if data is being retrieved
-            Console.WriteLine($"Total rows: {metadataList.Count}");
+            Console.WriteLine($"Total rows: {datasetList.Count}");
 
             // Create a memory stream to hold the PDF
             var stream = new MemoryStream();
@@ -52,8 +53,8 @@ namespace Pidar.Controllers
             // Set page margins
             document.SetMargins(20, 20, 20, 20);
 
-            // Get the properties of the Metadata class
-            var properties = typeof(Metadata).GetProperties();
+            // Get the properties of the dataset class
+            var properties = typeof(Dataset).GetProperties();
 
             // Create a bold font for headers
             var boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
@@ -61,23 +62,23 @@ namespace Pidar.Controllers
             // Create a regular font for data
             var regularFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
 
-            // Iterate through each metadata row
-            for (int i = 0; i < metadataList.Count; i++)
+            // Iterate through each dataset row
+            for (int i = 0; i < datasetList.Count; i++)
             {
-                var metadata = metadataList[i];
+                var dataset = datasetList[i];
 
                 // Debug: Check current row data
-                Console.WriteLine($"Processing row: {metadata.DatasetId}");
+                Console.WriteLine($"Processing row: {dataset.DatasetId}");
 
                 // Filter properties with non-null values for the current row
                 var nonNullProperties = properties
-                    .Where(prop => prop.GetValue(metadata) != null)
+                    .Where(prop => prop.GetValue(dataset) != null)
                     .ToList();
 
                 // Debug: Check filtered properties
                 foreach (var property in nonNullProperties)
                 {
-                    Console.WriteLine($"{property.Name}: {property.GetValue(metadata)}");
+                    Console.WriteLine($"{property.Name}: {property.GetValue(dataset)}");
                 }
 
                 // Create a table with 2 columns (key-value pairs)
@@ -90,7 +91,7 @@ namespace Pidar.Controllers
                     var key = property.Name;
 
                     // Get the value (property value)
-                    var value = property.GetValue(metadata)?.ToString();
+                    var value = property.GetValue(dataset)?.ToString();
 
                     // Add the key-value pair to the table
                     table.AddCell(new Cell().Add(new Paragraph(key).SetFont(boldFont).SetFontSize(10)));
@@ -101,7 +102,7 @@ namespace Pidar.Controllers
                 document.Add(table);
 
                 // Add a page break after each dataset (except the last one)
-                if (i < metadataList.Count - 1)
+                if (i < datasetList.Count - 1)
                 {
                     Console.WriteLine($"Adding page break after row {i}");
                     document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
@@ -112,60 +113,60 @@ namespace Pidar.Controllers
             document.Close();
 
             // Return the PDF as a file
-            return File(stream.ToArray(), "application/pdf", "Pidar_metadata.pdf");
+            return File(stream.ToArray(), "application/pdf", "Pidar_dataset.pdf");
         }
 
         // JSON Download
         public IActionResult DownloadJson()
         {
-            var metadataList = _context.Metadata.ToList();
-            var jsonContent = JsonSerializer.Serialize(metadataList);
-            return File(new System.Text.UTF8Encoding().GetBytes(jsonContent), "application/json", "Pidar_metadata.json");
+            var datasetList = _context.Dataset.ToList();
+            var jsonContent = JsonSerializer.Serialize(datasetList);
+            return File(new System.Text.UTF8Encoding().GetBytes(jsonContent), "application/json", "Pidar_dataset.json");
         }
 
         // XLSX Download using ClosedXML
         public IActionResult DownloadXlsx()
         {
-            var metadataList = _context.Metadata.ToList();
+            var datasetList = _context.Dataset.ToList();
             using (var workbook = new XLWorkbook())
             {
-                var worksheet = workbook.Worksheets.Add("Metadata");
+                var worksheet = workbook.Worksheets.Add("Dataset");
                 // Add headers
-                var properties = typeof(Metadata).GetProperties();
+                var properties = typeof(Dataset).GetProperties();
                 for (int i = 0; i < properties.Length; i++)
                 {
                     worksheet.Cell(1, i + 1).Value = properties[i].Name;
                 }
 
                 // Add data
-                for (int i = 0; i < metadataList.Count; i++)
+                for (int i = 0; i < datasetList.Count; i++)
                 {
                     for (int j = 0; j < properties.Length; j++)
                     {
-                        worksheet.Cell(i + 2, j + 1).Value = properties[j].GetValue(metadataList[i])?.ToString();
+                        worksheet.Cell(i + 2, j + 1).Value = properties[j].GetValue(datasetList[i])?.ToString();
                     }
                 }
 
                 using (var stream = new MemoryStream())
                 {
                     workbook.SaveAs(stream);
-                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Pidar_metadata.xlsx");
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Pidar_dataset.xlsx");
                 }
             }
         }
 
-        private string GenerateCsv(List<Metadata> metadataList)
+        private string GenerateCsv(List<Dataset> datasetList)
         {
             var sb = new StringBuilder();
-            var properties = typeof(Metadata).GetProperties();
+            var properties = typeof(Dataset).GetProperties();
 
             // Add headers
             sb.AppendLine(string.Join(",", properties.Select(p => p.Name)));
 
             // Add data
-            foreach (var metadata in metadataList)
+            foreach (var dataset in datasetList)
             {
-                sb.AppendLine(string.Join(",", properties.Select(p => p.GetValue(metadata)?.ToString())));
+                sb.AppendLine(string.Join(",", properties.Select(p => p.GetValue(dataset)?.ToString())));
             }
 
             return sb.ToString();

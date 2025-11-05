@@ -46,9 +46,9 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
-        Title = "PIDAR Metadata API",
+        Title = "PIDAR Dataset API",
         Version = "v1",
-        Description = "A Web API for managing Metadata",
+        Description = "A Web API for managing Dataset",
     });
     // Ignore non-API controllers (e.g. MVC views)
     c.DocInclusionPredicate((docName, apiDesc) =>
@@ -135,7 +135,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "root",
     pattern: "",
-    defaults: new { controller = "Metadatas", action = "Index" });
+    defaults: new { controller = "Datasets", action = "Index" });
 
 
 app.MapControllerRoute(

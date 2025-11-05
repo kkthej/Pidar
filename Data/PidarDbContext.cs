@@ -10,7 +10,7 @@ namespace Pidar.Data
         {
         }
 
-        public DbSet<Metadata> Metadata { get; set; }
+        public DbSet<Dataset> Dataset { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -19,12 +19,12 @@ namespace Pidar.Data
             // Set the default schema for PostgreSQL
             modelBuilder.HasDefaultSchema("public");
 
-            modelBuilder.Entity<Metadata>(entity =>
+            modelBuilder.Entity<Dataset>(entity =>
             {
-                entity.ToTable("metadata"); // Explicit table name in lowercase
+                entity.ToTable("dataset"); // Explicit table name in lowercase
 
                 entity.HasKey(e => e.DatasetId)
-                    .HasName("pk_metadata");
+                    .HasName("pk_dataset");
 
                 entity.Property(e => e.DatasetId)
                     .HasColumnName("dataset_id")
@@ -47,7 +47,7 @@ namespace Pidar.Data
 
                 // Add index for DisplayId
                 entity.HasIndex(e => e.DisplayId)
-                    .HasDatabaseName("ix_metadata_display_id");
+                    .HasDatabaseName("ix_dataset_display_id");
             });
         }
 

@@ -1,5 +1,5 @@
 ﻿
-@model PaginatedList<Pidar.Models.Metadata>
+@model PaginatedList<Pidar.Models.Dataset>
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Pidar.Areas.Identity.Data
@@ -14,13 +14,13 @@
     <div id="sfondo" class="d-flex justify-content-center align-items-start">
         <img src="/images/sfondo.png" class="img-fluid" alt="Background Image" style="padding-bottom: 20px;">
     </div>
-    <h3 class="text-center">The Preclinical Image DAtaset Repository (PIDAR) is a public repository of metadata information of preclinical image datasets from any imaging modality associated to peer-review publications.</h3>
+<h3 class="text-center">The Preclinical Image DAtaset Repository (PIDAR) is a public repository of dataset information of preclinical image datasets from any imaging modality associated to peer-review publications.</h3>
    <div class="alert alert-info mb-4">
     
   <div class="row g-4">
   <div class="col-md-4">
     <div class="stat-card bg-success zoom-card">
-      <h3>@ViewData["MetadataCount"]</h3>
+      <h3>@ViewData["DatasetCount"]</h3>
       <p class="fw-semibold fst-italic">Datasets</p>
       <div class="card-icon">💾</div>
     </div>
@@ -37,7 +37,7 @@
   <div class="col-md-4">
     <div class="stat-card bg-danger zoom-card">
       <h3>@ViewData["TableColumnCount"]</h3>
-      <p class="fw-semibold fst-italic">Metadata</p>
+                <p class="fw-semibold fst-italic">Dataset</p>
       <div class="card-icon">📝</div>
     </div>
   </div>
