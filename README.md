@@ -66,3 +66,4 @@ Added features:
 	2. Added links to publication DOI and Dataset URL.
 23. Modified the Statistics page for better understanding.
 24. Cleared null warnings and errors from controllers.
+25. Admin Login page modified to fit on mobile devices.

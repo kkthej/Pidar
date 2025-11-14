@@ -1,6 +1,6 @@
-/* ---------------------- */
-/* RESET & BASE STYLES    */
-/* ---------------------- */
+/* =========================================================
+   RESET & BASE
+   ========================================================= */
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -9,28 +9,51 @@
 
 html {
     font-size: 14px;
-    min-height: 100%;
     height: 100%;
 }
 
-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    padding-top: 30px;
-    margin-bottom: 60px;
-}
-
-/* Responsive typography */
 @media (min-width: 768px) {
     html {
         font-size: 16px;
     }
 }
 
-/* ---------------------- */
-/* TYPOGRAPHY             */
-/* ---------------------- */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-top: 56px; /* navbar offset */
+}
+
+/* =========================================================
+   NAVBAR
+   ========================================================= */
+.navbar {
+    background-color: #808080;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* =========================================================
+   CONTENT & FOOTER
+   ========================================================= */
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+footer {
+    text-align: center;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    padding: 2rem 1rem;
+}
+
+/* =========================================================
+   FORMS & TYPOGRAPHY
+   ========================================================= */
 .form-floating > .form-control::placeholder,
 .form-floating > .form-control-plaintext::placeholder {
     color: var(--bs-secondary-color);
@@ -42,9 +65,9 @@ body {
     text-align: start;
 }
 
-/* ---------------------- */
-/* BUTTONS                */
-/* ---------------------- */
+/* =========================================================
+   BUTTONS
+   ========================================================= */
 .btn-primary {
     transition: transform 0.2s ease-in-out;
 }
@@ -54,126 +77,14 @@ body {
     }
 
 .btn:focus,
-.btn:active:focus,
-.btn-link.nav-link:focus,
 .form-control:focus,
 .form-check-input:focus {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
-/* Downloading state overlay */
-.btn[data-downloading="true"] {
-    position: relative;
-    pointer-events: none;
-}
-
-    .btn[data-downloading="true"]::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.5);
-    }
-
-/* ---------------------- */
-/* NAVBAR                 */
-/* ---------------------- */
-.navbar {
-    background-color: #808080;
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 1000;
-}
-
-/* ---------------------- */
-/* MAIN CONTENT & FOOTER  */
-/* ---------------------- */
-.content {
-    flex: 1;
-    padding: 20px;
-    margin-top: 56px; /* navbar height offset */
-}
-
-footer {
-    text-align: center;
-    background-color: #f8f9fa;
-    border-top: 1px solid #e0e0e0;
-    padding: 2rem 1rem;
-    width: 100%;
-}
-
-/* ---------------------- */
-/* CONTRIBUTORS GRID      */
-/* ---------------------- */
-.contributors {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    background-color: rgb(93, 223, 225);
-    gap: 1rem;
-    justify-items: center;
-    align-items: center;
-    padding: 1rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-    .contributors h2 {
-        grid-column: 1 / -1;
-        text-align: center;
-        padding: 1rem;
-        margin: 0;
-        font-size: 1.5rem;
-    }
-
-.contributor img {
-    height: auto;
-    max-width: 100%;
-    width: 100px;
-    padding: 1rem 0;
-}
-
-.image-5 {
-    grid-column: 2 / 3;
-}
-
-.image-6 {
-    grid-column: 3 / 4;
-}
-
-@media (max-width: 768px) {
-    .contributors {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .contributor img {
-        width: 80px;
-    }
-
-    .image-5, .image-6 {
-        grid-column: auto;
-    }
-}
-
-@media (max-width: 480px) {
-    .contributors {
-        grid-template-columns: 1fr;
-    }
-
-    .contributor img {
-        width: 60px;
-    }
-
-    .contributors h2 {
-        font-size: 1.2rem;
-    }
-}
-
-/* ---------------------- */
-/* HOVER / ACTIVE EFFECTS */
-/* ---------------------- */
+/* =========================================================
+   HOVER EFFECTS
+   ========================================================= */
 .hover-effect {
     transition: all 0.3s ease;
 }
@@ -189,12 +100,11 @@ footer {
         transform: scale(0.95);
     }
 
-/* ---------------------- */
-/* TABLE SORTING          */
-/* ---------------------- */
+/* =========================================================
+   TABLES & SORTING
+   ========================================================= */
 th.sortable {
     cursor: pointer;
-    position: relative;
 }
 
     th.sortable:hover {
@@ -213,22 +123,25 @@ th a {
         color: #007bff;
     }
 
-.fas.fa-sort-up,
-.fas.fa-sort-down {
-    font-size: 0.8em;
+th {
+    font-weight: 600;
 }
 
-/* ---------------------- */
-/* ACTIVE NAV LINK        */
-/* ---------------------- */
+td {
+    word-wrap: break-word;
+}
+
+/* =========================================================
+   ACTIVE NAV LINK
+   ========================================================= */
 .nav-link.active {
     color: blue !important;
     font-weight: bold;
 }
 
-/* ---------------------- */
-/* HIGHLIGHT & SEARCH     */
-/* ---------------------- */
+/* =========================================================
+   SEARCH HIGHLIGHT
+   ========================================================= */
 .highlight {
     background-color: #fffde7;
     font-weight: bold;
@@ -242,13 +155,9 @@ th a {
     border-radius: 4px;
 }
 
-.matched-property {
-    margin: 5px 0;
-}
-
-/* ---------------------- */
-/* STATISTICS / CARDS     */
-/* ---------------------- */
+/* =========================================================
+   STATISTIC CARDS
+   ========================================================= */
 .stat-card {
     position: relative;
     color: white;
@@ -257,16 +166,10 @@ th a {
     text-align: center;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     transition: transform 0.3s ease;
-    overflow: hidden;
 }
 
-    .stat-card h3 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-card p {
-        margin-bottom: 1rem;
+    .stat-card:hover {
+        transform: scale(1.05);
     }
 
 .card-icon {
@@ -277,25 +180,11 @@ th a {
     bottom: 10px;
 }
 
-.zoom-card {
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-    .zoom-card:hover {
-        transform: scale(1.05);
-        z-index: 1;
-    }
-
-.chart-container {
-    margin: 0 auto;
-}
-
-/* Card style enhancements */
+/* Card enhancements */
 .card {
     border-radius: 10px;
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform .2s ease, box-shadow .2s ease;
 }
 
     .card:hover {
@@ -307,30 +196,117 @@ th a {
     border-radius: 10px 10px 0 0 !important;
 }
 
-/* ---------------------- */
-/* TABLES                 */
-/* ---------------------- */
-th {
-    font-weight: 600;
+/* =========================================================
+   CONTRIBUTORS GRID
+   ========================================================= */
+.contributors {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background-color: rgb(93, 223, 225);
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-td {
-    word-wrap: break-word;
-}
-
-/* ---------------------- */
-/* TOAST (LOGOUT)         */
-/* ---------------------- */
-.toast-container {
-    z-index: 1100;
-}
-
-.toast {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    min-width: 350px;
-}
-
-    .toast.fade-out {
-        opacity: 0;
-        transition: opacity 0.4s ease;
+    .contributors h2 {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 1rem;
     }
+
+.contributor img {
+    width: 100px;
+    height: auto;
+    padding: 1rem 0;
+}
+
+@media (max-width: 768px) {
+    .contributors {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .contributor img {
+        width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contributors {
+        grid-template-columns: 1fr;
+    }
+
+    .contributor img {
+        width: 60px;
+    }
+}
+
+/* =========================================================
+   LOGIN PAGE
+   ========================================================= */
+body.login-page {
+    padding-top: 56px !important;
+}
+
+.login-wrapper {
+    min-height: calc(100vh - 56px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #e0f7fa, #e8f5e9);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.login-image {
+    width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+/* Mobile refinements */
+@media (max-width: 576px) {
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden !important;
+    }
+
+    .container, .container-fluid,
+    .content, .card {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 0 !important;
+        width: 100% !important;
+    }
+
+    .login-wrapper {
+        padding: 0 !important;
+        padding-top: 1rem !important;
+    }
+
+    .login-card {
+        max-width: 100% !important;
+        border-radius: 0 !important;
+        padding: 1.2rem !important;
+    }
+
+    .login-image {
+        max-height: 150px;
+        border-radius: 0;
+    }
+}

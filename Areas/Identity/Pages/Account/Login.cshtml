@@ -3,54 +3,45 @@
 
 @{
     ViewData["Title"] = "Log in";
+    ViewData["BodyClass"] = "login-page";
 }
 
-<div class="container d-flex flex-column align-items-center justify-content-center min-vh-100"
-     style="background: linear-gradient(135deg, #e0f7fa, #e8f5e9);">
+<div class="login-wrapper">
+    <div class="login-card">
 
-    <!-- Translucent Card Wrapper -->
-    <div class="card border-0 shadow-lg p-4 rounded-4 backdrop-blur"
-         style="background-color: rgba(255, 255, 255, 0.65);
-                max-width: 400px; width: 100%;">
-
-        <!-- Image -->
-        <div class="text-center mb-4">
-            <img src="/images/sfondo.png"
-                 class="img-fluid w-100"
-                 alt="Background Image"
-                 style="object-fit: contain; border-radius: 12px;">
+        <div class="text-center">
+            <img src="/images/sfondo.png" class="login-image" alt="Login Background" />
         </div>
 
-        <!-- Login Form -->
         <form id="account" method="post">
-            <h2 class="text-center mb-3 fw-bold">Use an admin account to log in</h2>
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <h2 class="login-title">Use an admin account to log in</h2>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger login-validation"></div>
 
             <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email" class="form-label">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" />
+                <label asp-for="Input.Email"></label>
+                <span asp-validation-for="Input.Email" class="text-danger login-validation"></span>
             </div>
 
             <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password" class="form-label">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" />
+                <label asp-for="Input.Password"></label>
+                <span asp-validation-for="Input.Password" class="text-danger login-validation"></span>
             </div>
 
-            <div class="checkbox mb-3">
-                <label asp-for="Input.RememberMe" class="form-label">
-                    <input class="form-check-input" asp-for="Input.RememberMe" />
-                    @Html.DisplayNameFor(m => m.Input.RememberMe)
-                </label>
+            <div class="form-check mb-3">
+                <input class="form-check-input" asp-for="Input.RememberMe" />
+                <label class="form-check-label" asp-for="Input.RememberMe"></label>
             </div>
 
-            <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+            <button id="login-submit" type="submit" class="btn btn-primary w-100 mb-2">Log in</button>
 
-            <div class="text-center mt-3">
-                <a id="forgot-password" asp-page="./ForgotPassword" class="text-decoration-none">Forgot your password?</a>
+            <div class="text-center mt-2">
+                <a asp-page="./ForgotPassword" class="login-forgot">Forgot your password?</a>
             </div>
         </form>
+
     </div>
 </div>
 
