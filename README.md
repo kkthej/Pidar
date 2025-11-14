@@ -65,3 +65,4 @@ Added features:
 	1. made the fields categorized for better readability.
 	2. Added links to publication DOI and Dataset URL.
 23. Modified the Statistics page for better understanding.
+24. Cleared null warnings and errors from controllers.

@@ -293,7 +293,7 @@ th a {
 
 /* Card style enhancements */
 .card {
-    border-radius: 1rem;
+    border-radius: 10px;
     overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }

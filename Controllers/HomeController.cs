@@ -3,10 +3,8 @@ using Pidar.Data;
 using Pidar.Models;
 using System.Diagnostics;
 using System.Text.Json;
-using System.Linq;
-using Microsoft.EntityFrameworkCore; // Make sure this is present
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Diagnostics;       // For Task<T> return types
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace Pidar.Controllers
 {
@@ -30,10 +28,10 @@ namespace Pidar.Controllers
         {
             ViewData["ActivePage"] = "Statistic";
 
-            // Get dataset count
+            // Total dataset count
             ViewData["DatasetCount"] = await _context.Dataset.CountAsync();
 
-            // Get total sample size with stats
+            // Total sample size
             var sampleSizes = await _context.Dataset
                 .Select(x => x.OverallSampleSize)
                 .ToListAsync();
@@ -41,25 +39,27 @@ namespace Pidar.Controllers
             int totalSampleSize = 0;
             foreach (var size in sampleSizes)
             {
-                if (int.TryParse(size?.Replace(",", ""), out int parsedSize))
+                if (!string.IsNullOrWhiteSpace(size) &&
+                    int.TryParse(size.Replace(",", ""), out int parsed))
                 {
-                    totalSampleSize += parsedSize;
+                    totalSampleSize += parsed;
                 }
             }
             ViewData["TotalSampleSize"] = totalSampleSize;
 
-            // Get table column count
+            // Table column count (safe null handling)
             var entityType = _context.Model.FindEntityType(typeof(Dataset));
-            ViewData["TableColumnCount"] = entityType?.GetProperties().Count() ?? 0;
+            int columnCount = entityType?.GetProperties()?.Count() ?? 0;
+            ViewData["TableColumnCount"] = columnCount;
 
-            // Get data for charts
-            // Fetch all imaging modality entries (non-empty)
+            // -------- Statistics & Charts ----------------------------------------------------
+
+            // Imaging Modality Distribution
             var modalitiesRaw = await _context.Dataset
-                .Where(d => !string.IsNullOrEmpty(d.ImagingModality))
-                .Select(d => d.ImagingModality)
+                .Where(d => !string.IsNullOrWhiteSpace(d.ImagingModality))
+                .Select(d => d.ImagingModality!)
                 .ToListAsync();
 
-            // Split only by commas, trim, normalize, and count each modality
             var modalityCounts = modalitiesRaw
                 .SelectMany(m => m.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 .Select(m => m.Trim().ToUpperInvariant())
@@ -71,31 +71,32 @@ namespace Pidar.Controllers
             ViewData["ModalityDistribution"] = JsonSerializer.Serialize(modalityCounts);
 
 
+            // Country Distribution
             ViewData["CountryDistribution"] = JsonSerializer.Serialize(
                 await _context.Dataset
-                    .Where(m => !string.IsNullOrEmpty(m.CountryOfImagingFacility))
+                    .Where(m => !string.IsNullOrWhiteSpace(m.CountryOfImagingFacility))
                     .GroupBy(m => m.CountryOfImagingFacility)
-                    .Select(g => new { Country = g.Key, Count = g.Count() })
+                    .Select(g => new { Country = g.Key!, Count = g.Count() })
                     .OrderByDescending(x => x.Count)
                     .Take(10)
                     .ToListAsync());
 
+            // Disease Model Distribution
             ViewData["DiseaseModelDistribution"] = JsonSerializer.Serialize(
                 await _context.Dataset
-                    .Where(m => !string.IsNullOrEmpty(m.DiseaseModel))
+                    .Where(m => !string.IsNullOrWhiteSpace(m.DiseaseModel))
                     .GroupBy(m => m.DiseaseModel)
-                    .Select(g => new { Disease = g.Key, Count = g.Count() })
+                    .Select(g => new { Disease = g.Key!, Count = g.Count() })
                     .OrderByDescending(x => x.Count)
                     .Take(10)
                     .ToListAsync());
 
-            // Fetch all OrganOrTissue entries (non-empty)
+            // Organ/Tissue distribution
             var organsRaw = await _context.Dataset
-                .Where(d => !string.IsNullOrEmpty(d.OrganOrTissue))
-                .Select(d => d.OrganOrTissue)
+                .Where(d => !string.IsNullOrWhiteSpace(d.OrganOrTissue))
+                .Select(d => d.OrganOrTissue!)
                 .ToListAsync();
 
-            // Split only by commas, trim, normalize, and count
             var organCounts = organsRaw
                 .SelectMany(o => o.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 .Select(o => o.Trim())
@@ -107,7 +108,7 @@ namespace Pidar.Controllers
 
             ViewData["OrganDistribution"] = JsonSerializer.Serialize(organCounts);
 
-
+            // Yearly uploads
             ViewData["YearlyUploads"] = JsonSerializer.Serialize(
                 await _context.Dataset
                     .Where(m => m.UpdatedYear != null)
@@ -116,15 +117,14 @@ namespace Pidar.Controllers
                     .OrderBy(x => x.Year)
                     .ToListAsync());
 
+            // Status distribution
             ViewData["StatusDistribution"] = JsonSerializer.Serialize(
                 await _context.Dataset
-                    .Where(m => !string.IsNullOrEmpty(m.Status))
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Status))
                     .GroupBy(m => m.Status)
-                    .Select(g => new { Status = g.Key, Count = g.Count() })
+                    .Select(g => new { Status = g.Key!, Count = g.Count() })
                     .OrderByDescending(x => x.Count)
                     .ToListAsync());
-
-
 
             return View();
         }
@@ -147,7 +147,6 @@ namespace Pidar.Controllers
             return View();
         }
 
-
         [HttpGet]
         [Route("Error/{statusCode?}")]
         public IActionResult Error(int? statusCode = null)
@@ -157,17 +156,13 @@ namespace Pidar.Controllers
                 RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
             };
 
-            // Get the exception details if available
-            var exceptionHandlerPathFeature =
-                HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
 
-            if (exceptionHandlerPathFeature?.Error != null)
+            if (exceptionFeature?.Error != null)
             {
-                errorModel.ErrorMessage = exceptionHandlerPathFeature.Error.Message;
+                errorModel.ErrorMessage = exceptionFeature.Error.Message;
 
-                // Log the error if needed
-                _logger.LogError(exceptionHandlerPathFeature.Error,
-                    "Unhandled exception occurred");
+                _logger.LogError(exceptionFeature.Error, "Unhandled exception occurred.");
             }
 
             if (statusCode.HasValue)
