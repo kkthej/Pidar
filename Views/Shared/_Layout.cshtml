@@ -11,22 +11,30 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-
     <title>@ViewData["Title"] - Pidar</title>
-    <script type="importmap"></script>
+
+    <!-- Bootstrap First -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <!-- NOW load Font Awesome (must be after Bootstrap) -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          integrity="sha512-pIVp5jcJHhHVd3bG4+eGZTXQzfqLV5KGmP4hYVo8Bww6ZCBxRfI7hE5H9xqAIW5RYyt9kNfzbAe4ZVg6x2GK7A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
+
+    <!-- Your site CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Pidar.styles.css" asp-append-version="true" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     @RenderSection("Styles", required: false)
-
-    <!-- ✅ FIXED: safe partial -->
     <partial name="_Favicons" />
 </head>
+
 <body class="d-flex flex-column min-vh-100 @ViewData["BodyClass"]">
 
     <header>
@@ -90,38 +98,57 @@
 
     <footer class="bg-white text-black-50 text-center py-3">
         <section class="contributors">
+
             <h2>Support for <strong>PIDAR</strong> provided by:</h2>
 
-            <div class="contributor image-1">
-                <a href="https://www.ibb.cnr.it/" target="_blank"><img src="/images/ibb.PNG" id="ibb" /></a>
+            <div class="contributor">
+                <a href="https://www.ibb.cnr.it/" target="_blank">
+                    <img src="/images/ibb.PNG" id="ibb" />
+                </a>
             </div>
-            <div class="contributor image-2">
+
+            <div class="contributor">
                 <a href="https://www.unito.it/" target="_blank">
                     <img src="/images/unito.png" id="unito" />
                 </a>
             </div>
-            <div class="contributor image-3">
-                <a href="https://www.eurobioimaging.eu/" target="_blank"><img src="/images/Immagine1.png" id="euro" /></a>
+
+            <div class="contributor">
+                <a href="https://www.eurobioimaging.eu/" target="_blank">
+                    <img src="/images/Immagine1.png" id="euro" />
+                </a>
             </div>
-            <div class="contributor image-4">
-                <a href="https://www.cnr.it/" target="_blank"><img src="/images/cnr.PNG" id="cnr" /></a>
+
+            <div class="contributor">
+                <a href="https://www.cnr.it/" target="_blank">
+                    <img src="/images/cnr.PNG" id="cnr" />
+                </a>
             </div>
+
+            <!-- FUNDING SOURCES (CENTERED) -->
             <h2>Funding sources</h2>
-            <div class="contributor image-5">
-                <a href="https://www.eosc-life.eu/" target="_blank">
-                    <img src="/images/eosc-life-transformed.png" id="eosc-life" />
-                </a>
+
+            <div class="funding-row">
+                <div class="contributor">
+                    <a href="https://www.eosc-life.eu/" target="_blank">
+                        <img src="/images/eosc-life-transformed.png" id="eosc-life" />
+                    </a>
+                </div>
+
+                <div class="contributor">
+                    <a href="https://european-union.europa.eu/index_en" target="_blank">
+                        <img src="/images/eulogo.jpeg" id="eu-logo" />
+                    </a>
+                </div>
             </div>
-            <div class="contributor image-6">
-                <a href="https://european-union.europa.eu/index_en" target="_blank">
-                    <img src="/images/eulogo.jpeg" id="eu-logo" />
-                </a>
-            </div>
+
         </section>
+
         <div>
-            <p>&copy; <span id="year"></span> Universit&aacute; di Torino. All rights reserved.</p>
+            <p>&copy; <span id="year"></span> Università di Torino. All rights reserved.</p>
         </div>
     </footer>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

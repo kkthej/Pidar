@@ -2,18 +2,18 @@
 
 #nullable disable
 
-namespace Pidar.data.pidar
+namespace Pidar.Migrations
 {
     /// <inheritdoc />
-    public partial class AddMissingDatasetFields1 : Migration
+    public partial class AddedReagentProcedures : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "BloodCollectionTiming",
+                name: "NameOfReagentS",
                 schema: "public",
-                table: "dataset",
+                table: "procedures",
                 type: "text",
                 nullable: true);
         }
@@ -22,9 +22,9 @@ namespace Pidar.data.pidar
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "BloodCollectionTiming",
+                name: "NameOfReagentS",
                 schema: "public",
-                table: "dataset");
+                table: "procedures");
         }
     }
 }

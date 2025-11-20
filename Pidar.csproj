@@ -12,8 +12,7 @@
 
   <ItemGroup>
 
-    <!-- Fix for NETSDK1064 -->
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+    
 
     <!-- EF Core 8 -->
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.0" />
@@ -45,6 +44,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
 
     <Watch Include="**/*" Exclude="**/.git/**;**/.vs/**;**/.vscode/**;**/bin/**;**/obj/**;**/node_modules/**;**/packages/**;**/logs/**;*.user;appsettings.*.json;.env;.env.local" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

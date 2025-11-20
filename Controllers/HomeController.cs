@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics;
 using Pidar.Data;
 using Pidar.Models;
 using System.Diagnostics;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Diagnostics;
 
 namespace Pidar.Controllers
 {
@@ -24,45 +24,57 @@ namespace Pidar.Controllers
             return RedirectToAction("Index", "Datasets");
         }
 
+        // ============================================================
+        // STATISTICS PAGE
+        // ============================================================
         public async Task<IActionResult> Statistic()
         {
             ViewData["ActivePage"] = "Statistic";
 
-            // Total dataset count
-            ViewData["DatasetCount"] = await _context.Dataset.CountAsync();
+            // ------------------------------
+            // BASIC COUNTS
+            // ------------------------------
+            ViewData["DatasetCount"] = await _context.Datasets.CountAsync();
 
-            // Total sample size
-            var sampleSizes = await _context.Dataset
-                .Select(x => x.OverallSampleSize)
+            // Total sample size (InVivo)
+            var sampleSizes = await _context.InVivos
+                .Select(v => v.OverallSampleSize)
                 .ToListAsync();
 
             int totalSampleSize = 0;
-            foreach (var size in sampleSizes)
+            foreach (var s in sampleSizes)
             {
-                if (!string.IsNullOrWhiteSpace(size) &&
-                    int.TryParse(size.Replace(",", ""), out int parsed))
-                {
+                if (!string.IsNullOrWhiteSpace(s) &&
+                    int.TryParse(s.Replace(",", ""), out int parsed))
                     totalSampleSize += parsed;
-                }
             }
             ViewData["TotalSampleSize"] = totalSampleSize;
 
-            // Table column count (safe null handling)
-            var entityType = _context.Model.FindEntityType(typeof(Dataset));
-            int columnCount = entityType?.GetProperties()?.Count() ?? 0;
-            ViewData["TableColumnCount"] = columnCount;
+            // Column count of Dataset table only (not sub-tables)
+            var datasetEntityType = _context.Model.FindEntityType(typeof(Dataset));
+            ViewData["TableColumnCount"] = datasetEntityType?.GetProperties().Count() ?? 0;
 
-            // -------- Statistics & Charts ----------------------------------------------------
 
-            // Imaging Modality Distribution
-            var modalitiesRaw = await _context.Dataset
-                .Where(d => !string.IsNullOrWhiteSpace(d.ImagingModality))
-                .Select(d => d.ImagingModality!)
+
+
+
+            // ============================================================
+            // -------------------- CHART DATA -----------------------------
+            // ============================================================
+
+
+            // ------------------------------------------------------------
+            // 1. IMAGING MODALITY (StudyComponent.ImagingModality)
+            // ------------------------------------------------------------
+            var modalityRaw = await _context.StudyComponents
+                .Where(sc => sc.ImagingModality != null && sc.ImagingModality.Trim() != "")
+                .Select(sc => sc.ImagingModality!)
                 .ToListAsync();
 
-            var modalityCounts = modalitiesRaw
+            var modalityCounts = modalityRaw
                 .SelectMany(m => m.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 .Select(m => m.Trim().ToUpperInvariant())
+                .Where(m => m != "")
                 .GroupBy(m => m)
                 .Select(g => new { Label = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
@@ -71,35 +83,46 @@ namespace Pidar.Controllers
             ViewData["ModalityDistribution"] = JsonSerializer.Serialize(modalityCounts);
 
 
-            // Country Distribution
-            ViewData["CountryDistribution"] = JsonSerializer.Serialize(
-                await _context.Dataset
-                    .Where(m => !string.IsNullOrWhiteSpace(m.CountryOfImagingFacility))
-                    .GroupBy(m => m.CountryOfImagingFacility)
-                    .Select(g => new { Country = g.Key!, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .Take(10)
-                    .ToListAsync());
+            // ------------------------------------------------------------
+            // 2. COUNTRY OF IMAGING FACILITY (DatasetInfo)
+            // ------------------------------------------------------------
+            var countryCounts = await _context.DatasetInfos
+                .Where(i => i.CountryOfImagingFacility != null && i.CountryOfImagingFacility.Trim() != "")
+                .GroupBy(i => i.CountryOfImagingFacility!.Trim())
+                .Select(g => new { Country = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(10)
+                .ToListAsync();
 
-            // Disease Model Distribution
-            ViewData["DiseaseModelDistribution"] = JsonSerializer.Serialize(
-                await _context.Dataset
-                    .Where(m => !string.IsNullOrWhiteSpace(m.DiseaseModel))
-                    .GroupBy(m => m.DiseaseModel)
-                    .Select(g => new { Disease = g.Key!, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .Take(10)
-                    .ToListAsync());
+            ViewData["CountryDistribution"] = JsonSerializer.Serialize(countryCounts);
 
-            // Organ/Tissue distribution
-            var organsRaw = await _context.Dataset
-                .Where(d => !string.IsNullOrWhiteSpace(d.OrganOrTissue))
-                .Select(d => d.OrganOrTissue!)
+
+            // ------------------------------------------------------------
+            // 3. DISEASE MODEL (InVivo)
+            // ------------------------------------------------------------
+            var diseaseCounts = await _context.InVivos
+                .Where(v => v.DiseaseModel != null && v.DiseaseModel.Trim() != "")
+                .GroupBy(v => v.DiseaseModel!.Trim())
+                .Select(g => new { Disease = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(10)
+                .ToListAsync();
+
+            ViewData["DiseaseModelDistribution"] = JsonSerializer.Serialize(diseaseCounts);
+
+
+            // ------------------------------------------------------------
+            // 4. ORGAN / TISSUE (InVivo)
+            // ------------------------------------------------------------
+            var organsRaw = await _context.InVivos
+                .Where(v => v.OrganOrTissue != null && v.OrganOrTissue.Trim() != "")
+                .Select(v => v.OrganOrTissue!)
                 .ToListAsync();
 
             var organCounts = organsRaw
                 .SelectMany(o => o.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 .Select(o => o.Trim())
+                .Where(o => o != "")
                 .GroupBy(o => o)
                 .Select(g => new { Organ = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
@@ -108,27 +131,46 @@ namespace Pidar.Controllers
 
             ViewData["OrganDistribution"] = JsonSerializer.Serialize(organCounts);
 
-            // Yearly uploads
-            ViewData["YearlyUploads"] = JsonSerializer.Serialize(
-                await _context.Dataset
-                    .Where(m => m.UpdatedYear != null)
-                    .GroupBy(m => m.UpdatedYear)
-                    .Select(g => new { Year = g.Key, Count = g.Count() })
-                    .OrderBy(x => x.Year)
-                    .ToListAsync());
 
-            // Status distribution
-            ViewData["StatusDistribution"] = JsonSerializer.Serialize(
-                await _context.Dataset
-                    .Where(m => !string.IsNullOrWhiteSpace(m.Status))
-                    .GroupBy(m => m.Status)
-                    .Select(g => new { Status = g.Key!, Count = g.Count() })
-                    .OrderByDescending(x => x.Count)
-                    .ToListAsync());
+            // ------------------------------------------------------------
+            // 5. YEARLY UPLOADS (Analyzed.UpdatedYear)
+            // ------------------------------------------------------------
+            var yearlyUploads = await _context.Analyzed
+                .Where(a => a.UpdatedYear != null)
+                .GroupBy(a => a.UpdatedYear)
+                .Select(g => new { Year = g.Key, Count = g.Count() })
+                .OrderBy(x => x.Year)
+                .ToListAsync();
+
+            ViewData["YearlyUploads"] = JsonSerializer.Serialize(yearlyUploads);
+
+
+            // ------------------------------------------------------------
+            // 6. STATUS DISTRIBUTION (Analyzed.Status)
+            // ------------------------------------------------------------
+            var statusCounts = await _context.Analyzed
+                .Where(a => a.Status != null && a.Status.Trim() != "")
+                .GroupBy(a => a.Status!.Trim())
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .ToListAsync();
+
+            ViewData["StatusDistribution"] = JsonSerializer.Serialize(statusCounts);
+            // ------------------------------------------------------------
+            // 7. DISTRIBUTION OF METADATA
+            // ------------------------------------------------------------
+
+            var stats = GetMetadataStats();
+            ViewBag.MetadataSections = stats.SectionCounts;
+
 
             return View();
         }
 
+
+        // -------------------------
+        // OTHER PAGES
+        // -------------------------
         public IActionResult Contribute()
         {
             ViewData["ActivePage"] = "Contribute";
@@ -147,30 +189,78 @@ namespace Pidar.Controllers
             return View();
         }
 
+
+        // -------------------------
+        // ERROR HANDLER
+        // -------------------------
         [HttpGet]
         [Route("Error/{statusCode?}")]
         public IActionResult Error(int? statusCode = null)
         {
-            var errorModel = new ErrorViewModel
+            var model = new ErrorViewModel
             {
                 RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
             };
 
-            var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var feature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
 
-            if (exceptionFeature?.Error != null)
+            if (feature?.Error != null)
             {
-                errorModel.ErrorMessage = exceptionFeature.Error.Message;
-
-                _logger.LogError(exceptionFeature.Error, "Unhandled exception occurred.");
+                model.ErrorMessage = feature.Error.Message;
+                _logger.LogError(feature.Error, "Unhandled exception occurred.");
             }
 
             if (statusCode.HasValue)
+                model.ErrorMessage ??= $"Status Code: {statusCode}";
+
+            return View(model);
+        }
+
+        // --------------------------------------------------------------
+        // COUNT ALL DISTINCT METADATA FIELDS (ACROSS ALL 11 SUB TABLES)
+        // --------------------------------------------------------------
+        private (int TotalFields, Dictionary<string, int> SectionCounts) GetMetadataStats()
+        {
+            var entities = new Dictionary<string, Type>
+    {
+        { "Study Design", typeof(StudyDesign) },
+        { "Publication", typeof(Publication) },
+        { "Study Component", typeof(StudyComponent) },
+        { "Dataset Info", typeof(DatasetInfo) },
+        { "In Vivo", typeof(InVivo) },
+        { "Procedures", typeof(Procedures) },
+        { "Image Acquisition", typeof(ImageAcquisition) },
+        { "Image Data", typeof(ImageData) },
+        { "Image Correlation", typeof(ImageCorrelation) },
+        { "Analyzed", typeof(Analyzed) },
+        { "Ontology", typeof(Ontology) }
+    };
+
+            var sectionCounts = new Dictionary<string, int>();
+            var distinctFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var section in entities)
             {
-                errorModel.ErrorMessage ??= $"Status Code: {statusCode}";
+                var entityType = _context.Model.FindEntityType(section.Value);
+                if (entityType == null)
+                    continue;
+
+                var fields = entityType
+                    .GetProperties()
+                    .Select(p => p.Name)
+                    .Where(p => !p.Equals("DatasetId", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                // count fields in this section
+                sectionCounts[section.Key] = fields.Count;
+
+                // add to global distinct set
+                foreach (var f in fields)
+                    distinctFields.Add(f);
             }
 
-            return View(errorModel);
+            return (distinctFields.Count, sectionCounts);
         }
+
     }
 }

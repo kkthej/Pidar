@@ -8,11 +8,13 @@ namespace Pidar.Controllers
     [ApiExplorerSettings(IgnoreApi = true)]
     public class ErrorController : Controller
     {
-        
+        // --------------------------------------------------------------------
+        // HANDLE STATUS CODE ERRORS (404, 500, etc.)
+        // --------------------------------------------------------------------
         [Route("Error/{statusCode}")]
         public IActionResult HttpStatusCodeHandler(int statusCode)
         {
-            var errorModel = new ErrorViewModel
+            var model = new ErrorViewModel
             {
                 RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
             };
@@ -20,37 +22,46 @@ namespace Pidar.Controllers
             switch (statusCode)
             {
                 case 404:
-                    errorModel.ErrorMessage = "Sorry, the resource you requested could not be found";
+                    model.ErrorMessage = "Sorry, the page or resource you requested could not be found.";
                     break;
+
                 case 500:
-                    errorModel.ErrorMessage = "Sorry, something went wrong on the server";
+                    model.ErrorMessage = "Internal server error. Something went wrong on the server.";
                     break;
+
                 default:
-                    errorModel.ErrorMessage = $"Sorry, an error occurred (Status Code: {statusCode})";
+                    model.ErrorMessage = $"An error occurred (Status Code: {statusCode}).";
                     break;
             }
 
-            return View("Error", errorModel);
+            return View("Error", model);
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
+        // --------------------------------------------------------------------
+        // HANDLE UNHANDLED EXCEPTIONS (global errors)
+        // --------------------------------------------------------------------
         [Route("Error")]
         public IActionResult Error()
         {
-            var errorModel = new ErrorViewModel
+            var model = new ErrorViewModel
             {
                 RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-                ErrorMessage = "An unexpected error occurred"
+                ErrorMessage = "An unexpected error occurred."
             };
 
-            // Retrieve the actual exception if available
-            var exceptionHandlerPathFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
-            if (exceptionHandlerPathFeature?.Error != null)
+            // Attempt to retrieve the real exception
+            var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+
+            if (exceptionFeature?.Error != null)
             {
-                errorModel.ErrorMessage = exceptionHandlerPathFeature.Error.Message;
+                // Log the real error (critical during development)
+                model.ErrorMessage = exceptionFeature.Error.Message;
+
+                // You could also log the path:
+                // exceptionFeature.Path
             }
 
-            return View("Error", errorModel);
+            return View("Error", model);
         }
     }
 }

@@ -1,332 +1,191 @@
 ﻿@model Pidar.Models.Dataset
 @using Microsoft.AspNetCore.Html
 @using Pidar.Areas.Identity.Data
-@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
+@using Pidar.Helpers   <!-- REQUIRED FOR AUTO ONTOLOGY RENDERING -->
 @inject SignInManager<PidarUser> SignInManager
 @inject UserManager<PidarUser> UserManager
+@inject ICategoryProvider CategoryProvider
 
 @{
     ViewData["Title"] = "Details";
-   
     var colorClasses = new[] { "primary", "success", "info", "warning", "danger", "secondary" };
     var colorIndex = 0;
 }
+
 @functions {
-    public IHtmlContent FormatLabel(string str)
+
+    /* ==========================================================
+       FORMAT LABEL (camelCase → spaced words, keep acronyms)
+       ========================================================== */
+    public IHtmlContent FormatLabel(string raw)
     {
-        if (string.IsNullOrWhiteSpace(str))
+        if (String.IsNullOrWhiteSpace(raw))
             return HtmlString.Empty;
 
-        // Replace slashes with spaces
-        str = str.Replace("/", " ");
-
-        // Insert spaces before capital letters, but:
-        //   - keep acronyms like MRI, PET, CT, URL intact
-        //   - keep short forms like pH, HbA1c intact
+        var clean = raw.Replace("/", " ");
         var formatted = System.Text.RegularExpressions.Regex.Replace(
-            str,
-            @"(?<=[a-z0-9])(?=[A-Z][a-z])",  // space only before capital starting a mixed-case word
-            " ",
-            System.Text.RegularExpressions.RegexOptions.Compiled
+            clean,
+            @"(?<=[a-z0-9])(?=[A-Z][a-z])",
+            " "
         ).Trim();
 
-        // Capitalize the first letter if needed
-        if (!string.IsNullOrEmpty(formatted))
-            formatted = char.ToUpper(formatted[0]) + formatted.Substring(1);
+        if (formatted.Length > 0)
+            formatted = Char.ToUpper(formatted[0]) + formatted[1..];
 
-        // Return safe, encoded HTML
         return new HtmlString(System.Net.WebUtility.HtmlEncode(formatted));
     }
-    public IHtmlContent FormatValue(object value)
+
+    /* ==========================================================
+       UNIVERSAL FALLBACK FORMATTER (non-ontology)
+       ========================================================== */
+    public IHtmlContent FormatValue(object? value)
     {
         var str = value?.ToString()?.Trim();
-        if (string.IsNullOrWhiteSpace(str))
+        if (String.IsNullOrWhiteSpace(str))
             return HtmlString.Empty;
 
-        // --- Handle URLs and emails ---
+        // URL or mailto
         if (Uri.TryCreate(str, UriKind.Absolute, out var uri))
         {
             if (uri.Scheme == Uri.UriSchemeMailto || str.Contains("@"))
-                return new HtmlString($"<a href=\"mailto:{System.Net.WebUtility.HtmlEncode(str)}\">{System.Net.WebUtility.HtmlEncode(str)}</a>");
+                return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
 
-            return new HtmlString($"<a href=\"{System.Net.WebUtility.HtmlEncode(str)}\" target=\"_blank\">{System.Net.WebUtility.HtmlEncode(str)}</a>");
+            return new HtmlString($"<a href=\"{str}\" target=\"_blank\">{str}</a>");
         }
 
+        // Email-like
         if (str.Contains("@") && str.Contains("."))
-        {
-            return new HtmlString($"<a href=\"mailto:{System.Net.WebUtility.HtmlEncode(str)}\">{System.Net.WebUtility.HtmlEncode(str)}</a>");
-        }
+            return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
 
-        // --- Smart formatting for normal text ---
+        // Normal formatting
         str = str.Replace("/", " ");
-
-        // Insert spaces before capital letters but:
-        //   - skip acronyms (2+ consecutive caps)
-        //   - skip single-cap following a lowercase letter if next char is also uppercase (e.g. pH)
         var formatted = System.Text.RegularExpressions.Regex.Replace(
             str,
-            @"(?<=[a-z0-9])(?=[A-Z][a-z])",  // add space only before capital starting a normal word
-            " ",
-            System.Text.RegularExpressions.RegexOptions.Compiled
+            @"(?<=[a-z0-9])(?=[A-Z][a-z])",
+            " "
         ).Trim();
 
-        // Capitalize first letter if needed
-        if (!string.IsNullOrEmpty(formatted))
-            formatted = char.ToUpper(formatted[0]) + formatted.Substring(1);
+        if (formatted.Length > 0)
+            formatted = Char.ToUpper(formatted[0]) + formatted[1..];
 
         return new HtmlString(System.Net.WebUtility.HtmlEncode(formatted));
     }
+
+    /* ==========================================================
+       UNIVERSAL NULL-SAFE NESTED ACCESSOR  (A.B.C)
+       ========================================================== */
+    public object? GetNested(object? root, string path)
+    {
+        if (root == null || String.IsNullOrWhiteSpace(path))
+            return null;
+
+        object? current = root;
+        foreach (var part in path.Split('.'))
+        {
+            if (current == null) return null;
+            var prop = current.GetType().GetProperty(part);
+            if (prop == null) return null;
+            current = prop.GetValue(current);
+        }
+        return current;
+    }
 }
 
-
+<!-- HEADER -->
 <div>
-    <strong>Dataset ID:</strong>
-    @Html.DisplayFor(model => model.DisplayId)
-    @if (SignInManager.IsSignedIn(User))
-    {
-            <div>
-                <a asp-action="Edit" asp-route-id="@Model?.DatasetId">Edit</a> |
-                <a asp-action="Index">Back to List</a>
-            </div>
-    }
-    else
-    {
-            <div>
-                <a asp-action="Index">Back to List</a>
-            </div>
-    }
+    <strong>Dataset ID:</strong> @Model.DisplayId
+
+    <div>
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.DatasetId">Edit</a>
+        }
+        <a asp-action="Index">Back to List</a>
+    </div>
 </div>
+
 <hr />
 
+<!-- CATEGORY DEFINITIONS -->
 @{
-    // Define categories and their properties
-    var categories = new Dictionary<string, List<string>>()
-            {
-                ["Study Design"] = new List<string>
-        {
-            "StudyDesignBackground", "StudyDescription", "StudyType", "StudySubtype"
-        },
-                ["Publication"] = new List<string>
-        {
-            "PaperLinked", "PaperTitle", "PaperAuthors", "Affiliation", "PaperJournal",
-            "PaperYear", "PaperDoi", "OpenAccess"
-        },
-                ["Study Component"] = new List<string>
-        {
-            "MultiModalityImages", "ImagingModality", "ImagingSubModality", "Radiation",
-            "ImagingCoverage", "ImagingTarget"
-        },
-                ["Dataset Information"] = new List<string>
-        {
-            "Institution","RorCodeOwner", "Pi","PiOrchid", "CoPi", "CountryOfInstitution", "ImagingFacility",
-            "EuroBioImagingNode", "CountryOfImagingFacility", "LinkToDataset", "Funding",
-            "FundingAgency", "GrantNumber","FunderId", "DatasetAccess", "License", "LicenseFile",
-            "DuoDataUsePermission", "DuoDataUseModifier", "DuoInvestigation", "ContactPerson",
-            
-        },
-                ["In Vivo Experimental Parameters"] = new List<string>
-        {
-            "NumberOfGroups", "TypesOfGroups", "OverallSampleSize","AnimalCondition", "DiseaseModel",
-            "OrganOrTissue", "SampleSizeForEachGroup", "PowerCalculation",
-            "InclusionCriteria", "ExclusionCriteria", "Randomization", "Blinding",
-            "ProceduresToKeepTreatmentsBlind", "ProceduresToKeepExperimenterBlind",
-            "OutcomeMeasures", "StatisticalMethods", "Species", "Strain",
-            "ImmuneStatus", "Sex", "Age", "AgeAtStartExperiment",
-            "AgeAtScanningExperimentS", "Weight", "WeightAtStartExperiment",
-            "WeightAtEndExperiment", "Genotype", "GeneticManipulation", "Gene",
-            "SourceOfAnimals", "RegistryNumberOfAnimalAuthorization"
-        },
-                ["Experimental Procedures"] = new List<string>
-        {
-            "PharmacologicalProceduresInterventionAndControl", "PharmacologicalDrug",
-            "Company", "Formulation", "DrugDose", "Volume", "Concentration",
-            "SiteOrRouteOfAdministration", "FrequencyOfAdministration",
-            "VehicleOrCarrierSolutionFormulation", "DrugOrBatchSampleNumber",
-            "BloodSampling", "BloodSamplingMethod", "BloodSampleVolume", "BloodTiming","BloodCollectionTiming",
-            "SurgicalProceduresIncludingShamSurgery", "DescriptionOfTheSurgicalProcedure",
-            "ReferenceToProtocol", "TargetOrganTissue",
-            "PathogenInfectionInterventionAndControl", "InfectiousType",
-            "InfectiousAgent", "DoseLoad", "SiteAndRouteOfInfection",
-            "TimingOrFrequencyOfInfection", "AnalgesicPlanToRelievePainSufferingAndDistress",
-            "AnalgesicName", "Route", "AnalgesicDose", "AnesthesiaForImaging",
-            "AnesthesiaType", "Duration", "AnesthesiaDrugs", "AnesthesiaDose",
-            "MonitoringRegime", "Euthanasia", "Method", "Histology",
-            "TissuesCollectedPostEuthanasia", "TimingOfCollection","TissueDescription","PerfusionMethod",
-            "HistologicalProcedure", "NameOfReagentS", "CatalogueNumber",
-            "LengthOfFixation", "SpecimenThickness","Imaging", "FrequencyOfImaging", "TimingOfImaging",
-            "OverallScanLength", "ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule",
-            "ContrastAgentCommercialDrug", "ContrastAgentChemicalDrug", "ContrastAgentDose",
-            "InjectionVolume", "InjectionTime", "Vehicle", "RouteOfAdministration",
-            "CellLines", "CellLine", "Provenance","CellCultureMedium", "ModifiedCellLine",
-            "TypeOfGeneticModification", "GeneModified","VirusLabelledOrModified", "VerificationAndAuthentication",
-            "CellInjectionRoute","CellInjectionProcedure", "NumberOfCells", "Reagents", "NameOfReagent",
-            "CatalogueNumbers", "EquipmentAndSoftware", "Manufacturer",
-            "ModelVersionNumber", "FrequencyOfExperimentalProcedures",
-            "TimingOfExperimentalProcedures", "FrequencyOfExperimentalMeasurements",
-            "TimingOfExperimentalMeasurements", "HousingRoom", "DietaryIntervention",
-            "RespirationRate", "BodyTempuratureEtc", "FoodIntakeMeasured"
-        },
-                ["Image Acquisition"] = new List<string>
-        {
-            "InstrumentVendor", "InstrumentType", "InstrumentSpecifics",
-            "ImageAcquisitionParameters", "Correction", "RawData", "QA/QC"
-        },
-                ["Image Data"] = new List<string>
-        {
-            "ImageType", "ImageScale", "FormatCompression", "Dimensions",
-            "OverallNumberOfImages", "FieldOfView", "DimensionExtents",
-            "SizeDescription", "PixelVoxelSizeDescription", "ImageProcessingMethods",
-            "ImageReconstructionAlgorithm", "QualityControl", "ImageSmoothingOrFilteringAlgorithm",
-            "ImageRegistrationAlgorithm", "AiEnhancedAlgorithm", "QcInfo", "Corrections",
-            "SpatialAndTemporalAlignment", "FiducialsUsed", "CoregisteredImages",
-            "TransformationMatrixOtherInfo", "RelatedImagesAndRelationship"
-        },
-                ["Image Correlation"] = new List<string>
-        {
-            
-            "SpatialAndTemporalAlignment", "FiducialsUsed", "CoregisteredImages",
-            "TransformationMatrixOtherInfo", "RelatedImagesAndRelationship"
-        },
-                ["Analyzed Data"] = new List<string>
-        {
-            "AnalysisResultType", "DataUsedForAnalysis", "AnalysisMethodAndDetails",
-            "FileFormatOfResultFileCsvJsonTxtXlsx", "Status", "UpdatedYear"
-        },
-                ["Ontology Terms"] = new List<string>
-        {
-            "NcitImaging", "NcitImagingSubmodality", "Doid", "NcitAnatomy",
-            "NcitSpecies", "NcitStrain", "ChebiPharmaco", "ChebiAnesthesia",
-            "ChebiContrastAgentCommercialName", "ChebiContrastAgentChemicalName",
-            "Clo", "NcitGene"
-        }
-            };
+    var categories = CategoryProvider.GetCategories();
 }
 
+<!-- ==========================
+     RENDER DETAILS UI
+     ========================== -->
 <div class="container my-4">
-    <h2 class="text-center mb-4">@ViewData["Title"]</h2>
+    <h2 class="text-center mb-4">Dataset Details</h2>
 
     @foreach (var category in categories)
     {
-        var hasValues = false;
-
-        foreach (var propName in category.Value)
+        bool hasContent = category.Value.Any(path =>
         {
-            var propInfo = Model!.GetType().GetProperty(propName);
-            if (propInfo != null)
-            {
-                var value = propInfo.GetValue(Model);
-                if (value != null && !string.IsNullOrEmpty(value.ToString()))
-                {
-                    hasValues = true;
-                    break;
-                }
-            }
-        }
+            var val = GetNested(Model, path);
+            return val != null && !String.IsNullOrWhiteSpace(val.ToString());
+        });
 
-        if (hasValues)
-        {
-            var color = colorClasses[colorIndex % colorClasses.Length];
-            colorIndex++;
+        if (!hasContent)
+            continue;
 
-            <div class="card mb-4 shadow-sm border-@color">
-                <div class="card-header bg-@color text-white text-center fw-bold">
-                    @category.Key
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped table-hover mb-0">
-                        <colgroup>
-                            <col style="width: 30%">
-                            <col style="width: 70%">
-                        </colgroup>
-                        <tbody>
-                            @foreach (var propName in category.Value)
-                            {
-                                var propInfo = Model!.GetType().GetProperty(propName);
-                                if (propInfo != null)
-                                {
-                                    var value = propInfo.GetValue(Model);
-                                    if (value != null && !string.IsNullOrEmpty(value.ToString()))
-                                    {
-                                        <tr>
-                                            <th class="bg-light text-center pe-3 align-middle">
-                                                @FormatLabel(propName)
-                                            </th>
-                                            <td>
-                                                @FormatValue(value)
-                                            </td>
-                                        </tr>
+        var color = colorClasses[colorIndex % colorClasses.Length];
+        colorIndex++;
 
-                                    }
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
+        <div class="card mb-4 shadow-sm border-@color">
+            <div class="card-header bg-@color text-white text-center fw-bold">
+                @category.Key
             </div>
-        }
+
+            <div class="card-body p-0">
+                <table class="table table-striped table-hover mb-0">
+                    <colgroup>
+                        <col style="width:30%">
+                        <col style="width:70%">
+                    </colgroup>
+                    <tbody>
+                        @foreach (var path in category.Value)
+                        {
+                            var value = GetNested(Model, path);
+                            if (value == null || String.IsNullOrWhiteSpace(value.ToString()))
+                                continue;
+
+                            <tr>
+                                <th class="bg-light text-center pe-3 align-middle">
+                                    @FormatLabel(path.Split('.').Last())
+                                </th>
+
+                                <td>
+                                    @{
+                                        /* ================================
+                                           AUTOMATIC ONTOLOGY DETECTION
+                                           If a field starts with "Ontology."
+                                           → render clickable ontology badges
+                                           ================================ */
+                                        if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            @Html.Raw(AutoOntologyRenderer.Render(value.ToString()))
+                                        }
+                                        else
+                                        {
+                                            @FormatValue(value)
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     }
 </div>
 
-@* @foreach (var category in categories) *@
-@* { *@
-@*     var hasValues = false; *@
-
-@*     // Check if any property in this category has a value *@
-@*     foreach (var propName in category.Value) *@
-@*     { *@
-@*         var propInfo = Model!.GetType().GetProperty(propName); *@
-@*         if (propInfo != null) *@
-@*         { *@
-@*             var value = propInfo.GetValue(Model); *@
-@*             if (value != null && !string.IsNullOrEmpty(value.ToString())) *@
-@*             { *@
-@*                 hasValues = true; *@
-@*                 break; *@
-@*             } *@
-@*         } *@
-@*     } *@
-
-@*     if (hasValues) *@
-@*     { *@
-@*                 <h5 class="text-center fw-bold">@category.Key</h5> *@
-@*                 <table class="table table-bordered table-striped"> *@
-@*                 <colgroup> *@
-@*                     <col style="width: 30%"> *@
-@*                     <col style="width: 70%"> *@
-@*                 </colgroup> *@
-                    
-@*                     <tbody> *@
-@*                 @foreach (var propName in category.Value) *@
-@*                 { *@
-@*                     var propInfo = Model!.GetType().GetProperty(propName); *@
-@*                     if (propInfo != null) *@
-@*                     { *@
-@*                         var value = propInfo.GetValue(Model); *@
-@*                         if (value != null && !string.IsNullOrEmpty(value.ToString())) *@
-@*                         { *@
-@*                                                 <tr> *@
-@*                                                     <th>@FormatValue(propName)</th> *@
-@*                                                     <td>@value</td> *@
-@*                                                 </tr> *@
-@*                         } *@
-@*                     } *@
-@*                 } *@
-@*                     </tbody> *@
-@*                 </table> *@
-@*     } *@
-@* } *@
-
-@if (SignInManager.IsSignedIn(User))
-{
-        <div>
-            <a asp-action="Edit" asp-route-id="@Model?.DatasetId">Edit</a> |
-            <a asp-action="Index">Back to List</a>
-        </div>
-}
-else
-{
-        <div>
-            <a asp-action="Index">Back to List</a>
-        </div>
-}
+<!-- FOOTER -->
+<div class="mb-4">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <a asp-action="Edit" asp-route-id="@Model.DatasetId">Edit</a>
+    }
+    <a asp-action="Index">Back to List</a>
+</div>

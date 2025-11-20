@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Models;
-using System.Diagnostics;
+using Pidar.Models.ViewModels;
+using Pidar.Helpers;
 
 namespace Pidar.Controllers
 {
@@ -20,201 +21,428 @@ namespace Pidar.Controllers
             _logger = logger;
         }
 
-        // ------------------------------------------------------------
-        // INDEX
-        // ------------------------------------------------------------
-        [Route("")]
-        [Route("Index")]
-        public async Task<IActionResult> Index(string? sortOrder, int pageNumber = 1)
+        // ===============================================================
+        // INTERNAL CHILD PROCESSOR (NO ObjectHelper)
+        // ===============================================================
+        private void ProcessChild<T>(T? entity, DbSet<T> set) where T : class
         {
-            ViewData["ActivePage"] = "Dataset";
-            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
-            ViewBag.CurrentSort = sortOrder;
+            if (entity == null)
+                return;
 
-            var query = _context.Dataset.AsQueryable();
-
-            query = sortOrder switch
+            // Check if all string properties are empty → delete child
+            if (IsEntityEmpty(entity))
             {
-                "displayid_desc" => query.OrderByDescending(m => m.DisplayId),
-                "displayid_asc" => query.OrderBy(m => m.DisplayId),
-                _ => query.OrderBy(m => m.DisplayId)
-            };
+                var entry = _context.Entry(entity);
+                if (entry.IsKeySet)
+                    set.Remove(entity);
 
-            const int pageSize = 10;
-            var paginatedData = await PaginatedList<Dataset>.CreateAsync(query, pageNumber, pageSize);
+                return;
+            }
 
-            ViewData["DatasetCount"] = await _context.Dataset.CountAsync();
-            ViewData["TotalSampleSize"] = await CalculateTotalSampleSizeAsync();
-            ViewData["TableColumnCount"] = GetTableColumnCount();
-
-            return View(paginatedData);
+            // Not empty → Insert or Update
+            if (_context.Entry(entity).IsKeySet)
+                _context.Update(entity);
+            else
+                set.Add(entity);
         }
 
-        // ------------------------------------------------------------
+        private static bool IsEntityEmpty<T>(T entity)
+        {
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                if (prop.PropertyType == typeof(string))
+                {
+                    string? val = prop.GetValue(entity)?.ToString();
+                    if (!string.IsNullOrWhiteSpace(val))
+                        return false;
+                }
+                else
+                {
+                    var val = prop.GetValue(entity);
+                    if (val != null)
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        // ===============================================================
         // SEARCH FORM
-        // ------------------------------------------------------------
+        // ===============================================================
         [Route("Search")]
         public async Task<IActionResult> ShowSearchForm(int pageNumber = 1)
         {
             const int pageSize = 10;
-            var query = _context.Dataset.AsQueryable();
+
+            var query = _context.Datasets
+                .IncludeAll()
+                .AsNoTracking()
+                .OrderBy(x => x.DisplayId)
+                .AsQueryable();
+
             var paginatedData = await PaginatedList<Dataset>.CreateAsync(query, pageNumber, pageSize);
+
             return View(paginatedData);
         }
 
-        // ------------------------------------------------------------
+        // ===============================================================
         // SEARCH RESULTS
-        // ------------------------------------------------------------
+        // ===============================================================
         [Route("SearchResults")]
         public async Task<IActionResult> ShowSearchResults(string? SearchPhrase, string? sortOrder, int pageNumber = 1)
         {
             const int pageSize = 10;
 
-            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
+            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc"
+                ? "displayid_desc"
+                : "displayid_asc";
+
             ViewBag.CurrentSort = sortOrder;
 
-            if (!string.IsNullOrWhiteSpace(SearchPhrase))
+            if (string.IsNullOrWhiteSpace(SearchPhrase))
+                return RedirectToAction(nameof(Index));
+
+            // Load everything (Dataset + 11 child tables)
+            var allData = await _context.Datasets
+                .IncludeAll()
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Flatten + Search through ALL string properties from ALL tables
+            var results = allData.Where(m =>
+                GetAllStringValues(m)
+                    .Any(value => value.Contains(SearchPhrase, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+
+            // Sorting
+            results = sortOrder switch
             {
-                var allData = await _context.Dataset.ToListAsync();
+                "displayid_desc" => results.OrderByDescending(m => m.DisplayId).ToList(),
+                _ => results.OrderBy(m => m.DisplayId).ToList()
+            };
 
-                var results = allData.Where(m =>
-                    typeof(Dataset).GetProperties()
-                        .Where(p => p.PropertyType == typeof(string))
-                        .Select(p => p.GetValue(m)?.ToString())
-                        .Any(value => value is not null &&
-                            value.Contains(SearchPhrase, StringComparison.OrdinalIgnoreCase))
-                ).ToList();
+            // Pagination
+            var totalRecords = results.Count;
+            var paginatedResults = results
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
-                results = sortOrder switch
+            ViewData["DatasetCount"] = totalRecords;
+            ViewData["TotalSampleSize"] = CalculateSampleSize(results);
+            // ⭐ FIX INCLUDED HERE ⭐
+            var stats = GetMetadataStats();
+            ViewData["TableColumnCount"] = stats.TotalFields;
+            ViewBag.MetadataSections = stats.SectionCounts;
+
+            return View("Index", new PaginatedList<Dataset>(paginatedResults, totalRecords, pageNumber, pageSize));
+        }
+        // Collect ALL string values from Dataset + all children
+        private IEnumerable<string> GetAllStringValues(Dataset ds)
+        {
+            foreach (var prop in typeof(Dataset).GetProperties())
+            {
+                if (prop.PropertyType == typeof(string))
                 {
-                    "displayid_desc" => results.OrderByDescending(m => m.DisplayId).ToList(),
-                    _ => results.OrderBy(m => m.DisplayId).ToList()
-                };
-
-                var totalRecords = results.Count;
-                var paginatedResults = results.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
-
-                ViewData["DatasetCount"] = totalRecords;
-                ViewData["TotalSampleSize"] = CalculateSampleSize(results);
-                ViewData["TableColumnCount"] = GetTableColumnCount();
-
-                return View("Index", new PaginatedList<Dataset>(paginatedResults, totalRecords, pageNumber, pageSize));
+                    string? val = prop.GetValue(ds)?.ToString();
+                    if (!string.IsNullOrWhiteSpace(val))
+                        yield return val;
+                }
             }
 
-            return RedirectToAction(nameof(Index));
+            // Child entities
+            var children = new object?[]
+            {
+        ds.StudyDesign,
+        ds.Publication,
+        ds.StudyComponent,
+        ds.DatasetInfo,
+        ds.InVivo,
+        ds.Procedures,
+        ds.ImageAcquisition,
+        ds.ImageData,
+        ds.ImageCorrelation,
+        ds.Analyzed,
+        ds.Ontology
+            };
+
+            foreach (var child in children)
+            {
+                if (child == null) continue;
+
+                foreach (var prop in child.GetType().GetProperties())
+                {
+                    if (prop.PropertyType == typeof(string))
+                    {
+                        string? val = prop.GetValue(child)?.ToString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            yield return val;
+                    }
+                }
+            }
         }
 
-        // ------------------------------------------------------------
-        // DETAILS
-        // ------------------------------------------------------------
-        [Route("Details")]
-        public async Task<IActionResult> Details(int? id)
+        // ------------------------------------------
+        // COUNT DISTINCT METADATA FIELDS + SECTIONS
+        // ------------------------------------------
+        private (int TotalFields, Dictionary<string, int> SectionCounts) GetMetadataStats()
         {
-            if (id == null)
-                return NotFound();
+            var entities = new Dictionary<string, Type>
+        {
+            { "Dataset", typeof(Dataset) },
+            { "Study Design", typeof(StudyDesign) },
+            { "Publication", typeof(Publication) },
+            { "Study Component", typeof(StudyComponent) },
+            { "Dataset Info", typeof(DatasetInfo) },
+            { "In Vivo", typeof(InVivo) },
+            { "Procedures", typeof(Procedures) },
+            { "Image Acquisition", typeof(ImageAcquisition) },
+            { "Image Data", typeof(ImageData) },
+            { "Image Correlation", typeof(ImageCorrelation) },
+            { "Analyzed", typeof(Analyzed) },
+            { "Ontology", typeof(Ontology) }
+        };
 
-            Dataset? dataset = await _context.Dataset
-                .FirstOrDefaultAsync(m => m.DisplayId == id);
+            var sectionCounts = new Dictionary<string, int>();
+            var distinctFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            if (dataset == null)
-                return NotFound();
+            foreach (var section in entities)
+            {
+                var entityType = _context.Model.FindEntityType(section.Value);
+                if (entityType == null)
+                    continue;
 
-            return View(dataset);
+                var fields = entityType
+                    .GetProperties()
+                    .Select(p => p.Name)
+                    .Where(p => !p.Equals("DatasetId", StringComparison.OrdinalIgnoreCase) &&
+                                !p.Equals("dataset_id", StringComparison.OrdinalIgnoreCase) &&
+                                !p.Equals("DisplayId", StringComparison.OrdinalIgnoreCase))  // exclude DisplayId too
+                    .ToList();
+
+                // Count ONLY real metadata fields for this section
+                sectionCounts[section.Key] = fields.Count;
+
+                // Add to distinct global list
+                foreach (var f in fields)
+                    distinctFields.Add(f);
+            }
+
+            return (distinctFields.Count, sectionCounts);
         }
 
-        // ------------------------------------------------------------
+
+
+        // ===============================================================
+        // INDEX
+        // ===============================================================
+        [Route("")]
+        [Route("Index")]
+        public async Task<IActionResult> Index(string? sortOrder, int pageNumber = 1)
+        {
+            ViewData["ActivePage"] = "Dataset";
+            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc"
+                ? "displayid_desc"
+                : "displayid_asc";
+
+            // ⭐⭐ THE FIX — LOAD ALL CHILD TABLES ⭐⭐
+            var query = _context.Datasets
+                .IncludeAll()
+                .AsNoTracking()
+                .AsQueryable();
+
+            query = sortOrder switch
+            {
+                "displayid_desc" => query.OrderByDescending(x => x.DisplayId),
+                "displayid_asc" => query.OrderBy(x => x.DisplayId),
+                _ => query.OrderBy(x => x.DisplayId)
+            };
+
+            var paginated = await PaginatedList<Dataset>.CreateAsync(query, pageNumber, 10);
+
+            // ----- Stats -----
+            ViewData["DatasetCount"] = await _context.Datasets.CountAsync();
+            ViewData["TotalSampleSize"] = await CalculateTotalSampleSizeAsync();
+
+            // 🔥 NEW metadata stats
+            var stats = GetMetadataStats();
+            ViewData["TableColumnCount"] = stats.TotalFields;   // global field count
+            ViewBag.MetadataSections = stats.SectionCounts;     // per-section count
+
+            return View(paginated);
+        }
+
+
+
+
+        // ===============================================================
+        // DETAILS
+        // ===============================================================
+        [Route("Details/{displayId}")]
+        public async Task<IActionResult> Details(int displayId)
+        {
+            var ds = await _context.Datasets
+                .IncludeAll()
+                .FirstOrDefaultAsync(x => x.DisplayId == displayId);
+
+            return ds == null ? NotFound() : View(ds);
+        }
+
+        // ===============================================================
         // CREATE (GET)
-        // ------------------------------------------------------------
+        // ===============================================================
         [Authorize]
         [Route("Create")]
         public IActionResult Create()
         {
-            int? maxDisplayId = _context.Dataset.Max(m => (int?)m.DisplayId);
-            ViewBag.SuggestedDisplayId = (maxDisplayId ?? 0) + 1;
-            return View();
+            int nextId = (_context.Datasets.Max(x => (int?)x.DisplayId) ?? 0) + 1;
+            ViewBag.SuggestedDisplayId = nextId;
+
+            return View(new DatasetCreateViewModel
+            {
+                Dataset = new Dataset { DisplayId = nextId },
+                StudyDesign = new(),
+                Publication = new(),
+                StudyComponent = new(),
+                DatasetInfo = new(),
+                InVivo = new(),
+                Procedures = new(),
+                ImageAcquisition = new(),
+                ImageData = new(),
+                ImageCorrelation = new(),
+                Analyzed = new(),
+                Ontology = new()
+            });
         }
 
-        // ------------------------------------------------------------
+        // ===============================================================
         // CREATE (POST)
-        // ------------------------------------------------------------
+        // ===============================================================
         [HttpPost]
-        [ValidateAntiForgeryToken]
         [Authorize]
+        [ValidateAntiForgeryToken]
         [Route("Create")]
-        public async Task<IActionResult> Create(Dataset dataset)
+        public async Task<IActionResult> Create(DatasetCreateViewModel vm)
         {
             if (!ModelState.IsValid)
-                return View(dataset);
-
-            var strategy = _context.Database.CreateExecutionStrategy();
+                return View(vm);
 
             try
             {
+                var strategy = _context.Database.CreateExecutionStrategy();
                 await strategy.ExecuteAsync(async () =>
                 {
                     await using var tx = await _context.Database.BeginTransactionAsync();
 
-                    _context.Add(dataset);
+                    _context.Datasets.Add(vm.Dataset);
                     await _context.SaveChangesAsync();
 
+                    int id = vm.Dataset.DatasetId;
+
+                    AssignFK(vm, id);
+
+                    // Always insert children on Create
+                    // Force compiler to treat all children as non-null
+                    object[] children =
+                    {
+                        vm.StudyDesign!,
+                        vm.Publication!,
+                        vm.StudyComponent!,
+                        vm.DatasetInfo!,
+                        vm.InVivo!,
+                        vm.Procedures!,
+                        vm.ImageAcquisition!,
+                        vm.ImageData!,
+                        vm.ImageCorrelation!,
+                        vm.Analyzed!,
+                        vm.Ontology!
+                    };
+
+                    _context.AddRange(children);
+
+
+                    await _context.SaveChangesAsync();
                     await tx.CommitAsync();
                 });
 
                 return RedirectToAction(nameof(Index));
             }
-            catch (DbUpdateException ex) when (ex.GetBaseException() is Npgsql.PostgresException pg)
-            {
-                ModelState.AddModelError("", $"Database error ({pg.SqlState}): {pg.MessageText}");
-                _logger.LogError(ex, "DB Error during CREATE");
-                return View(dataset);
-            }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", ex.Message);
-                _logger.LogError(ex, "General Error during CREATE");
-                return View(dataset);
+                return View(vm);
             }
         }
 
-        // ------------------------------------------------------------
+        // ===============================================================
         // EDIT (GET)
-        // ------------------------------------------------------------
+        // ===============================================================
         [Authorize]
         [Route("Edit/{id}")]
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null)
+            var ds = await _context.Datasets
+                .IncludeAll()
+                .FirstOrDefaultAsync(x => x.DatasetId == id);
+
+            if (ds == null)
                 return NotFound();
 
-            Dataset? dataset = await _context.Dataset.FindAsync(id);
-
-            if (dataset == null)
-                return NotFound();
-
-            return View(dataset);
+            return View(new DatasetCreateViewModel
+            {
+                Dataset = ds,
+                StudyDesign = ds.StudyDesign ?? new(),
+                Publication = ds.Publication ?? new(),
+                StudyComponent = ds.StudyComponent ?? new(),
+                DatasetInfo = ds.DatasetInfo ?? new(),
+                InVivo = ds.InVivo ?? new(),
+                Procedures = ds.Procedures ?? new(),
+                ImageAcquisition = ds.ImageAcquisition ?? new(),
+                ImageData = ds.ImageData ?? new(),
+                ImageCorrelation = ds.ImageCorrelation ?? new(),
+                Analyzed = ds.Analyzed ?? new(),
+                Ontology = ds.Ontology ?? new()
+            });
         }
 
-        // ------------------------------------------------------------
+        // ===============================================================
         // EDIT (POST)
-        // ------------------------------------------------------------
+        // ===============================================================
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
         [Route("Edit/{id}")]
-        public async Task<IActionResult> Edit(int id, Dataset dataset)
+        public async Task<IActionResult> Edit(int id, DatasetCreateViewModel vm)
         {
-            if (id != dataset.DatasetId)
+            if (id != vm.Dataset.DatasetId)
                 return NotFound();
 
             if (!ModelState.IsValid)
-                return View(dataset);
+                return View(vm);
+
+            AssignFK(vm, id);
 
             try
             {
-                _context.Update(dataset);
+                _context.Update(vm.Dataset);
+
+                // Process children safely
+                ProcessChild(vm.StudyDesign, _context.StudyDesigns);
+                ProcessChild(vm.Publication, _context.Publications);
+                ProcessChild(vm.StudyComponent, _context.StudyComponents);
+                ProcessChild(vm.DatasetInfo, _context.DatasetInfos);
+                ProcessChild(vm.InVivo, _context.InVivos);
+                ProcessChild(vm.Procedures, _context.Procedures);
+                ProcessChild(vm.ImageAcquisition, _context.ImageAcquisitions);
+                ProcessChild(vm.ImageData, _context.ImageDatas);
+                ProcessChild(vm.ImageCorrelation, _context.ImageCorrelations);
+                ProcessChild(vm.Analyzed, _context.Analyzed);
+                ProcessChild(vm.Ontology, _context.Ontologies);
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            catch (DbUpdateConcurrencyException)
+            catch
             {
                 if (!DatasetExists(id))
                     return NotFound();
@@ -222,128 +450,117 @@ namespace Pidar.Controllers
             }
         }
 
-        // ------------------------------------------------------------
-        // DELETE (GET)
-        // ------------------------------------------------------------
+        // ===============================================================
+        // DELETE
+        // ===============================================================
         [Authorize]
         [Route("Delete/{id}")]
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null)
-                return NotFound();
+            var ds = await _context.Datasets
+                .IncludeAll()
+                .FirstOrDefaultAsync(x => x.DatasetId == id);
 
-            Dataset? dataset = await _context.Dataset
-                .FirstOrDefaultAsync(m => m.DatasetId == id);
-
-            if (dataset == null)
-                return NotFound();
-
-            return View(dataset);
+            return ds == null ? NotFound() : View(ds);
         }
 
-        // ------------------------------------------------------------
-        // DELETE (POST)
-        // ------------------------------------------------------------
         [HttpPost, ActionName("Delete")]
+        [Authorize]
         [ValidateAntiForgeryToken]
         [Route("Delete/{id}")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var strategy = _context.Database.CreateExecutionStrategy();
-            IActionResult result = RedirectToAction(nameof(Index));
+            var ds = await _context.Datasets.FindAsync(id);
+            if (ds == null)
+                return NotFound();
 
-            try
-            {
-                await strategy.ExecuteAsync(async () =>
-                {
-                    await using var transaction = await _context.Database.BeginTransactionAsync();
-
-                    Dataset? dataset = await _context.Dataset.FindAsync(id);
-                    if (dataset == null)
-                    {
-                        result = NotFound();
-                        await transaction.RollbackAsync();
-                        return;
-                    }
-
-                    int deletedDisplayId = dataset.DisplayId;
-
-                    _context.Dataset.Remove(dataset);
-                    await _context.SaveChangesAsync();
-
-                    var recordsToUpdate = await _context.Dataset
-                        .Where(m => m.DisplayId > deletedDisplayId)
-                        .OrderBy(m => m.DisplayId)
-                        .ToListAsync();
-
-                    foreach (var record in recordsToUpdate)
-                    {
-                        record.DisplayId -= 1;
-                        _context.Update(record);
-                    }
-
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in DeleteConfirmed");
-                result = View("Error", new ErrorViewModel
-                {
-                    RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-                    ErrorMessage = "An error occurred while deleting the record."
-                });
-            }
-
-            return result;
+            _context.Datasets.Remove(ds);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
-        // ------------------------------------------------------------
+        // ===============================================================
         // HELPERS
-        // ------------------------------------------------------------
+        // ===============================================================
+        private void AssignFK(DatasetCreateViewModel vm, int id)
+        {
+            if (vm.StudyDesign != null) vm.StudyDesign.DatasetId = id;
+            if (vm.Publication != null) vm.Publication.DatasetId = id;
+            if (vm.StudyComponent != null) vm.StudyComponent.DatasetId = id;
+            if (vm.DatasetInfo != null) vm.DatasetInfo.DatasetId = id;
+            if (vm.InVivo != null) vm.InVivo.DatasetId = id;
+            if (vm.Procedures != null) vm.Procedures.DatasetId = id;
+            if (vm.ImageAcquisition != null) vm.ImageAcquisition.DatasetId = id;
+            if (vm.ImageData != null) vm.ImageData.DatasetId = id;
+            if (vm.ImageCorrelation != null) vm.ImageCorrelation.DatasetId = id;
+            if (vm.Analyzed != null) vm.Analyzed.DatasetId = id;
+            if (vm.Ontology != null) vm.Ontology.DatasetId = id;
+        }
+
+        private int CalculateSampleSize(List<Dataset> results)
+        {
+            int total = 0;
+
+            foreach (var ds in results)
+            {
+                if (ds.InVivo == null)
+                    continue;
+
+                var size = ds.InVivo.OverallSampleSize;
+
+                if (int.TryParse(size, out int n))
+                    total += n;
+            }
+
+            return total;
+        }
+
+
+
         private async Task<int> CalculateTotalSampleSizeAsync()
         {
-            var sampleSizes = await _context.Dataset
+            var vals = await _context.InVivos
                 .Select(x => x.OverallSampleSize)
                 .ToListAsync();
 
             int total = 0;
-            foreach (var size in sampleSizes)
-            {
-                if (!string.IsNullOrWhiteSpace(size) &&
-                    int.TryParse(size.Replace(",", ""), out int parsed))
-                {
-                    total += parsed;
-                }
-            }
-            return total;
-        }
+            foreach (var v in vals)
+                if (int.TryParse(v, out int n))
+                    total += n;
 
-        private int CalculateSampleSize(List<Dataset> items)
-        {
-            int total = 0;
-
-            foreach (var item in items)
-            {
-                if (!string.IsNullOrWhiteSpace(item.OverallSampleSize) &&
-                    int.TryParse(item.OverallSampleSize.Replace(",", ""), out int parsed))
-                {
-                    total += parsed;
-                }
-            }
             return total;
         }
 
         private int GetTableColumnCount()
         {
-            var entityType = _context.Model.FindEntityType(typeof(Dataset));
-            return entityType?.GetProperties()?.Count() ?? 0;
+            return _context.Model.FindEntityType(typeof(Dataset))?
+                .GetProperties().Count() ?? 0;
         }
 
         private bool DatasetExists(int id)
         {
-            return _context.Dataset.Any(e => e.DatasetId == id);
+            return _context.Datasets.Any(e => e.DatasetId == id);
+        }
+    }
+
+    // ===============================================================
+    // INCLUDE EXTENSION
+    // ===============================================================
+    public static class DatasetIncludeExtensions
+    {
+        public static IQueryable<Dataset> IncludeAll(this IQueryable<Dataset> q)
+        {
+            return q.Include(x => x.StudyDesign)
+                    .Include(x => x.Publication)
+                    .Include(x => x.StudyComponent)
+                    .Include(x => x.DatasetInfo)
+                    .Include(x => x.InVivo)
+                    .Include(x => x.Procedures)
+                    .Include(x => x.ImageAcquisition)
+                    .Include(x => x.ImageData)
+                    .Include(x => x.ImageCorrelation)
+                    .Include(x => x.Analyzed)
+                    .Include(x => x.Ontology);
         }
     }
 }

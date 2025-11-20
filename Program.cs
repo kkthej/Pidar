@@ -7,6 +7,7 @@ using System.IO;
 
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Pidar.Helpers;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,9 @@ builder.Services.AddDefaultIdentity<PidarUser>(options => options.SignIn.Require
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
+
+// Register CategoryProvider for use in all Razor pages
+builder.Services.AddSingleton<ICategoryProvider, CategoryProvider>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(x =>

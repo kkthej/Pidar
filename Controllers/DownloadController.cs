@@ -1,175 +1,378 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.IO;
+using Microsoft.AspNetCore.Hosting;
+using System.Text;
+using System.Text.Json;
+using ClosedXML.Excel;
 using iText.Kernel.Pdf;
+using iText.Kernel.Geom;
+using iText.Kernel.Font;
+using iText.Kernel.Colors;
+using iText.Kernel.Pdf.Canvas;
+using iText.IO.Font.Constants;
+using iText.IO.Image;
 using iText.Layout;
 using iText.Layout.Element;
-using ClosedXML.Excel;
-using System.Text.Json;
-using System.Text;
+using iText.Layout.Properties;
 using Pidar.Data;
 using Pidar.Models;
-using iText.Layout.Properties;
-using iText.Kernel.Geom;
-using iText.IO.Font.Constants;
-using iText.Kernel.Font;
-using System.Data;
-
+using Microsoft.EntityFrameworkCore;
+using System.Drawing;
 
 namespace Pidar.Controllers
 {
     public class DownloadController : Controller
     {
         private readonly PidarDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public DownloadController(PidarDbContext context)
+        public DownloadController(PidarDbContext context, IWebHostEnvironment env)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _context = context;
+            _env = env;
         }
 
-        // CSV Download
-        public IActionResult DownloadCsv()
+        // ========================================================
+        // PRETTY LABELS
+        // ========================================================
+        private static readonly Dictionary<string, string> PrettyLabelMap = new()
         {
-            var datasetList = _context.Dataset.ToList();
-            var csvContent = GenerateCsv(datasetList);
-            return File(new System.Text.UTF8Encoding().GetBytes(csvContent), "text/csv", "dataset.csv");
+            { "DisplayId", "Dataset ID" },
+            { "OverallSampleSize", "Sample size" },
+            { "OrganOrTissue", "Organ/Tissue" },
+            { "DiseaseModel", "Disease model" },
+            { "ImagingModality", "Imaging modality" },
+            { "Species", "Species" },
+            { "Strain", "Strain" },
+            { "Sex", "Sex" },
+            { "Age", "Age" },
+            { "Weight", "Weight" },
+            { "StudyDescription", "Study description" },
+            { "StudyType", "Study type" },
+            { "StudySubtype", "Study subtype" },
+            { "PaperTitle", "Paper title" },
+            { "PaperAuthors", "Authors" },
+            { "PaperJournal", "Journal" },
+            { "PaperYear", "Year" },
+            { "PaperDoi", "DOI" }
+        };
+
+        private string Pretty(string name)
+        {
+            if (PrettyLabelMap.TryGetValue(name, out var lbl))
+                return lbl;
+
+            return System.Text.RegularExpressions.Regex
+                .Replace(name, "([a-z])([A-Z])", "$1 $2");
         }
 
-        // PDF Download using iText7
-        public IActionResult DownloadPdf()
+        // ========================================================
+        // SKIP RULES: IDs + complex types
+        // ========================================================
+        private bool SkipProp(string p)
         {
-            // Fetch data from the database
-            var datasetList = _context.Dataset.ToList();
+            if (p == "DisplayId") return false;
+            if (p == "DatasetId") return true;
+            if (p.EndsWith("Id")) return true;
+            return false;
+        }
 
-            // Debug: Check if data is being retrieved
-            Console.WriteLine($"Total rows: {datasetList.Count}");
+        private bool IsSimpleType(Type t)
+        {
+            return t.IsPrimitive ||
+                   t.IsEnum ||
+                   t == typeof(string) ||
+                   t == typeof(decimal) ||
+                   t == typeof(DateTime) ||
+                   t == typeof(Guid) ||
+                   t == typeof(bool) ||
+                   t == typeof(double) ||
+                   t == typeof(float) ||
+                   t == typeof(int) ||
+                   t == typeof(long);
+        }
 
-            // Create a memory stream to hold the PDF
-            var stream = new MemoryStream();
+        private string GetValue(object? obj, string prop)
+        {
+            if (obj == null) return "";
+            var p = obj.GetType().GetProperty(prop);
+            var val = p?.GetValue(obj)?.ToString();
+            return string.IsNullOrWhiteSpace(val) ? "" : val;
+        }
+
+        // ========================================================
+        // SECTION DEFINITIONS
+        // ========================================================
+        private readonly Dictionary<string, Func<Dataset, object?>> Sections = new()
+        {
+            { "Dataset", ds => ds },
+            { "Study Design", ds => ds.StudyDesign },
+            { "Publication", ds => ds.Publication },
+            { "Study Component", ds => ds.StudyComponent },
+            { "Dataset Info", ds => ds.DatasetInfo },
+            { "In Vivo", ds => ds.InVivo },
+            { "Procedures", ds => ds.Procedures },
+            { "Image Acquisition", ds => ds.ImageAcquisition },
+            { "Image Data", ds => ds.ImageData },
+            { "Image Correlation", ds => ds.ImageCorrelation },
+            { "Analyzed", ds => ds.Analyzed },
+            { "Ontology", ds => ds.Ontology }
+        };
+
+        // ========================================================
+        // FETCH ALL DATASETS
+        // ========================================================
+        private async Task<List<Dataset>> FetchAsync()
+        {
+            return await _context.Datasets
+                .Include(x => x.StudyDesign)
+                .Include(x => x.Publication)
+                .Include(x => x.StudyComponent)
+                .Include(x => x.DatasetInfo)
+                .Include(x => x.InVivo)
+                .Include(x => x.Procedures)
+                .Include(x => x.ImageAcquisition)
+                .Include(x => x.ImageData)
+                .Include(x => x.ImageCorrelation)
+                .Include(x => x.Analyzed)
+                .Include(x => x.Ontology)
+                .OrderBy(x => x.DisplayId)
+                .ToListAsync();
+        }
+
+        // ========================================================
+        // FLATTEN FOR JSON + CSV
+        // ========================================================
+        private Dictionary<string, object?> Flatten(Dataset ds)
+        {
+            var dict = new Dictionary<string, object?>();
+
+            foreach (var sec in Sections)
+            {
+                var obj = sec.Value(ds);
+                if (obj == null) continue;
+
+                foreach (var p in obj.GetType().GetProperties())
+                {
+                    if (SkipProp(p.Name)) continue;
+                    if (!IsSimpleType(p.PropertyType)) continue;
+
+                    var val = p.GetValue(obj);
+                    if (val == null) continue;
+
+                    if (val is string s && string.IsNullOrWhiteSpace(s)) continue;
+
+                    dict[$"{sec.Key}: {Pretty(p.Name)}"] = val;
+                }
+            }
+
+            return dict;
+        }
+
+        // ========================================================
+        // JSON EXPORT
+        // ========================================================
+        public async Task<IActionResult> DownloadJson()
+        {
+            var flat = (await FetchAsync()).Select(Flatten).ToList();
+            var json = JsonSerializer.Serialize(flat, new JsonSerializerOptions { WriteIndented = true });
+
+            return File(Encoding.UTF8.GetBytes(json), "application/json", "PIDAR_datasets.json");
+        }
+
+        // ========================================================
+        // CSV EXPORT
+        // ========================================================
+        public async Task<IActionResult> DownloadCsv()
+        {
+            var flat = (await FetchAsync()).Select(Flatten).ToList();
+            if (!flat.Any()) return Content("No data available.");
+
+            var headers = flat.First().Keys.ToList();
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Join(",", headers));
+
+            foreach (var row in flat)
+            {
+                sb.AppendLine(string.Join(",", row.Select(v =>
+                {
+                    var s = v.Value?.ToString() ?? "";
+                    return s.Contains(",") ? $"\"{s}\"" : s;
+                })));
+            }
+
+            return File(Encoding.UTF8.GetBytes(sb.ToString()),
+                "text/csv",
+                "PIDAR_datasets.csv");
+        }
+
+        // ========================================================
+        // XLSX EXPORT
+        // ========================================================
+        public async Task<IActionResult> DownloadXlsx()
+        {
+            var data = await FetchAsync();
+
+            using var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("PIDAR Data");
+            int row = 1;
+
+            foreach (var ds in data)
+            {
+                ws.Cell(row, 1).Value = $"Dataset {ds.DisplayId}";
+                ws.Range(row, 1, row, 3).Merge().Style.Fill.BackgroundColor = XLColor.CornflowerBlue;
+                ws.Row(row).Style.Font.Bold = true;
+                row++;
+
+                foreach (var sec in Sections)
+                {
+                    var obj = sec.Value(ds);
+                    if (obj == null) continue;
+
+                    ws.Cell(row, 1).Value = sec.Key;
+                    ws.Row(row).Style.Font.Bold = true;
+                    ws.Row(row).Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    row++;
+
+                    foreach (var p in obj.GetType().GetProperties())
+                    {
+                        if (SkipProp(p.Name)) continue;
+                        if (!IsSimpleType(p.PropertyType)) continue;
+
+                        var val = p.GetValue(obj);
+                        if (val == null) continue;
+
+                        if (val is string s && string.IsNullOrWhiteSpace(s))
+                            continue;
+
+                        ws.Cell(row, 1).Value = Pretty(p.Name);
+                        ws.Cell(row, 2).Value = val.ToString();
+                        row++;
+                    }
+
+                    row++;
+                }
+
+                row += 2;
+            }
+
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            wb.SaveAs(stream);
+
+            return File(stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "PIDAR_datasets.xlsx");
+        }
+
+        // ========================================================
+        // PDF EXPORT (NO EMPTY FIELDS, NO COMPLEX TYPES)
+        // ========================================================
+        public async Task<IActionResult> DownloadPdf()
+        {
+            var data = await FetchAsync();
+
+            using var stream = new MemoryStream();
             var writer = new PdfWriter(stream);
             var pdf = new PdfDocument(writer);
-            var document = new Document(pdf, PageSize.A4.Rotate()); // Landscape mode for better readability
 
-            // Set page margins
-            document.SetMargins(20, 20, 20, 20);
+            pdf.AddNewPage(); // Ensure page 1 exists
+            var doc = new iText.Layout.Document(pdf, PageSize.A4.Rotate());
+            doc.SetMargins(60, 20, 50, 20);
 
-            // Get the properties of the dataset class
-            var properties = typeof(Dataset).GetProperties();
+            var bold = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+            var normal = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
 
-            // Create a bold font for headers
-            var boldFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD);
+            // Logo
+            string logoPath = System.IO.Path.Combine(_env.WebRootPath, "images", "pidar-logo.png");
+            bool hasLogo = System.IO.File.Exists(logoPath);
+            iText.Layout.Element.Image logo = null!;
+            if (hasLogo)
+                logo = new iText.Layout.Element.Image(ImageDataFactory.Create(logoPath)).SetHeight(40);
 
-            // Create a regular font for data
-            var regularFont = PdfFontFactory.CreateFont(StandardFonts.HELVETICA);
-
-            // Iterate through each dataset row
-            for (int i = 0; i < datasetList.Count; i++)
+            foreach (var ds in data)
             {
-                var dataset = datasetList[i];
+                // HEADER / FOOTER
+                var page = pdf.GetLastPage();
+                var ps = page.GetPageSize();
+                var canvas = new PdfCanvas(page);
 
-                // Debug: Check current row data
-                Console.WriteLine($"Processing row: {dataset.DatasetId}");
+                canvas.BeginText()
+                    .SetFontAndSize(normal, 10)
+                    .MoveText(ps.GetWidth() / 2 - 140, ps.GetTop() - 30)
+                    .ShowText("PIDAR – Preclinical Imaging Data Repository")
+                    .EndText();
 
-                // Filter properties with non-null values for the current row
-                var nonNullProperties = properties
-                    .Where(prop => prop.GetValue(dataset) != null)
-                    .ToList();
+                canvas.BeginText()
+                    .SetFontAndSize(normal, 9)
+                    .MoveText(ps.GetWidth() / 2 - 15, ps.GetBottom() + 20)
+                    .ShowText($"Page {pdf.GetPageNumber(page)}")
+                    .EndText();
 
-                // Debug: Check filtered properties
-                foreach (var property in nonNullProperties)
+                canvas.Release();
+
+                // LOGO
+                if (hasLogo)
+                    doc.Add(new Paragraph().Add(logo));
+
+                // SUMMARY
+                var summary = new Paragraph()
+                    .Add($"Dataset ID: {ds.DisplayId}\n")
+                    .Add($"Species: {GetValue(ds.DatasetInfo, "Species")}\n")
+                    .Add($"Organ/Tissue: {GetValue(ds.InVivo, "OrganOrTissue")}\n")
+                    .Add($"Disease Model: {GetValue(ds.InVivo, "DiseaseModel")}\n")
+                    .Add($"Imaging Modality: {GetValue(ds.ImageAcquisition, "ImagingModality")}\n")
+                    .Add($"Sample Size: {GetValue(ds.InVivo, "OverallSampleSize")}\n")
+                    .SetFont(bold).SetFontSize(12)
+                    .SetMarginBottom(10);
+
+                doc.Add(summary);
+
+                // SECTIONS
+                foreach (var sec in Sections)
                 {
-                    Console.WriteLine($"{property.Name}: {property.GetValue(dataset)}");
-                }
+                    var obj = sec.Value(ds);
+                    if (obj == null) continue;
 
-                // Create a table with 2 columns (key-value pairs)
-                var table = new Table(UnitValue.CreatePercentArray(new float[] { 30, 70 })).UseAllAvailableWidth(); // 30% for keys, 70% for values
+                    doc.Add(new Paragraph(sec.Key)
+                        .SetFont(bold)
+                        .SetFontSize(11)
+                        .SetBackgroundColor(ColorConstants.LIGHT_GRAY)
+                        .SetMarginTop(10));
 
-                // Add key-value pairs for the current row
-                foreach (var property in nonNullProperties)
-                {
-                    // Get the key (property name)
-                    var key = property.Name;
+                    var table = new iText.Layout.Element.Table(UnitValue.CreatePercentArray(new float[] { 30, 70 }))
+                        .UseAllAvailableWidth();
 
-                    // Get the value (property value)
-                    var value = property.GetValue(dataset)?.ToString();
-
-                    // Add the key-value pair to the table
-                    table.AddCell(new Cell().Add(new Paragraph(key).SetFont(boldFont).SetFontSize(10)));
-                    table.AddCell(new Cell().Add(new Paragraph(value).SetFont(regularFont).SetFontSize(8)));
-                }
-
-                // Add the table to the document
-                document.Add(table);
-
-                // Add a page break after each dataset (except the last one)
-                if (i < datasetList.Count - 1)
-                {
-                    Console.WriteLine($"Adding page break after row {i}");
-                    document.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
-                }
-            }
-
-            // Close the document
-            document.Close();
-
-            // Return the PDF as a file
-            return File(stream.ToArray(), "application/pdf", "Pidar_dataset.pdf");
-        }
-
-        // JSON Download
-        public IActionResult DownloadJson()
-        {
-            var datasetList = _context.Dataset.ToList();
-            var jsonContent = JsonSerializer.Serialize(datasetList);
-            return File(new System.Text.UTF8Encoding().GetBytes(jsonContent), "application/json", "Pidar_dataset.json");
-        }
-
-        // XLSX Download using ClosedXML
-        public IActionResult DownloadXlsx()
-        {
-            var datasetList = _context.Dataset.ToList();
-            using (var workbook = new XLWorkbook())
-            {
-                var worksheet = workbook.Worksheets.Add("Dataset");
-                // Add headers
-                var properties = typeof(Dataset).GetProperties();
-                for (int i = 0; i < properties.Length; i++)
-                {
-                    worksheet.Cell(1, i + 1).Value = properties[i].Name;
-                }
-
-                // Add data
-                for (int i = 0; i < datasetList.Count; i++)
-                {
-                    for (int j = 0; j < properties.Length; j++)
+                    foreach (var p in obj.GetType().GetProperties())
                     {
-                        worksheet.Cell(i + 2, j + 1).Value = properties[j].GetValue(datasetList[i])?.ToString();
+                        if (SkipProp(p.Name)) continue;
+                        if (!IsSimpleType(p.PropertyType)) continue;
+
+                        var val = p.GetValue(obj);
+                        if (val == null) continue;
+
+                        if (val is string s && string.IsNullOrWhiteSpace(s))
+                            continue;
+
+                        table.AddCell(new Cell().Add(
+                            new Paragraph(Pretty(p.Name)).SetFont(bold).SetFontSize(9)
+                        ));
+
+                        table.AddCell(new Cell().Add(
+                            new Paragraph(val.ToString()).SetFont(normal).SetFontSize(8)
+                        ));
                     }
+
+                    doc.Add(table);
                 }
 
-                using (var stream = new MemoryStream())
-                {
-                    workbook.SaveAs(stream);
-                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Pidar_dataset.xlsx");
-                }
-            }
-        }
-
-        private string GenerateCsv(List<Dataset> datasetList)
-        {
-            var sb = new StringBuilder();
-            var properties = typeof(Dataset).GetProperties();
-
-            // Add headers
-            sb.AppendLine(string.Join(",", properties.Select(p => p.Name)));
-
-            // Add data
-            foreach (var dataset in datasetList)
-            {
-                sb.AppendLine(string.Join(",", properties.Select(p => p.GetValue(dataset)?.ToString())));
+                // Next page
+                doc.Add(new AreaBreak(AreaBreakType.NEXT_PAGE));
             }
 
-            return sb.ToString();
+            doc.Close();
+
+            return File(stream.ToArray(), "application/pdf", "PIDAR_datasets.pdf");
         }
     }
 }
