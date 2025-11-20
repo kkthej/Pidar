@@ -155,49 +155,85 @@ td {
     border-radius: 4px;
 }
 
-/* =========================================================
-   STATISTIC CARDS
-   ========================================================= */
-.stat-card {
-    position: relative;
-    color: white;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+/* ============================================
+   PIDAR Modern Stat Cards (Final, Fixed Version)
+============================================ */
+
+.pidar-stat-container {
+    padding: 10px;
 }
 
-    .stat-card:hover {
-        transform: scale(1.05);
+.pidar-stat-card {
+    position: relative;
+    padding: 32px 25px;
+    border-radius: 20px;
+    text-align: center;
+    color: #fff;
+    background-size: 140% 140%;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+    .pidar-stat-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
     }
 
-.card-icon {
-    font-size: 2rem;
-    opacity: 0.2;
+.pidar-icon {
+    font-size: 2.8rem;
     position: absolute;
     right: 20px;
-    bottom: 10px;
+    bottom: 15px;
+    opacity: 0.5; /* default visibility */
+    pointer-events: none;
+    line-height: 1;
 }
 
-/* Card enhancements */
-.card {
-    border-radius: 10px;
-    overflow: hidden;
-    transition: transform .2s ease, box-shadow .2s ease;
+/* WHITE CARD NEEDS DARK ICON */
+.pidar-white .pidar-icon {
+    color: #444 !important;
+    opacity: 0.8 !important;
 }
 
-    .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-    }
+/* COLORED CARDS NEED LIGHT ICON */
+.pidar-green .pidar-icon,
+.pidar-red .pidar-icon {
+    color: rgba(255, 255, 255, 0.8) !important;
+    opacity: 0.4 !important;
+}
 
-.card-header {
-    border-radius: 10px 10px 0 0 !important;
+.pidar-stat-card h3 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.pidar-stat-card p {
+    font-size: 1.05rem;
+    font-style: italic;
+    margin: 0;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+/* PIDAR Color Themes */
+.pidar-green {
+    background: linear-gradient(135deg, #198754, #157347);
+}
+
+.pidar-white {
+    background: #ffffff;
+    color: #212529;
+    border: 1px solid #eee;
+}
+
+.pidar-red {
+    background: linear-gradient(135deg, #dc3545, #c82333);
 }
 
 /* =========================================================
-   CONTRIBUTORS GRID
+   CONTRIBUTORS GRID (MAIN SECTION)
    ========================================================= */
 .contributors {
     display: grid;
@@ -210,16 +246,53 @@ td {
 }
 
     .contributors h2 {
-        grid-column: 1 / -1;
+        grid-column: 1 / -1; /* Makes headings span full width */
         text-align: center;
-        padding: 1rem;
+        padding: 1rem 0;
     }
 
+/* Generic logo styling */
 .contributor img {
     width: 100px;
     height: auto;
     padding: 1rem 0;
 }
+
+/* =========================================================
+   SPECIAL: CENTER FUNDING SOURCES
+   ========================================================= */
+
+/* =========================================================
+   CENTER FUNDING SOURCES IN COLUMNS 2 AND 3
+   ========================================================= */
+.funding-row {
+    grid-column: 1 / -1; /* full-width row inside main grid */
+    display: grid;
+    /* EXACT placement: use 4-column grid matching main layout */
+    grid-template-columns: repeat(4, 1fr);
+    /* spacing */
+    padding-top: 0.5rem;
+    gap: 1rem;
+}
+
+    /* place logos in columns 2 and 3 */
+    .funding-row .contributor:nth-child(1) {
+        grid-column: 2;
+    }
+
+    .funding-row .contributor:nth-child(2) {
+        grid-column: 3;
+    }
+
+    /* keep image size */
+    .funding-row .contributor img {
+        width: 110px;
+    }
+
+
+/* ===========================
+   RESPONSIVE BEHAVIOR
+   =========================== */
 
 @media (max-width: 768px) {
     .contributors {
@@ -228,6 +301,10 @@ td {
 
     .contributor img {
         width: 80px;
+    }
+
+    .funding-row {
+        grid-template-columns: repeat(2, auto);
     }
 }
 
@@ -239,7 +316,13 @@ td {
     .contributor img {
         width: 60px;
     }
+
+    .funding-row {
+        grid-template-columns: 1fr; /* stack on small screens */
+        gap: 1rem;
+    }
 }
+
 
 /* =========================================================
    LOGIN PAGE
