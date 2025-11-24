@@ -79,6 +79,8 @@ app.MapHealthChecks("/health");
 
 
 
+
+
 // Apply pending migrations on startup
 // Update your migration code to handle container startup delays
 using (var scope = app.Services.CreateScope())
@@ -117,7 +119,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 
-
+// Run startup jobs
+await StartupJobs.RunAsync(app.Services);
 
 
 // Configure the HTTP request pipeline

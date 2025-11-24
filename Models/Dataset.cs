@@ -10,7 +10,9 @@ namespace Pidar.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int DatasetId { get; set; }
 
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int DisplayId { get; set; }
+
 
         // Navigation properties (1:1)
         public StudyDesign? StudyDesign { get; set; }

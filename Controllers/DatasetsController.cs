@@ -2,9 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
+using Pidar.Helpers;
 using Pidar.Models;
 using Pidar.Models.ViewModels;
-using Pidar.Helpers;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Pidar.Controllers
 {
@@ -22,24 +25,21 @@ namespace Pidar.Controllers
         }
 
         // ===============================================================
-        // INTERNAL CHILD PROCESSOR (NO ObjectHelper)
+        // INTERNAL CHILD PROCESSOR
         // ===============================================================
         private void ProcessChild<T>(T? entity, DbSet<T> set) where T : class
         {
             if (entity == null)
                 return;
 
-            // Check if all string properties are empty → delete child
             if (IsEntityEmpty(entity))
             {
                 var entry = _context.Entry(entity);
                 if (entry.IsKeySet)
                     set.Remove(entity);
-
                 return;
             }
 
-            // Not empty → Insert or Update
             if (_context.Entry(entity).IsKeySet)
                 _context.Update(entity);
             else
@@ -67,6 +67,25 @@ namespace Pidar.Controllers
         }
 
         // ===============================================================
+        // SEQUENTIAL DISPLAY ID REGENERATION (1..N ALWAYS)
+        // ===============================================================
+        [NonAction]
+        public async Task RegenerateDisplayIdsAsync()
+        {
+            var all = await _context.Datasets
+                .OrderBy(x => x.DatasetId)
+                .ToListAsync();
+
+            int next = 1;
+            foreach (var ds in all)
+            {
+                ds.DisplayId = next++;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        // ===============================================================
         // SEARCH FORM
         // ===============================================================
         [Route("Search")]
@@ -77,93 +96,77 @@ namespace Pidar.Controllers
             var query = _context.Datasets
                 .IncludeAll()
                 .AsNoTracking()
-                .OrderBy(x => x.DisplayId)
-                .AsQueryable();
+                .OrderBy(x => x.DisplayId);
 
-            var paginatedData = await PaginatedList<Dataset>.CreateAsync(query, pageNumber, pageSize);
+            var paginated = await PaginatedList<Dataset>
+                .CreateAsync(query, pageNumber, pageSize);
 
-            return View(paginatedData);
+            return View(paginated);
         }
 
         // ===============================================================
         // SEARCH RESULTS
         // ===============================================================
         [Route("SearchResults")]
-        public async Task<IActionResult> ShowSearchResults(string? SearchPhrase, string? sortOrder, int pageNumber = 1)
+        public async Task<IActionResult> ShowSearchResults(
+            string? SearchPhrase,
+            string? sortOrder,
+            int pageNumber = 1)
         {
             const int pageSize = 10;
 
-            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc"
-                ? "displayid_desc"
-                : "displayid_asc";
-
-            ViewBag.CurrentSort = sortOrder;
+            ViewData["DisplayIdSortParam"] =
+                sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
 
             if (string.IsNullOrWhiteSpace(SearchPhrase))
                 return RedirectToAction(nameof(Index));
 
-            // Load everything (Dataset + 11 child tables)
             var allData = await _context.Datasets
                 .IncludeAll()
                 .AsNoTracking()
                 .ToListAsync();
 
-            // Flatten + Search through ALL string properties from ALL tables
             var results = allData.Where(m =>
                 GetAllStringValues(m)
-                    .Any(value => value.Contains(SearchPhrase, StringComparison.OrdinalIgnoreCase))
+                    .Any(v => v.Contains(SearchPhrase, System.StringComparison.OrdinalIgnoreCase))
             ).ToList();
 
-            // Sorting
             results = sortOrder switch
             {
                 "displayid_desc" => results.OrderByDescending(m => m.DisplayId).ToList(),
                 _ => results.OrderBy(m => m.DisplayId).ToList()
             };
 
-            // Pagination
-            var totalRecords = results.Count;
-            var paginatedResults = results
+            var page = results
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
 
-            ViewData["DatasetCount"] = totalRecords;
+            ViewData["DatasetCount"] = results.Count;
             ViewData["TotalSampleSize"] = CalculateSampleSize(results);
-            // ⭐ FIX INCLUDED HERE ⭐
+
             var stats = GetMetadataStats();
             ViewData["TableColumnCount"] = stats.TotalFields;
             ViewBag.MetadataSections = stats.SectionCounts;
 
-            return View("Index", new PaginatedList<Dataset>(paginatedResults, totalRecords, pageNumber, pageSize));
+            return View("Index", new PaginatedList<Dataset>(page, results.Count, pageNumber, pageSize));
         }
-        // Collect ALL string values from Dataset + all children
+
         private IEnumerable<string> GetAllStringValues(Dataset ds)
         {
             foreach (var prop in typeof(Dataset).GetProperties())
             {
-                if (prop.PropertyType == typeof(string))
-                {
-                    string? val = prop.GetValue(ds)?.ToString();
-                    if (!string.IsNullOrWhiteSpace(val))
-                        yield return val;
-                }
+                if (prop.PropertyType == typeof(string) &&
+                    prop.GetValue(ds) is string s &&
+                    !string.IsNullOrWhiteSpace(s))
+                    yield return s;
             }
 
-            // Child entities
-            var children = new object?[]
+            object?[] children =
             {
-        ds.StudyDesign,
-        ds.Publication,
-        ds.StudyComponent,
-        ds.DatasetInfo,
-        ds.InVivo,
-        ds.Procedures,
-        ds.ImageAcquisition,
-        ds.ImageData,
-        ds.ImageCorrelation,
-        ds.Analyzed,
-        ds.Ontology
+                ds.StudyDesign, ds.Publication, ds.StudyComponent, ds.DatasetInfo,
+                ds.InVivo, ds.Procedures, ds.ImageAcquisition, ds.ImageData,
+                ds.ImageCorrelation, ds.Analyzed, ds.Ontology
             };
 
             foreach (var child in children)
@@ -172,66 +175,55 @@ namespace Pidar.Controllers
 
                 foreach (var prop in child.GetType().GetProperties())
                 {
-                    if (prop.PropertyType == typeof(string))
-                    {
-                        string? val = prop.GetValue(child)?.ToString();
-                        if (!string.IsNullOrWhiteSpace(val))
-                            yield return val;
-                    }
+                    if (prop.PropertyType == typeof(string) &&
+                        prop.GetValue(child) is string cv &&
+                        !string.IsNullOrWhiteSpace(cv))
+                        yield return cv;
                 }
             }
         }
 
-        // ------------------------------------------
-        // COUNT DISTINCT METADATA FIELDS + SECTIONS
-        // ------------------------------------------
+        // ===============================================================
+        // METADATA STATS
+        // ===============================================================
         private (int TotalFields, Dictionary<string, int> SectionCounts) GetMetadataStats()
         {
-            var entities = new Dictionary<string, Type>
-        {
-            { "Dataset", typeof(Dataset) },
-            { "Study Design", typeof(StudyDesign) },
-            { "Publication", typeof(Publication) },
-            { "Study Component", typeof(StudyComponent) },
-            { "Dataset Info", typeof(DatasetInfo) },
-            { "In Vivo", typeof(InVivo) },
-            { "Procedures", typeof(Procedures) },
-            { "Image Acquisition", typeof(ImageAcquisition) },
-            { "Image Data", typeof(ImageData) },
-            { "Image Correlation", typeof(ImageCorrelation) },
-            { "Analyzed", typeof(Analyzed) },
-            { "Ontology", typeof(Ontology) }
-        };
+            var entities = new Dictionary<string, System.Type>
+            {
+                {"Dataset", typeof(Dataset)},
+                {"Study Design", typeof(StudyDesign)},
+                {"Publication", typeof(Publication)},
+                {"Study Component", typeof(StudyComponent)},
+                {"Dataset Info", typeof(DatasetInfo)},
+                {"In Vivo", typeof(InVivo)},
+                {"Procedures", typeof(Procedures)},
+                {"Image Acquisition", typeof(ImageAcquisition)},
+                {"Image Data", typeof(ImageData)},
+                {"Image Correlation", typeof(ImageCorrelation)},
+                {"Analyzed", typeof(Analyzed)},
+                {"Ontology", typeof(Ontology)}
+            };
 
-            var sectionCounts = new Dictionary<string, int>();
-            var distinctFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var sections = new Dictionary<string, int>();
+            var distinct = new HashSet<string>();
 
             foreach (var section in entities)
             {
                 var entityType = _context.Model.FindEntityType(section.Value);
-                if (entityType == null)
-                    continue;
+                if (entityType == null) continue;
 
                 var fields = entityType
                     .GetProperties()
                     .Select(p => p.Name)
-                    .Where(p => !p.Equals("DatasetId", StringComparison.OrdinalIgnoreCase) &&
-                                !p.Equals("dataset_id", StringComparison.OrdinalIgnoreCase) &&
-                                !p.Equals("DisplayId", StringComparison.OrdinalIgnoreCase))  // exclude DisplayId too
+                    .Where(p => p != "DatasetId" && p != "DisplayId")
                     .ToList();
 
-                // Count ONLY real metadata fields for this section
-                sectionCounts[section.Key] = fields.Count;
-
-                // Add to distinct global list
-                foreach (var f in fields)
-                    distinctFields.Add(f);
+                sections[section.Key] = fields.Count;
+                foreach (var f in fields) distinct.Add(f);
             }
 
-            return (distinctFields.Count, sectionCounts);
+            return (distinct.Count, sections);
         }
-
-
 
         // ===============================================================
         // INDEX
@@ -241,39 +233,26 @@ namespace Pidar.Controllers
         public async Task<IActionResult> Index(string? sortOrder, int pageNumber = 1)
         {
             ViewData["ActivePage"] = "Dataset";
-            ViewData["DisplayIdSortParam"] = sortOrder == "displayid_asc"
-                ? "displayid_desc"
-                : "displayid_asc";
+            ViewData["DisplayIdSortParam"] =
+                sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
 
-            // ⭐⭐ THE FIX — LOAD ALL CHILD TABLES ⭐⭐
             var query = _context.Datasets
                 .IncludeAll()
                 .AsNoTracking()
-                .AsQueryable();
+                .OrderBy(x => x.DisplayId);
 
-            query = sortOrder switch
-            {
-                "displayid_desc" => query.OrderByDescending(x => x.DisplayId),
-                "displayid_asc" => query.OrderBy(x => x.DisplayId),
-                _ => query.OrderBy(x => x.DisplayId)
-            };
+            var paginated = await PaginatedList<Dataset>
+                .CreateAsync(query, pageNumber, 10);
 
-            var paginated = await PaginatedList<Dataset>.CreateAsync(query, pageNumber, 10);
-
-            // ----- Stats -----
             ViewData["DatasetCount"] = await _context.Datasets.CountAsync();
             ViewData["TotalSampleSize"] = await CalculateTotalSampleSizeAsync();
 
-            // 🔥 NEW metadata stats
             var stats = GetMetadataStats();
-            ViewData["TableColumnCount"] = stats.TotalFields;   // global field count
-            ViewBag.MetadataSections = stats.SectionCounts;     // per-section count
+            ViewData["TableColumnCount"] = stats.TotalFields;
+            ViewBag.MetadataSections = stats.SectionCounts;
 
             return View(paginated);
         }
-
-
-
 
         // ===============================================================
         // DETAILS
@@ -295,12 +274,14 @@ namespace Pidar.Controllers
         [Route("Create")]
         public IActionResult Create()
         {
-            int nextId = (_context.Datasets.Max(x => (int?)x.DisplayId) ?? 0) + 1;
-            ViewBag.SuggestedDisplayId = nextId;
+            int nextDisplayId =
+                (_context.Datasets.Max(x => (int?)x.DisplayId) ?? 0) + 1;
+
+            ViewBag.SuggestedDisplayId = nextDisplayId;
 
             return View(new DatasetCreateViewModel
             {
-                Dataset = new Dataset { DisplayId = nextId },
+                Dataset = new Dataset { DisplayId = nextDisplayId },
                 StudyDesign = new(),
                 Publication = new(),
                 StudyComponent = new(),
@@ -338,37 +319,30 @@ namespace Pidar.Controllers
                     await _context.SaveChangesAsync();
 
                     int id = vm.Dataset.DatasetId;
-
                     AssignFK(vm, id);
 
-                    // Always insert children on Create
-                    // Force compiler to treat all children as non-null
                     object[] children =
                     {
-                        vm.StudyDesign!,
-                        vm.Publication!,
-                        vm.StudyComponent!,
-                        vm.DatasetInfo!,
-                        vm.InVivo!,
-                        vm.Procedures!,
-                        vm.ImageAcquisition!,
-                        vm.ImageData!,
-                        vm.ImageCorrelation!,
-                        vm.Analyzed!,
-                        vm.Ontology!
+                        vm.StudyDesign!, vm.Publication!, vm.StudyComponent!,
+                        vm.DatasetInfo!, vm.InVivo!, vm.Procedures!,
+                        vm.ImageAcquisition!, vm.ImageData!,
+                        vm.ImageCorrelation!, vm.Analyzed!, vm.Ontology!
                     };
 
                     _context.AddRange(children);
-
-
                     await _context.SaveChangesAsync();
+
                     await tx.CommitAsync();
                 });
 
+                // ⭐ regenerate sequential DisplayIds
+                await RegenerateDisplayIdsAsync();
+
                 return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
+                _logger.LogError(ex, "Error creating dataset");
                 ModelState.AddModelError("", ex.Message);
                 return View(vm);
             }
@@ -385,8 +359,7 @@ namespace Pidar.Controllers
                 .IncludeAll()
                 .FirstOrDefaultAsync(x => x.DatasetId == id);
 
-            if (ds == null)
-                return NotFound();
+            if (ds == null) return NotFound();
 
             return View(new DatasetCreateViewModel
             {
@@ -420,13 +393,21 @@ namespace Pidar.Controllers
             if (!ModelState.IsValid)
                 return View(vm);
 
+            var original = await _context.Datasets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.DatasetId == id);
+
+            if (original == null)
+                return NotFound();
+
+            vm.Dataset.DisplayId = original.DisplayId;
+
             AssignFK(vm, id);
 
             try
             {
                 _context.Update(vm.Dataset);
 
-                // Process children safely
                 ProcessChild(vm.StudyDesign, _context.StudyDesigns);
                 ProcessChild(vm.Publication, _context.Publications);
                 ProcessChild(vm.StudyComponent, _context.StudyComponents);
@@ -476,6 +457,10 @@ namespace Pidar.Controllers
 
             _context.Datasets.Remove(ds);
             await _context.SaveChangesAsync();
+
+            // ⭐ regenerate sequential DisplayIds
+            await RegenerateDisplayIdsAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -503,19 +488,13 @@ namespace Pidar.Controllers
 
             foreach (var ds in results)
             {
-                if (ds.InVivo == null)
-                    continue;
-
-                var size = ds.InVivo.OverallSampleSize;
-
-                if (int.TryParse(size, out int n))
+                if (ds.InVivo == null) continue;
+                if (int.TryParse(ds.InVivo.OverallSampleSize, out int n))
                     total += n;
             }
 
             return total;
         }
-
-
 
         private async Task<int> CalculateTotalSampleSizeAsync()
         {
@@ -529,12 +508,6 @@ namespace Pidar.Controllers
                     total += n;
 
             return total;
-        }
-
-        private int GetTableColumnCount()
-        {
-            return _context.Model.FindEntityType(typeof(Dataset))?
-                .GetProperties().Count() ?? 0;
         }
 
         private bool DatasetExists(int id)
