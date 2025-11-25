@@ -393,43 +393,77 @@ namespace Pidar.Controllers
             if (!ModelState.IsValid)
                 return View(vm);
 
-            var original = await _context.Datasets
-                .AsNoTracking()
+            // 1) Load with tracking + children
+            var entity = await _context.Datasets
+                .IncludeAll()
                 .FirstOrDefaultAsync(x => x.DatasetId == id);
 
-            if (original == null)
+            if (entity == null)
                 return NotFound();
 
-            vm.Dataset.DisplayId = original.DisplayId;
+            // 2) Preserve DisplayId (never trust the client)
+            vm.Dataset.DisplayId = entity.DisplayId;
 
+            // 3) Ensure FKs for incoming children
             AssignFK(vm, id);
 
-            try
+            // 4) Update root entity safely
+            _context.Entry(entity).CurrentValues.SetValues(vm.Dataset);
+
+            // 5) Update children safely (add / update / delete)
+            UpdateChild(entity.StudyDesign, vm.StudyDesign, ds => entity.StudyDesign = ds);
+            UpdateChild(entity.Publication, vm.Publication, p => entity.Publication = p);
+            UpdateChild(entity.StudyComponent, vm.StudyComponent, sc => entity.StudyComponent = sc);
+            UpdateChild(entity.DatasetInfo, vm.DatasetInfo, di => entity.DatasetInfo = di);
+            UpdateChild(entity.InVivo, vm.InVivo, iv => entity.InVivo = iv);
+            UpdateChild(entity.Procedures, vm.Procedures, pr => entity.Procedures = pr);
+            UpdateChild(entity.ImageAcquisition, vm.ImageAcquisition, ia => entity.ImageAcquisition = ia);
+            UpdateChild(entity.ImageData, vm.ImageData, idt => entity.ImageData = idt);
+            UpdateChild(entity.ImageCorrelation, vm.ImageCorrelation, ic => entity.ImageCorrelation = ic);
+            UpdateChild(entity.Analyzed, vm.Analyzed, an => entity.Analyzed = an);
+            UpdateChild(entity.Ontology, vm.Ontology, on => entity.Ontology = on);
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+
+        private void UpdateChild<T>(
+    T? tracked,
+    T? incoming,
+    Action<T?> assignToParent
+) where T : class
+        {
+            // Both null → nothing to do
+            if (tracked == null && incoming == null)
+                return;
+
+            // User cleared the form → delete existing row
+            if (tracked != null && (incoming == null || IsEntityEmpty(incoming)))
             {
-                _context.Update(vm.Dataset);
-
-                ProcessChild(vm.StudyDesign, _context.StudyDesigns);
-                ProcessChild(vm.Publication, _context.Publications);
-                ProcessChild(vm.StudyComponent, _context.StudyComponents);
-                ProcessChild(vm.DatasetInfo, _context.DatasetInfos);
-                ProcessChild(vm.InVivo, _context.InVivos);
-                ProcessChild(vm.Procedures, _context.Procedures);
-                ProcessChild(vm.ImageAcquisition, _context.ImageAcquisitions);
-                ProcessChild(vm.ImageData, _context.ImageDatas);
-                ProcessChild(vm.ImageCorrelation, _context.ImageCorrelations);
-                ProcessChild(vm.Analyzed, _context.Analyzed);
-                ProcessChild(vm.Ontology, _context.Ontologies);
-
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                _context.Remove(tracked);
+                assignToParent(null);
+                return;
             }
-            catch
+
+            // New row in form, no existing row in DB → insert
+            if (tracked == null && incoming != null && !IsEntityEmpty(incoming))
             {
-                if (!DatasetExists(id))
-                    return NotFound();
-                throw;
+                _context.Add(incoming);
+                assignToParent(incoming);
+                return;
+            }
+
+            // Existing row in DB + non-empty incoming → update
+            if (tracked != null && incoming != null && !IsEntityEmpty(incoming))
+            {
+                _context.Entry(tracked).CurrentValues.SetValues(incoming);
+                return;
             }
         }
+
+
 
         // ===============================================================
         // DELETE
