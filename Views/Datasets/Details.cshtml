@@ -2,18 +2,37 @@
 @using Microsoft.AspNetCore.Html
 @using Pidar.Areas.Identity.Data
 @using Microsoft.AspNetCore.Identity
-@using Pidar.Helpers   <!-- REQUIRED FOR AUTO ONTOLOGY RENDERING -->
+@using Pidar.Helpers <!-- REQUIRED FOR AUTO ONTOLOGY RENDERING -->
 @inject SignInManager<PidarUser> SignInManager
 @inject UserManager<PidarUser> UserManager
 @inject ICategoryProvider CategoryProvider
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Dataset Details";
     var colorClasses = new[] { "primary", "success", "info", "warning", "danger", "secondary" };
     var colorIndex = 0;
 }
 
 @functions {
+
+    /* ==========================================================
+       CHECK IF VALUE IS MEANINGFUL
+       ========================================================== */
+    public static bool IsMeaningful(object? value)
+    {
+        if (value == null) return false;
+
+        var str = value.ToString()?.Trim().ToLower();
+        if (string.IsNullOrWhiteSpace(str)) return false;
+
+        var hiddenValues = new[]
+        {
+            "n/a", "na", "none", "not available", "null", "-", "unknown",
+            "not applicable", "pending", "todo"
+        };
+
+        return !hiddenValues.Contains(str);
+    }
 
     /* ==========================================================
        FORMAT LABEL (camelCase → spaced words, keep acronyms)
@@ -23,21 +42,84 @@
         if (String.IsNullOrWhiteSpace(raw))
             return HtmlString.Empty;
 
+        // Normalize
         var clean = raw.Replace("/", " ");
-        var formatted = System.Text.RegularExpressions.Regex.Replace(
+
+        // Insert space before camelCase boundaries
+        var spaced = System.Text.RegularExpressions.Regex.Replace(
             clean,
-            @"(?<=[a-z0-9])(?=[A-Z][a-z])",
+            @"(?<=[a-z0-9])(?=[A-Z])",
             " "
-        ).Trim();
+        );
 
-        if (formatted.Length > 0)
-            formatted = Char.ToUpper(formatted[0]) + formatted[1..];
+        var parts = spaced.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
 
-        return new HtmlString(System.Net.WebUtility.HtmlEncode(formatted));
+        // Known acronyms to auto-upcase
+        var acronyms = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "ncit", "doid", "chebi", "clo", "ror", "pi", "qa", "qc", "duo", "doi", "orcid"
+    };
+
+        // Format each token
+        for (int i = 0; i < parts.Count; i++)
+        {
+            var p = parts[i];
+
+            // Pure acronym (QA, QC, PI, ROR, NCIT…)
+            if (acronyms.Contains(p.ToLower()))
+            {
+                parts[i] = p.ToUpper();
+                continue;
+            }
+
+            // Prefix acronym (RorCodeOwner → ROR CodeOwner)
+            foreach (var ac in acronyms)
+            {
+                if (p.StartsWith(ac, StringComparison.OrdinalIgnoreCase))
+                {
+                    var suffix = p.Substring(ac.Length);
+                    parts[i] = ac.ToUpper() +
+                               (suffix.Length > 0 ? " " + suffix : "");
+                    break;
+                }
+            }
+
+            // Normal word → Title Case
+            if (!parts[i].All(Char.IsUpper))
+            {
+                parts[i] = Char.ToUpper(parts[i][0]) + parts[i].Substring(1);
+            }
+        }
+
+        var finalLabel = String.Join(" ", parts).Trim();
+
+        /* ============================================================
+           SPECIAL CASE RULES
+           ============================================================ */
+
+        // QA QC → QA/QC
+        if (finalLabel.Equals("QA QC", StringComparison.OrdinalIgnoreCase))
+            finalLabel = "QA/QC";
+
+        // QA QC Info → QA/QC Info
+        if (finalLabel.Equals("QA QC Info", StringComparison.OrdinalIgnoreCase))
+            finalLabel = "QA/QC Info";
+
+        // RorCodeOwner → ROR Code Owner
+        if (finalLabel.Equals("Ror Code Owner", StringComparison.OrdinalIgnoreCase))
+            finalLabel = "ROR Code Owner";
+
+        // PiOrchid → PI-ORCID
+        // Your property is "PiOrchid" but the correct acronym is ORCID, not Orchid
+        if (finalLabel.Equals("Pi Orchid", StringComparison.OrdinalIgnoreCase))
+            finalLabel = "PI-ORCID";
+
+        return new HtmlString(System.Net.WebUtility.HtmlEncode(finalLabel));
     }
 
+
     /* ==========================================================
-       UNIVERSAL FALLBACK FORMATTER (non-ontology)
+       UNIVERSAL VALUE FORMATTER
        ========================================================== */
     public IHtmlContent FormatValue(object? value)
     {
@@ -45,7 +127,6 @@
         if (String.IsNullOrWhiteSpace(str))
             return HtmlString.Empty;
 
-        // URL or mailto
         if (Uri.TryCreate(str, UriKind.Absolute, out var uri))
         {
             if (uri.Scheme == Uri.UriSchemeMailto || str.Contains("@"))
@@ -54,11 +135,9 @@
             return new HtmlString($"<a href=\"{str}\" target=\"_blank\">{str}</a>");
         }
 
-        // Email-like
         if (str.Contains("@") && str.Contains("."))
             return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
 
-        // Normal formatting
         str = str.Replace("/", " ");
         var formatted = System.Text.RegularExpressions.Regex.Replace(
             str,
@@ -86,6 +165,7 @@
             if (current == null) return null;
             var prop = current.GetType().GetProperty(part);
             if (prop == null) return null;
+
             current = prop.GetValue(current);
         }
         return current;
@@ -107,23 +187,23 @@
 
 <hr />
 
-<!-- CATEGORY DEFINITIONS -->
 @{
     var categories = CategoryProvider.GetCategories();
 }
 
-<!-- ==========================
-     RENDER DETAILS UI
-     ========================== -->
 <div class="container my-4">
     <h2 class="text-center mb-4">Dataset Details</h2>
 
     @foreach (var category in categories)
     {
+        /* ===================================================================
+        UPDATE: category visibility now checks IsMeaningful() instead of
+        only null/empty → N/A fields no longer trigger category display
+        =================================================================== */
         bool hasContent = category.Value.Any(path =>
         {
             var val = GetNested(Model, path);
-            return val != null && !String.IsNullOrWhiteSpace(val.ToString());
+            return IsMeaningful(val);
         });
 
         if (!hasContent)
@@ -143,11 +223,16 @@
                         <col style="width:30%">
                         <col style="width:70%">
                     </colgroup>
+
                     <tbody>
                         @foreach (var path in category.Value)
                         {
                             var value = GetNested(Model, path);
-                            if (value == null || String.IsNullOrWhiteSpace(value.ToString()))
+
+                            /* ============================================
+                            UPDATE: field-level filtering using IsMeaningful
+                            ============================================ */
+                            if (!IsMeaningful(value))
                                 continue;
 
                             <tr>
@@ -157,11 +242,6 @@
 
                                 <td>
                                     @{
-                                        /* ================================
-                                           AUTOMATIC ONTOLOGY DETECTION
-                                           If a field starts with "Ontology."
-                                           → render clickable ontology badges
-                                           ================================ */
                                         if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
                                         {
                                             @Html.Raw(AutoOntologyRenderer.Render(value.ToString()))
@@ -175,6 +255,7 @@
                             </tr>
                         }
                     </tbody>
+
                 </table>
             </div>
         </div>
