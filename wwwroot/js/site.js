@@ -255,5 +255,203 @@
             updateButtonState('Download', 'btn-primary');
         }
     }
+
+    // ============================================================
+    // NEW: Download Selected Datasets (multi-select dropdown)
+    // ============================================================
+    const datasetCheckboxList = document.getElementById('datasetCheckboxList');
+    const selectAllDatasets = document.getElementById('selectAllDatasets');
+    const datasetSearch = document.getElementById('datasetSearch');
+    const selectedCountBadge = document.getElementById('selectedCountBadge');
+    const selectedCountText = document.getElementById('selectedCountText');
+
+    const selectedDownloadType = document.getElementById('selectedDownloadType');
+    const downloadSelectedButton = document.getElementById('downloadSelectedButton');
+    const selectedProgressText = document.getElementById('selectedProgressText');
+
+    let datasetItems = []; // { displayId, label, haystack }
+    let selectedIds = new Set();
+
+    function setSelectedUi() {
+        const count = selectedIds.size;
+        if (selectedCountBadge) selectedCountBadge.textContent = String(count);
+        if (selectedCountText) selectedCountText.textContent = String(count);
+
+        // enable only when: >=1 selected AND format chosen
+        const ok = count > 0 && selectedDownloadType && !!selectedDownloadType.value;
+        if (downloadSelectedButton) downloadSelectedButton.disabled = !ok;
+    }
+
+    function buildLabel(item) {
+        // item: { displayId, species, modality, title }
+        const bits = [];
+        if (item.species) bits.push(item.species);
+        if (item.modality) bits.push(item.modality);
+        if (item.title) bits.push(item.title);
+        const tail = bits.length ? ` — ${bits.join(" | ")}` : "";
+        return `Dataset ${item.displayId}${tail}`;
+    }
+
+    function renderDatasetList(filterText = "") {
+        if (!datasetCheckboxList) return;
+
+        const q = (filterText || "").trim().toLowerCase();
+        const filtered = !q
+            ? datasetItems
+            : datasetItems.filter(x => x.haystack.includes(q));
+
+        if (!filtered.length) {
+            datasetCheckboxList.innerHTML = `<div class="text-muted small">No datasets found.</div>`;
+            return;
+        }
+
+        datasetCheckboxList.innerHTML = filtered.map(x => {
+            const checked = selectedIds.has(x.displayId) ? "checked" : "";
+            return `
+                <div class="form-check">
+                    <input class="form-check-input dataset-cb" type="checkbox" id="ds_${x.displayId}" data-id="${x.displayId}" ${checked}>
+                    <label class="form-check-label" for="ds_${x.displayId}">
+                        ${x.label}
+                    </label>
+                </div>
+            `;
+        }).join("");
+    }
+
+    async function loadDatasetsForDropdown() {
+        if (!datasetCheckboxList) return;
+
+        try {
+            const res = await fetch(`/Download/DatasetList?t=${Date.now()}`);
+            if (!res.ok) throw new Error(`DatasetList failed: ${res.status}`);
+
+            const list = await res.json();
+
+            datasetItems = list.map(d => {
+                const label = buildLabel(d);
+                const haystack = [
+                    String(d.displayId ?? ""),
+                    d.species ?? "",
+                    d.modality ?? "",
+                    d.title ?? ""
+                ].join(" ").toLowerCase();
+
+                return { displayId: d.displayId, label, haystack };
+            });
+
+            renderDatasetList("");
+            setSelectedUi();
+        } catch (e) {
+            console.error(e);
+            datasetCheckboxList.innerHTML = `<div class="text-danger small">Failed to load datasets.</div>`;
+        }
+    }
+
+    // Events
+    if (datasetCheckboxList) {
+        datasetCheckboxList.addEventListener('change', (e) => {
+            const cb = e.target;
+            if (!cb.classList.contains('dataset-cb')) return;
+
+            const id = parseInt(cb.getAttribute('data-id'));
+            if (Number.isNaN(id)) return;
+
+            if (cb.checked) selectedIds.add(id);
+            else selectedIds.delete(id);
+
+            // Update Select All checkbox state
+            if (selectAllDatasets) {
+                selectAllDatasets.checked = (selectedIds.size === datasetItems.length && datasetItems.length > 0);
+                selectAllDatasets.indeterminate = (selectedIds.size > 0 && selectedIds.size < datasetItems.length);
+            }
+
+            setSelectedUi();
+        });
+    }
+
+    if (selectAllDatasets) {
+        selectAllDatasets.addEventListener('change', () => {
+            if (selectAllDatasets.checked) {
+                selectedIds = new Set(datasetItems.map(x => x.displayId));
+            } else {
+                selectedIds.clear();
+            }
+            renderDatasetList(datasetSearch ? datasetSearch.value : "");
+            selectAllDatasets.indeterminate = false;
+            setSelectedUi();
+        });
+    }
+
+    if (datasetSearch) {
+        datasetSearch.addEventListener('input', () => {
+            renderDatasetList(datasetSearch.value);
+        });
+    }
+
+    if (selectedDownloadType) {
+        selectedDownloadType.addEventListener('change', setSelectedUi);
+    }
+
+    function getSelectedDownloadUrl(format, idsCsv) {
+        const map = {
+            csv: '/Download/DownloadSelectedCsv',
+            pdf: '/Download/DownloadSelectedPdf',
+            json: '/Download/DownloadSelectedJson',
+            xlsx: '/Download/DownloadSelectedXlsx'
+        };
+        const base = map[(format || "").toLowerCase()];
+        if (!base) return "";
+        return `${base}?displayIds=${encodeURIComponent(idsCsv)}`;
+    }
+
+    async function startSelectedDownload(format) {
+        const idsCsv = Array.from(selectedIds).sort((a, b) => a - b).join(",");
+        const url = getSelectedDownloadUrl(format, idsCsv);
+        if (!url) throw new Error("Invalid selected download format/url");
+
+        // simple progress text (separate from existing)
+        if (selectedProgressText) selectedProgressText.textContent = "Preparing…";
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(`${url}&t=${Date.now()}`, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+
+        const blob = await response.blob();
+        const filename = `PIDAR_selected_${selectedIds.size}_${new Date().toISOString().slice(0, 10)}.${format}`;
+        await downloadBlob(blob, filename);
+
+        if (selectedProgressText) selectedProgressText.textContent = "Download complete";
+        setTimeout(() => { if (selectedProgressText) selectedProgressText.textContent = ""; }, 2000);
+    }
+
+    if (downloadSelectedButton && selectedDownloadType) {
+        downloadSelectedButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!selectedIds.size || !selectedDownloadType.value) return;
+
+            downloadSelectedButton.disabled = true;
+            try {
+                await startSelectedDownload(selectedDownloadType.value);
+            } catch (err) {
+                console.error("Selected download error:", err);
+                if (selectedProgressText) selectedProgressText.textContent = "Download failed";
+            } finally {
+                setSelectedUi();
+            }
+        });
+    }
+
+    // Kick off load
+    loadDatasetsForDropdown();
+
+
+
+
 });
 

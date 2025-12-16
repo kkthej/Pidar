@@ -67,3 +67,4 @@ Added features:
 23. Modified the Statistics page for better understanding.
 24. Cleared null warnings and errors from controllers.
 25. Admin Login page modified to fit on mobile devices.
+26. Download only selected datasets feature added.

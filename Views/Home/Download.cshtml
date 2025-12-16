@@ -2,36 +2,121 @@
     ViewData["Title"] = "Download";
 }
 
+<div class="container py-4">
 
-<h2 style="text-align: center;">Download Datasets</h2>
+    <h2 class="text-center mb-4">Download Datasets</h2>
 
-<div style="display: flex; justify-content: center; margin-top: 20px;">
-    <select id="downloadType" class="form-select" style="width: 200px;">
-        <option value="">Download file Type</option>
-        <option value="csv">CSV</option>
-        <option value="pdf">PDF</option>
-        <option value="json">JSON</option>
-        <option value="xlsx">XLSX</option>
-    </select>
-</div>
+    <!-- =========================
+         A) EXISTING: DOWNLOAD ALL
+         ========================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Download all datasets</h5>
 
-<div style="display: flex; justify-content: center; margin-top: 20px;">
-    <button id="downloadButton" class="btn btn-primary" disabled>Download</button>
-</div>
+            <div class="row g-3 align-items-start">
+                <div class="col-md-4">
+                    <label class="form-label">File type</label>
+                    <select id="downloadType" class="form-select">
+                        <option value="">Select format</option>
+                        <option value="csv">CSV</option>
+                        <option value="pdf">PDF</option>
+                        <option value="json">JSON</option>
+                        <option value="xlsx">XLSX</option>
+                    </select>
+                </div>
 
-<div style="display: flex; justify-content: center; margin-top: 20px;">
+                <div class="col-md-4">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button id="downloadButton" class="btn btn-primary w-100" type="button" disabled>
+                        Download
+                    </button>
+                </div>
 
-    <button id="downloadButton" class="btn btn-primary" onclick="location.href='/swagger'">Go to API</button>
+                <div class="col-md-4">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <a class="btn btn-outline-secondary w-100" href="/swagger">Go to API</a>
+                </div>
+            </div>
 
+            <div class="mt-2 text-center">
+                <span id="progressText" class="small" style="color: green;"></span>
+            </div>
+        </div>
+    </div>
 
+    <!-- =========================
+         B) NEW: DOWNLOAD SELECTED
+         ========================= -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Download selected datasets</h5>
 
-</div>
+            <div class="row g-3 align-items-start">
 
+                <!-- Dataset multi-select dropdown -->
+                <div class="col-md-4">
+                    <label class="form-label">Datasets</label>
 
-<div style="display: flex; justify-content: center; margin-top: 10px;">
-    <span id="progressText" style="font-size: 14px; color: green;"></span>
+                    <div class="dropdown w-100">
+                        <button class="btn btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center"
+                                type="button"
+                                id="datasetDropdownBtn"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            <span>Select datasets</span>
+                            <span class="badge bg-primary" id="selectedCountBadge">0</span>
+                        </button>
+
+                        <div class="dropdown-menu p-2 w-100" style="max-height: 320px; overflow:auto;" aria-labelledby="datasetDropdownBtn">
+                            <div class="d-flex align-items-center mb-2">
+                                <input class="form-check-input me-2" type="checkbox" id="selectAllDatasets">
+                                <label class="form-check-label" for="selectAllDatasets"><strong>Select all</strong></label>
+                            </div>
+
+                           
+
+                            <div id="datasetCheckboxList" class="px-1">
+                                <div class="text-muted small">Loading datasets…</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-text">
+                        Selected: <span id="selectedCountText">0</span>
+                    </div>
+                </div>
+
+                <!-- Selected format -->
+                <div class="col-md-4">
+                    <label class="form-label">File type</label>
+                    <select id="selectedDownloadType" class="form-select">
+                        <option value="">Select format</option>
+                        <option value="csv">CSV</option>
+                        <option value="pdf">PDF</option>
+                        <option value="json">JSON</option>
+                        <option value="xlsx">XLSX</option>
+                    </select>
+                    <!-- Spacer to match Datasets column height -->
+                    <div class="form-text">&nbsp;</div>
+                </div>
+
+                <!-- Download selected -->
+                <div class="col-md-4">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button id="downloadSelectedButton" class="btn btn-success w-100" type="button" disabled>
+                        Download selected
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-2 text-center">
+                <span id="selectedProgressText" class="small" style="color: green;"></span>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 @section scripts {
-            <script src="~/js/site.js"></script>
+    <script src="~/js/site.js"></script>
 }
