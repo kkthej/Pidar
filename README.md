@@ -68,3 +68,4 @@ Added features:
 24. Cleared null warnings and errors from controllers.
 25. Admin Login page modified to fit on mobile devices.
 26. Download only selected datasets feature added.
+27. fixed multiple download popup issue and added a timestamp to the downloaded file for better identification.

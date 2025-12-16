@@ -25,6 +25,12 @@ namespace Pidar.Controllers
         private readonly PidarDbContext _context;
         private readonly IWebHostEnvironment _env;
 
+        private static string Stamp() => DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+        private static string PidarFileName(string scope, string ext)
+            => $"Pidar_{scope}_{Stamp()}.{ext}";
+
+
         public DownloadController(PidarDbContext context, IWebHostEnvironment env)
         {
             _context = context;
@@ -145,25 +151,7 @@ namespace Pidar.Controllers
         [HttpGet]
         public async Task<IActionResult> DatasetList()
         {
-            // Lightweight projection for the dropdown.
-            // NOTE: Use safe null navigation in case related tables are missing.
-
-            // --- ORIGINAL LINES KEPT (but commented because they can fail compile if those properties don't exist) ---
-            // var list = await _context.Datasets
-            //     .AsNoTracking()
-            //     .OrderBy(x => x.DisplayId)
-            //     .Select(x => new
-            //     {
-            //         displayId = x.DisplayId,
-            //         species = x.DatasetInfo != null ? x.DatasetInfo.Species : null,
-            //         modality = x.ImageAcquisition != null ? x.ImageAcquisition.ImagingModality : null,
-            //         title = x.Publication != null ? x.Publication.PaperTitle : null
-            //     })
-            //     .ToListAsync();
-            //
-            // return Json(list);
-
-            // --- SAFE VERSION (always compiles, still works with your JS) ---
+            
             var list = await _context.Datasets
                 .AsNoTracking()
                 .OrderBy(x => x.DisplayId)
@@ -234,7 +222,8 @@ namespace Pidar.Controllers
             var flat = data.Select(Flatten).ToList();
             var json = JsonSerializer.Serialize(flat, new JsonSerializerOptions { WriteIndented = true });
 
-            return File(Encoding.UTF8.GetBytes(json), "application/json", "PIDAR_datasets_selected.json");
+            return File(Encoding.UTF8.GetBytes(json), "application/json",
+                    PidarFileName("selected", "json"));
         }
 
         // ========================================================
@@ -263,9 +252,8 @@ namespace Pidar.Controllers
                 })));
             }
 
-            return File(Encoding.UTF8.GetBytes(sb.ToString()),
-                "text/csv",
-                "PIDAR_datasets_selected.csv");
+            return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv",
+                    PidarFileName("selected", "csv"));
         }
 
         // ========================================================
@@ -326,8 +314,8 @@ namespace Pidar.Controllers
             wb.SaveAs(stream);
 
             return File(stream.ToArray(),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "PIDAR_datasets_selected.xlsx");
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        PidarFileName("selected", "xlsx"));
         }
 
         // ========================================================
@@ -433,7 +421,8 @@ namespace Pidar.Controllers
 
             // ---- MISSING LINES (FIX): close + return (this is what was causing your brace errors) ----
             doc.Close();
-            return File(stream.ToArray(), "application/pdf", "PIDAR_datasets_selected.pdf");
+            return File(stream.ToArray(), "application/pdf",
+                    PidarFileName("selected", "pdf"));
         }
 
         // ========================================================
@@ -473,7 +462,8 @@ namespace Pidar.Controllers
             var flat = (await FetchAsync()).Select(Flatten).ToList();
             var json = JsonSerializer.Serialize(flat, new JsonSerializerOptions { WriteIndented = true });
 
-            return File(Encoding.UTF8.GetBytes(json), "application/json", "PIDAR_datasets.json");
+            return File(Encoding.UTF8.GetBytes(json), "application/json",
+                    PidarFileName("all", "json"));
         }
 
         // ========================================================
@@ -497,9 +487,8 @@ namespace Pidar.Controllers
                 })));
             }
 
-            return File(Encoding.UTF8.GetBytes(sb.ToString()),
-                "text/csv",
-                "PIDAR_datasets.csv");
+            return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv",
+                    PidarFileName("all", "csv"));
         }
 
         // ========================================================
@@ -558,8 +547,8 @@ namespace Pidar.Controllers
             wb.SaveAs(stream);
 
             return File(stream.ToArray(),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "PIDAR_datasets.xlsx");
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                     PidarFileName("all", "xlsx"));
         }
 
         // ========================================================
@@ -669,7 +658,8 @@ namespace Pidar.Controllers
 
             doc.Close();
 
-            return File(stream.ToArray(), "application/pdf", "PIDAR_datasets.pdf");
+            return File(stream.ToArray(), "application/pdf",
+                    PidarFileName("all", "pdf"));
         }
     }
 }
