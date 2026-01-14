@@ -52,10 +52,7 @@
     <PackageReference Include="QuestPDF" Version="2025.1.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
 
-    <Watch Include="**/*"
-           Exclude="**/.git/**;**/.vs/**;**/.vscode/**;**/bin/**;**/obj/**;
-                    **/node_modules/**;**/packages/**;**/logs/**;*.user;
-                    appsettings.*.json;.env;.env.local" />
+    <Watch Include="**/*" Exclude="**/.git/**;**/.vs/**;**/.vscode/**;**/bin/**;**/obj/**;&#xD;&#xA;                    **/node_modules/**;**/packages/**;**/logs/**;*.user;&#xD;&#xA;                    appsettings.*.json;.env;.env.local" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
-using Pidar.Models;
+using Pidar.Models.Summaries;
 
 namespace Pidar.Controllers
 {
@@ -11,28 +11,50 @@ namespace Pidar.Controllers
     {
         private readonly PidarDbContext _context;
 
-        public DatasetsApiController(PidarDbContext context)
-        {
-            _context = context;
-        }
+        public DatasetsApiController(PidarDbContext context) => _context = context;
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Dataset>>> GetDatasets()
+        public async Task<ActionResult<IEnumerable<DatasetSummary>>> GetDatasets()
         {
-            return await _context.Datasets.ToListAsync();
+            var items = await _context.Datasets
+                .AsNoTracking()
+                .OrderBy(d => d.DisplayId)
+                .Select(d => new DatasetSummary
+                {
+                    DisplayId = d.DisplayId,
+                    Species = d.InVivo != null ? d.InVivo.Species : null,
+                    OrganOrTissue = d.InVivo != null ? d.InVivo.OrganOrTissue : null,
+                    DiseaseModel = d.InVivo != null ? d.InVivo.DiseaseModel : null,
+                    SampleSize = d.InVivo != null ? d.InVivo.OverallSampleSize : null,
+                    ImagingModality = d.StudyComponent != null ? d.StudyComponent.ImagingModality : null
+                })
+                .ToListAsync();
+
+            return Ok(items);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Dataset>> GetDataset(int id)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<DatasetSummary>> GetDataset(int id)
         {
-            var dataset = await _context.Datasets
-                .Include(d => d.StudyDesign)
-                .FirstOrDefaultAsync(x => x.DatasetId == id);
+            var item = await _context.Datasets
+                .AsNoTracking()
+                .Where(d => d.DatasetId == id)
+                .Select(d => new DatasetSummary
+                {
+                    
+                    DisplayId = d.DisplayId,
+                    Species = d.InVivo != null ? d.InVivo.Species : null,
+                    OrganOrTissue = d.InVivo != null ? d.InVivo.OrganOrTissue : null,
+                    DiseaseModel = d.InVivo != null ? d.InVivo.DiseaseModel : null,
+                    SampleSize = d.InVivo != null ? d.InVivo.OverallSampleSize : null,
+                    ImagingModality = d.StudyComponent != null ? d.StudyComponent.ImagingModality : null
+                })
+                .FirstOrDefaultAsync();
 
-            if (dataset == null)
+            if (item == null)
                 return NotFound();
 
-            return dataset;
+            return Ok(item);
         }
     }
 }

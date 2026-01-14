@@ -272,10 +272,10 @@ namespace Pidar.Controllers
         // ===============================================================
         [Authorize]
         [Route("Create")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             int nextDisplayId =
-                (_context.Datasets.Max(x => (int?)x.DisplayId) ?? 0) + 1;
+                (await _context.Datasets.MaxAsync(x => (int?)x.DisplayId) ?? 0) + 1;
 
             ViewBag.SuggestedDisplayId = nextDisplayId;
 
@@ -295,6 +295,7 @@ namespace Pidar.Controllers
                 Ontology = new()
             });
         }
+
 
         // ===============================================================
         // CREATE (POST)
@@ -435,33 +436,32 @@ namespace Pidar.Controllers
     Action<T?> assignToParent
 ) where T : class
         {
-            // Both null → nothing to do
-            if (tracked == null && incoming == null)
+            var hasIncoming = incoming != null && !IsEntityEmpty(incoming);
+
+            // Nothing exists and nothing meaningful came in
+            if (tracked == null && !hasIncoming)
                 return;
 
-            // User cleared the form → delete existing row
-            if (tracked != null && (incoming == null || IsEntityEmpty(incoming)))
+            // Remove existing entity
+            if (tracked != null && !hasIncoming)
             {
                 _context.Remove(tracked);
                 assignToParent(null);
                 return;
             }
 
-            // New row in form, no existing row in DB → insert
-            if (tracked == null && incoming != null && !IsEntityEmpty(incoming))
+            // Add new entity
+            if (tracked == null && hasIncoming)
             {
-                _context.Add(incoming);
+                _context.Add(incoming!);
                 assignToParent(incoming);
                 return;
             }
 
-            // Existing row in DB + non-empty incoming → update
-            if (tracked != null && incoming != null && !IsEntityEmpty(incoming))
-            {
-                _context.Entry(tracked).CurrentValues.SetValues(incoming);
-                return;
-            }
+            // Update existing entity
+            _context.Entry(tracked!).CurrentValues.SetValues(incoming!);
         }
+
 
 
 

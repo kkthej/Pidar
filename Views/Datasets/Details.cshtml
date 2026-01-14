@@ -151,6 +151,27 @@
         return new HtmlString(System.Net.WebUtility.HtmlEncode(formatted));
     }
 
+    public IHtmlContent RenderLicense(object? value)
+    {
+        var str = value?.ToString()?.Trim();
+        if (string.IsNullOrWhiteSpace(str))
+            return HtmlString.Empty;
+
+        if (str.Equals("CC BY", StringComparison.OrdinalIgnoreCase))
+        {
+            return new HtmlString(
+                "<a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener\">" +
+                "<img class=\"license-logo\" src=\"/images/licenses/cc-by.png\" alt=\"CC BY 4.0\" title=\"Creative Commons Attribution 4.0\" />" +
+                "</a>"
+            );
+        }
+
+        return new HtmlString(System.Net.WebUtility.HtmlEncode(str));
+    }
+
+
+
+
     /* ==========================================================
        UNIVERSAL NULL-SAFE NESTED ACCESSOR  (A.B.C)
        ========================================================== */
@@ -242,15 +263,23 @@
 
                                 <td>
                                     @{
+                                        var fieldName = path.Split('.').Last();
+
                                         if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
                                         {
-                                            @Html.Raw(AutoOntologyRenderer.Render(value.ToString()))
+                                            @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
+                                        }
+                                        else if (fieldName.Equals("License", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            @RenderLicense(value)
                                         }
                                         else
                                         {
                                             @FormatValue(value)
                                         }
                                     }
+
+
                                 </td>
                             </tr>
                         }

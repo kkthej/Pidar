@@ -87,11 +87,15 @@ namespace Pidar.Controllers
             // 2. COUNTRY OF IMAGING FACILITY (DatasetInfo)
             // ------------------------------------------------------------
             var countryCounts = await _context.DatasetInfos
-                .Where(i => i.CountryOfImagingFacility != null && i.CountryOfImagingFacility.Trim() != "")
-                .GroupBy(i => i.CountryOfImagingFacility!.Trim())
-                .Select(g => new { Country = g.Key, Count = g.Count() })
+                .Where(i => !string.IsNullOrWhiteSpace(i.CountryOfImagingFacility)) // Cleaner check
+                .GroupBy(i => i.CountryOfImagingFacility) // Grouping by the raw column is index-friendly
+                .Select(g => new {
+                        Country = g.Key.Trim(), // Trim here, after the heavy lifting is done
+                        Count = g.Count()
+                    })
                 .OrderByDescending(x => x.Count)
                 .Take(10)
+                .AsNoTracking() //Performance Tip: Tells EF not to track these for changes
                 .ToListAsync();
 
             ViewData["CountryDistribution"] = JsonSerializer.Serialize(countryCounts);
@@ -186,6 +190,12 @@ namespace Pidar.Controllers
         public IActionResult Download()
         {
             ViewData["ActivePage"] = "Download";
+            return View();
+        }
+
+        public IActionResult Xnat()
+        {
+            ViewData["ActivePage"] = "Xnat";
             return View();
         }
 

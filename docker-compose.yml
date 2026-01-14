@@ -11,6 +11,7 @@
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - ConnectionStrings__DefaultConnection=${CONNECTIONSTRINGS__DEFAULTCONNECTION}
+      - DOTNET_USE_POLLING_FILE_WATCHER=1
     volumes:
       - .:/app                  # 👈 mount your source code
       - ~/.nuget/packages:/root/.nuget/packages  # speeds up restores

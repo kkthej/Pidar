@@ -74,6 +74,10 @@
                             <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "About" ? "active" : "")"
                                asp-area="" asp-controller="Home" asp-action="About">About Pidar</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark @(ViewData["ActivePage"]?.ToString() == "Xnat" ? "active" : "")"
+                               asp-area="" asp-controller="Home" asp-action="Xnat">XNAT</a>
+                        </li>
                     </ul>
 
                     <a class="navbar-brand position-absolute start-50 translate-middle-x d-none d-lg-block"
@@ -98,51 +102,24 @@
 
     <footer class="bg-white text-black-50 text-center py-3">
         <section class="contributors">
-
             <h2>Support for <strong>PIDAR</strong> provided by:</h2>
 
-            <div class="contributor">
-                <a href="https://www.ibb.cnr.it/" target="_blank">
-                    <img src="/images/ibb.PNG" id="ibb" />
-                </a>
-            </div>
+            <div class="contributor"><a href="https://www.ibb.cnr.it/" target="_blank"><img src="/images/ibb.PNG" /></a></div>
+            <div class="contributor"><a href="https://www.unito.it/" target="_blank"><img src="/images/unito.png" /></a></div>
+            <div class="contributor"><a href="https://www.eurobioimaging.eu/" target="_blank"><img src="/images/Immagine1.png" /></a></div>
+            <div class="contributor"><a href="https://www.cnr.it/" target="_blank"><img src="/images/cnr.PNG" /></a></div>
 
-            <div class="contributor">
-                <a href="https://www.unito.it/" target="_blank">
-                    <img src="/images/unito.png" id="unito" />
-                </a>
-            </div>
-
-            <div class="contributor">
-                <a href="https://www.eurobioimaging.eu/" target="_blank">
-                    <img src="/images/Immagine1.png" id="euro" />
-                </a>
-            </div>
-
-            <div class="contributor">
-                <a href="https://www.cnr.it/" target="_blank">
-                    <img src="/images/cnr.PNG" id="cnr" />
-                </a>
-            </div>
-
-            <!-- FUNDING SOURCES (CENTERED) -->
             <h2>Funding sources</h2>
 
             <div class="funding-row">
-                <div class="contributor">
-                    <a href="https://www.eosc-life.eu/" target="_blank">
-                        <img src="/images/eosc-life-transformed.png" id="eosc-life" />
-                    </a>
-                </div>
-
-                <div class="contributor">
-                    <a href="https://european-union.europa.eu/index_en" target="_blank">
-                        <img src="/images/eulogo.jpeg" id="eu-logo" />
-                    </a>
-                </div>
+                <div class="contributor"><a href="https://www.eosc-life.eu/" target="_blank"><img src="/images/eosc-life-transformed.png" /></a></div>
+                <div class="contributor"><a href="https://www.eurobioimaging.eu/evolve/" target="_blank"><img src="/images/evolve.png" /></a></div>
+                <div class="contributor"><a href="https://founding-gide.eurobioimaging.eu/" target="_blank"><img src="/images/eosc-cancer.png" /></a></div>
+                <div class="contributor"><a href="https://eosc4cancer.eu/" target="_blank"><img src="/images/founding-gide.png" /></a></div>
+                <div class="contributor"><a href="https://european-union.europa.eu/index_en" target="_blank"><img src="/images/Funded-EU.png" /></a></div>
             </div>
-
         </section>
+
 
         <div>
             <p>&copy; <span id="year"></span> Università di Torino. All rights reserved.</p>

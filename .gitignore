@@ -72,3 +72,5 @@ secrets.json
 # macOS/Linux system files
 .DS_Store
 Thumbs.db
+# keys folder
+keys/

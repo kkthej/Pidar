@@ -174,7 +174,26 @@
                     <td>@GetNestedSafe(ds, "InVivo.OverallSampleSize")</td>
                     <td>@GetNestedSafe(ds, "InVivo.DiseaseModel")</td>
                     <td>@GetNestedSafe(ds, "InVivo.OrganOrTissue")</td>
-                    <td>@GetNestedSafe(ds, "DatasetInfo.License")</td>
+                    <td class="text-center">
+                        @{
+                            var license = GetNestedSafe(ds, "DatasetInfo.License")?.ToString()?.Trim();
+                        }
+                        @if (!string.IsNullOrWhiteSpace(license) &&
+                                            license.Equals("CC BY", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">
+                                <img src="~/images/licenses/cc-by.png"
+                                     class="license-logo"
+                                     alt="CC BY 4.0"
+                                     title="Creative Commons Attribution 4.0" />
+                            </a>
+                        }
+                        else
+                        {
+                            @license
+                        }
+                    </td>
+
                     <td>@GetNestedSafe(ds, "Analyzed.Status")</td>
                     <td>@GetNestedSafe(ds, "Analyzed.UpdatedYear")</td>
 
