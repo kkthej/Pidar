@@ -69,3 +69,4 @@ Added features:
 25. Admin Login page modified to fit on mobile devices.
 26. Download only selected datasets feature added.
 27. fixed multiple download popup issue and added a timestamp to the downloaded file for better identification.
+28. added images, cc by logos ondetails and index pages and new page for linking xnat and PIDAR
