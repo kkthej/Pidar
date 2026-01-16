@@ -86,13 +86,20 @@ namespace Pidar.Data
             var child = modelBuilder.Entity<TChild>();
             child.ToTable(tableName);
 
+            // Set all string columns to TEXT for child tables too
+            foreach (var p in child.Metadata.GetProperties().Where(p => p.ClrType == typeof(string)))
+            {
+                child.Property(p.Name).HasColumnType("text");
+            }
+
+
             // Child PK = DatasetId
             child.HasKey("DatasetId");
 
             // 1:1 relation
             modelBuilder.Entity<Dataset>()
                 .HasOne(navigation)
-                .WithOne()
+                .WithOne("Dataset")
                 .HasForeignKey<TChild>("DatasetId")
                 .OnDelete(DeleteBehavior.Cascade);
         }

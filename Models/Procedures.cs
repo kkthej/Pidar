@@ -7,8 +7,10 @@ namespace Pidar.Models
     {
 
         [Key]
-        [ForeignKey("Dataset")]
+       
         public int DatasetId { get; set; }
+        // inverse navigation required because your Fluent API uses .WithOne("Dataset")
+        public Dataset Dataset { get; set; } = null!;
 
         // Pharmacological
         public string? PharmacologicalProceduresInterventionAndControl { get; set; }

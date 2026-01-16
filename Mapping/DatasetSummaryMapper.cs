@@ -5,14 +5,18 @@ namespace Pidar.Mapping;
 
 public static class DatasetSummaryMapper
 {
-    public static DatasetSummary FromDataset(Dataset ds) => new()
+    public static DatasetSummary FromDataset(Dataset dataset)
     {
-       
-        DisplayId = ds.DisplayId,
-        Species = ds.InVivo?.Species,
-        OrganOrTissue = ds.InVivo?.OrganOrTissue,
-        DiseaseModel = ds.InVivo?.DiseaseModel,
-        SampleSize = ds.InVivo?.OverallSampleSize,
-        ImagingModality = ds.StudyComponent?.ImagingModality
-    };
+        ArgumentNullException.ThrowIfNull(dataset);
+
+        return new DatasetSummary
+        {
+            DisplayId = dataset.DisplayId,
+            Species = dataset.InVivo?.Species,
+            OrganOrTissue = dataset.InVivo?.OrganOrTissue,
+            DiseaseModel = dataset.InVivo?.DiseaseModel,
+            SampleSize = dataset.InVivo?.OverallSampleSize,
+            ImagingModality = dataset.StudyComponent?.ImagingModality
+        };
+    }
 }

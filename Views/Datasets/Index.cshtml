@@ -188,6 +188,26 @@
                                      title="Creative Commons Attribution 4.0" />
                             </a>
                         }
+                        else if (!string.IsNullOrWhiteSpace(license) &&
+                                            license.Equals("CC BY NC", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">
+                                <img src="~/images/licenses/cc-by-nc.png"
+                                     class="license-logo"
+                                     alt="CC BY NC"
+                                     title="Creative Commons Attribution 4.0" />
+                            </a>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(license) &&
+                                            license.Equals("CC BY NC ND", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">
+                                <img src="~/images/licenses/cc-by-nd-nc.png"
+                                     class="license-logo"
+                                     alt="CC BT NC ND"
+                                     title="Creative Commons Attribution 4.0" />
+                            </a>
+                        }
                         else
                         {
                             @license

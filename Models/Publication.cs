@@ -6,9 +6,11 @@ namespace Pidar.Models
     public class Publication
     {
         [Key]
-        [ForeignKey("Dataset")]
+        
         public int DatasetId { get; set; }
 
+        // inverse navigation required because your Fluent API uses .WithOne("Dataset")
+        public Dataset Dataset { get; set; } = null!;
         public string? PaperLinked { get; set; }
         public string? PaperTitle { get; set; }
         public string? PaperAuthors { get; set; }

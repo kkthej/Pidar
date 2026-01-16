@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Pidar.Models;
+using System.Collections.Generic;
 
 namespace Pidar.Helpers
 {
@@ -30,9 +31,9 @@ namespace Pidar.Helpers
                 ["Study Component"] = new()
                 {
                     "StudyComponent.MultiModalityImages","StudyComponent.ImagingModality",
-                    "Ontology.NcitImaging","StudyComponent.ImagingSubModality",
+                    "Ontology.NcitImagingModality","StudyComponent.ImagingSubModality",
                     "Ontology.NcitImagingSubmodality","StudyComponent.Radiation",
-                    "StudyComponent.ImagingCoverage","StudyComponent.ImagingTarget"
+                    "StudyComponent.ImagingCoverage","Ontology.UberonImagingCoverage","StudyComponent.ImagingTarget"
                 },
 
                 ["Dataset Information"] = new()
@@ -51,26 +52,27 @@ namespace Pidar.Helpers
                 ["In Vivo Experimental Parameters"] = new()
                 {
                     "InVivo.NumberOfGroups","InVivo.TypesOfGroups","InVivo.OverallSampleSize",
-                    "InVivo.AnimalCondition","InVivo.DiseaseModel","Ontology.Doid",
-                    "InVivo.OrganOrTissue","Ontology.NcitAnatomy",
+                    "InVivo.AnimalCondition","InVivo.DiseaseModel","Ontology.DoidDiseaseModel",
+                    "InVivo.OrganOrTissue","Ontology.UberonOrganOrTissue",
                     "InVivo.SampleSizeForEachGroup","InVivo.PowerCalculation",
                     "InVivo.InclusionCriteria","InVivo.ExclusionCriteria","InVivo.Randomization",
                     "InVivo.Blinding","InVivo.ProceduresToKeepTreatmentsBlind",
                     "InVivo.ProceduresToKeepExperimenterBlind","InVivo.OutcomeMeasures",
-                    "InVivo.StatisticalMethods","InVivo.Species","Ontology.NcitSpecies",
-                    "InVivo.Strain","Ontology.NcitStrain",
-                    "InVivo.ImmuneStatus","InVivo.Sex","InVivo.Age",
+                    "InVivo.StatisticalMethods","Ontology.SwoStatisticalMethods","InVivo.Species","Ontology.NcitSpecies",
+                    "InVivo.Strain","Ontology.EfoStrain",
+                    "InVivo.ImmuneStatus","Ontology.MpImmuneStatus","InVivo.Sex","InVivo.Age",
                     "InVivo.AgeAtStartExperiment","InVivo.AgeAtScanningExperimentS",
                     "InVivo.Weight","InVivo.WeightAtStartExperiment",
-                    "InVivo.WeightAtEndExperiment","InVivo.Genotype",
-                    "InVivo.GeneticManipulation","InVivo.Gene","InVivo.SourceOfAnimals",
+                    "InVivo.WeightAtEndExperiment","InVivo.Genotype","Ontology.NcitGenotype",
+                    "InVivo.GeneticManipulation","Ontology.NcitGeneticManipulation","InVivo.Gene","Ontology.GoGene",
+                    "InVivo.SourceOfAnimals",
                     "InVivo.RegistryNumberOfAnimalAuthorization"
                 },
 
                 ["Experimental Procedures"] = new()
                 {
                     "Procedures.PharmacologicalProceduresInterventionAndControl",
-                    "Procedures.PharmacologicalDrug","Ontology.ChebiPharmaco","Procedures.Company",
+                    "Procedures.PharmacologicalDrug","Ontology.ChebiDrug","Procedures.Company",
                     "Procedures.Formulation","Procedures.DrugDose","Procedures.Volume",
                     "Procedures.Concentration","Procedures.SiteOrRouteOfAdministration",
                     "Procedures.FrequencyOfAdministration",
@@ -80,19 +82,20 @@ namespace Pidar.Helpers
                     "Procedures.BloodTiming","Procedures.BloodCollectionTiming",
                     "Procedures.SurgicalProceduresIncludingShamSurgery",
                     "Procedures.DescriptionOfTheSurgicalProcedure",
-                    "Procedures.ReferenceToProtocol","Procedures.TargetOrganTissue",
+                    "Procedures.ReferenceToProtocol","Procedures.TargetOrganTissue","Ontology.ObiTargetOrganTissue",
                     "Procedures.PathogenInfectionInterventionAndControl",
                     "Procedures.InfectiousType","Procedures.InfectiousAgent","Procedures.DoseLoad",
                     "Procedures.SiteAndRouteOfInfection",
                     "Procedures.TimingOrFrequencyOfInfection",
                     "Procedures.AnalgesicPlanToRelievePainSufferingAndDistress",
-                    "Procedures.AnalgesicName","Ontology.ChebiAnesthesia","Procedures.Route",
+                    "Procedures.AnalgesicName","Ontology.ChebiAnalgesic","Procedures.Route",
                     "Procedures.AnalgesicDose","Procedures.AnesthesiaForImaging",
                     "Procedures.AnesthesiaType","Procedures.Duration",
-                    "Procedures.AnesthesiaDrugs","Procedures.AnesthesiaDose",
+                    "Procedures.AnesthesiaDrugs","Ontology.ChebiAnhestetic","Procedures.AnesthesiaDose",
                     "Procedures.MonitoringRegime","Procedures.Euthanasia","Procedures.Method",
-                    "Procedures.Histology","Procedures.TissuesCollectedPostEuthanasia",
-                    "Procedures.TimingOfCollection","Procedures.TissueDescription",
+                    "Ontology.ObiEuthanasiaMethod","Procedures.Histology",
+                    "Procedures.TissuesCollectedPostEuthanasia","Ontology.UberonTissueExcised",
+                    "Procedures.TimingOfCollection","Procedures.TissueDescription","Ontology.MpathHistologicalTissueDescription",
                     "Procedures.PerfusionMethod","Procedures.HistologicalProcedure",
                     "Procedures.NameOfReagentS","Procedures.CatalogueNumber",
                     "Procedures.LengthOfFixation","Procedures.SpecimenThickness",
@@ -100,13 +103,13 @@ namespace Pidar.Helpers
                     "Procedures.TimingOfImaging","Procedures.OverallScanLength",
                     "Procedures.ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule",
                     "Procedures.ContrastAgentCommercialDrug",
-                    "Ontology.ChebiContrastAgentCommercialName",
                     "Procedures.ContrastAgentChemicalDrug",
-                    "Ontology.ChebiContrastAgentChemicalName",
+                    "Ontology.ChebiContrastAgent",
                     "Procedures.ContrastAgentDose","Procedures.InjectionVolume",
                     "Procedures.InjectionTime","Procedures.Vehicle",
-                    "Procedures.RouteOfAdministration","Procedures.CellLines",
-                    "Procedures.CellLine","Ontology.Clo","Procedures.Provenance",
+                    "Procedures.RouteOfAdministration","Ontology.ObiRouteAdministration",
+                    "Procedures.CellLines",
+                    "Procedures.CellLine","Ontology.ClCellLineName","Procedures.Provenance",
                     "Procedures.CellCultureMedium","Procedures.ModifiedCellLine",
                     "Procedures.TypeOfGeneticModification","Procedures.GeneModified",
                     "Procedures.VirusLabelledOrModified",
@@ -166,11 +169,6 @@ namespace Pidar.Helpers
                     "Analyzed.AnalysisMethodAndDetails",
                     "Analyzed.FileFormatOfResultFileCsvJsonTxtXlsx",
                     "Analyzed.Status","Analyzed.UpdatedYear"
-                },
-
-                ["Ontology Terms"] = new()
-                {
-                    "Ontology.NcitGene"
                 }
             };
 

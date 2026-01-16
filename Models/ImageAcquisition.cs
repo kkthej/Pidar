@@ -6,8 +6,10 @@ namespace Pidar.Models
     public class ImageAcquisition
     {
         [Key]
-        [ForeignKey("Dataset")]
+       
         public int DatasetId { get; set; }
+        // inverse navigation required because your Fluent API uses .WithOne("Dataset")
+        public Dataset Dataset { get; set; } = null!;
 
         public string? InstrumentVendor { get; set; }
         public string? InstrumentType { get; set; }

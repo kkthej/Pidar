@@ -70,3 +70,7 @@ Added features:
 26. Download only selected datasets feature added.
 27. fixed multiple download popup issue and added a timestamp to the downloaded file for better identification.
 28. added images, cc by logos ondetails and index pages and new page for linking xnat and PIDAR
+29. Addded Migrations for new fields in Ontology and Dataset models.
+30. Added more fields to Ontology model.
+31. Changed Create and Edit pages of Ontology to accommodate new fields.
+32. Minor chasnges to _layout.cshtml 

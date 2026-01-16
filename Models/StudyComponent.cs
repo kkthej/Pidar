@@ -6,9 +6,11 @@ namespace Pidar.Models
     public class StudyComponent
     {
         [Key]
-        [ForeignKey("Dataset")]
+        
         public int DatasetId { get; set; }
 
+        // inverse navigation required because your Fluent API uses .WithOne("Dataset")
+        public Dataset Dataset { get; set; } = null!;
         public string? MultiModalityImages { get; set; }
         public string? ImagingModality { get; set; }
         public string? ImagingSubModality { get; set; }
