@@ -91,7 +91,7 @@ namespace Pidar.Helpers
                     "Procedures.AnalgesicName","Ontology.ChebiAnalgesic","Procedures.Route",
                     "Procedures.AnalgesicDose","Procedures.AnesthesiaForImaging",
                     "Procedures.AnesthesiaType","Procedures.Duration",
-                    "Procedures.AnesthesiaDrugs","Ontology.ChebiAnhestetic","Procedures.AnesthesiaDose",
+                    "Procedures.AnesthesiaDrugs","Ontology.ChebiAnestetic","Procedures.AnesthesiaDose",
                     "Procedures.MonitoringRegime","Procedures.Euthanasia","Procedures.Method",
                     "Ontology.ObiEuthanasiaMethod","Procedures.Histology",
                     "Procedures.TissuesCollectedPostEuthanasia","Ontology.UberonTissueExcised",

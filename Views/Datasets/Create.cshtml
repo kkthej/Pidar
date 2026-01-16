@@ -39,6 +39,7 @@
 <h2 class="text-center mb-4">Create New Dataset</h2>
 
 <form asp-action="Create" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
     @Html.AntiForgeryToken()
 
   

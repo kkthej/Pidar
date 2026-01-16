@@ -50,21 +50,39 @@ namespace Pidar.Controllers
         {
             foreach (var prop in typeof(T).GetProperties())
             {
+                // Skip keys and navigations
+                if (prop.Name == "DatasetId" || prop.Name == "Dataset")
+                    continue;
+
+                var value = prop.GetValue(entity);
+
+                // Strings: meaningful if not empty/whitespace
                 if (prop.PropertyType == typeof(string))
                 {
-                    string? val = prop.GetValue(entity)?.ToString();
-                    if (!string.IsNullOrWhiteSpace(val))
+                    if (!string.IsNullOrWhiteSpace(value as string))
                         return false;
+
+                    continue;
                 }
-                else
+
+                // Value types: meaningful only if not default(T)
+                if (prop.PropertyType.IsValueType)
                 {
-                    var val = prop.GetValue(entity);
-                    if (val != null)
+                    var defaultValue = Activator.CreateInstance(prop.PropertyType);
+                    if (!Equals(value, defaultValue))
                         return false;
+
+                    continue;
                 }
+
+                // Reference types (non-string): meaningful if not null
+                if (value != null)
+                    return false;
             }
+
             return true;
         }
+
 
         // ===============================================================
         // SEQUENTIAL DISPLAY ID REGENERATION (1..N ALWAYS)

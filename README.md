@@ -74,3 +74,4 @@ Added features:
 30. Added more fields to Ontology model.
 31. Changed Create and Edit pages of Ontology to accommodate new fields.
 32. Minor chasnges to _layout.cshtml 
+33. Fixed issues with saving edit.cshtml form after adding new Ontology.
