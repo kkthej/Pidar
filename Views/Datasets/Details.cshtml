@@ -164,6 +164,21 @@
                 "<img class=\"license-logo\" src=\"/images/licenses/cc-by.png\" alt=\"CC BY 4.0\" title=\"Creative Commons Attribution 4.0\" />" +
                 "</a>"
             );
+        }else if (str.Equals("CC BY NC", StringComparison.OrdinalIgnoreCase))
+        {
+            return new HtmlString(
+                "<a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener\">" +
+                "<img class=\"license-logo\" src=\"/images/licenses/cc-by-nc.png\" alt=\"CC BY NC 4.0\" title=\"Creative Commons Attribution 4.0\" />" +
+                "</a>"
+            );
+        }
+        else if (str.Equals("CC BY NC ND", StringComparison.OrdinalIgnoreCase))
+        {
+            return new HtmlString(
+                "<a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener\">" +
+                "<img class=\"license-logo\" src=\"/images/licenses/cc-by-nc-nd.png\" alt=\"CC BY NC 4.0\" title=\"Creative Commons Attribution 4.0\" />" +
+                "</a>"
+            );
         }
 
         return new HtmlString(System.Net.WebUtility.HtmlEncode(str));
