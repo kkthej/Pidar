@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Html
 @using Pidar.Areas.Identity.Data
 @using Microsoft.AspNetCore.Identity
-@using Pidar.Helpers <!-- REQUIRED FOR AUTO ONTOLOGY RENDERING -->
+@using Pidar.Helpers
 @inject SignInManager<PidarUser> SignInManager
 @inject UserManager<PidarUser> UserManager
 @inject ICategoryProvider CategoryProvider
@@ -11,6 +11,43 @@
     ViewData["Title"] = "Dataset Details";
     var colorClasses = new[] { "primary", "success", "info", "warning", "danger", "secondary" };
     var colorIndex = 0;
+
+    // ==========================================================
+    // INLINE ONTOLOGY MAPPING (main field -> ontology field)
+    // These ontology fields will be rendered as badges next to the main value
+    // and the ontology row itself will be skipped to avoid duplicates.
+    // ==========================================================
+    var inlineOntologyMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["StudyComponent.ImagingModality"] = "Ontology.NcitImagingModality",
+        ["StudyComponent.ImagingSubModality"] = "Ontology.NcitImagingSubmodality",
+        ["StudyComponent.ImagingCoverage"] = "Ontology.UberonImagingCoverage",
+
+
+        ["InVivo.DiseaseModel"] = "Ontology.DoidDiseaseModel",
+        ["InVivo.OrganOrTissue"] = "Ontology.UberonOrganOrTissue",
+        ["InVivo.StatisticalMethods"] = "Ontology.SwoStatisticalMethods",
+        ["InVivo.Species"] = "Ontology.NcitSpecies",
+        ["InVivo.Strain"] = "Ontology.EfoStrain",
+        ["InVivo.ImmuneStatus"] = "Ontology.MpImmuneStatus",
+        ["InVivo.Genotype"] = "Ontology.NcitGenotype",
+        ["InVivo.GeneticManipulation"] = "Ontology.NcitGeneticManipulation",
+        ["InVivo.Gene"] = "Ontology.GoGene",
+
+        ["Procedures.PharmacologicalDrug"] = "Ontology.ChebiDrug",
+        ["Procedures.TargetOrganTissue"] = "Ontology.ObiTargetOrganTissue",
+        ["Procedures.AnalgesicName"] = "Ontology.ChebiAnalgesic",
+        ["Procedures.AnesthesiaDrugs"] = "Ontology.ChebiAnestetic",
+        ["Procedures.Method"] = "Ontology.ObiEuthanasiaMethod",
+        ["Procedures.TissuesCollectedPostEuthanasia"] = "Ontology.UberonTissueExcised",
+        ["Procedures.TissueDescription"] = "Ontology.MpathHistologicalTissueDescription",
+        ["Procedures.ContrastAgentChemicalDrug"] = "Ontology.ChebiContrastAgent",
+        ["Procedures.RouteOfAdministration"] = "Ontology.ObiRouteAdministration",
+        ["Procedures.CellLine"] = "Ontology.ClCellLineName"
+
+    };
+
+    var ontologyPathsToSkip = new HashSet<string>(inlineOntologyMap.Values, StringComparer.OrdinalIgnoreCase);
 }
 
 @functions {
@@ -56,9 +93,9 @@
 
         // Known acronyms to auto-upcase
         var acronyms = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "ncit", "doid", "chebi", "clo", "ror", "pi", "qa", "qc", "duo", "doi", "orcid"
-    };
+        {
+            "ncit", "doid", "chebi", "clo", "ror", "pi", "qa", "qc", "duo", "doi", "orcid"
+        };
 
         // Format each token
         for (int i = 0; i < parts.Count; i++)
@@ -117,7 +154,6 @@
         return new HtmlString(System.Net.WebUtility.HtmlEncode(finalLabel));
     }
 
-
     /* ==========================================================
        UNIVERSAL VALUE FORMATTER
        ========================================================== */
@@ -164,7 +200,8 @@
                 "<img class=\"license-logo\" src=\"/images/licenses/cc-by.png\" alt=\"CC BY 4.0\" title=\"Creative Commons Attribution 4.0\" />" +
                 "</a>"
             );
-        }else if (str.Equals("CC BY NC", StringComparison.OrdinalIgnoreCase))
+        }
+        else if (str.Equals("CC BY NC", StringComparison.OrdinalIgnoreCase))
         {
             return new HtmlString(
                 "<a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener\">" +
@@ -183,9 +220,6 @@
 
         return new HtmlString(System.Net.WebUtility.HtmlEncode(str));
     }
-
-
-
 
     /* ==========================================================
        UNIVERSAL NULL-SAFE NESTED ACCESSOR  (A.B.C)
@@ -232,10 +266,6 @@
 
     @foreach (var category in categories)
     {
-        /* ===================================================================
-        UPDATE: category visibility now checks IsMeaningful() instead of
-        only null/empty → N/A fields no longer trigger category display
-        =================================================================== */
         bool hasContent = category.Value.Any(path =>
         {
             var val = GetNested(Model, path);
@@ -263,26 +293,40 @@
                     <tbody>
                         @foreach (var path in category.Value)
                         {
+                            // 1) Skip ontology rows that are rendered inline
+                            if (ontologyPathsToSkip.Contains(path))
+                                continue;
+
                             var value = GetNested(Model, path);
 
-                            /* ============================================
-                            UPDATE: field-level filtering using IsMeaningful
-                            ============================================ */
                             if (!IsMeaningful(value))
                                 continue;
+
+                            // 2) If this path has a paired ontology code, fetch it
+                            object? inlineOntologyValue = null;
+                            if (inlineOntologyMap.TryGetValue(path, out var ontologyPath))
+                            {
+                                inlineOntologyValue = GetNested(Model, ontologyPath);
+                                if (!IsMeaningful(inlineOntologyValue))
+                                    inlineOntologyValue = null;
+                            }
 
                             <tr>
                                 <th class="bg-light text-center pe-3 align-middle">
                                     @FormatLabel(path.Split('.').Last())
                                 </th>
 
-                                <td>
+                                <td class="align-middle">
                                     @{
                                         var fieldName = path.Split('.').Last();
 
+                                        // Main value render
                                         if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
                                         {
-                                            @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
+                                            // Wrap so CSS can target it reliably
+                                            <span class="ontology-link">
+                                                @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
+                                            </span>
                                         }
                                         else if (fieldName.Equals("License", StringComparison.OrdinalIgnoreCase))
                                         {
@@ -292,12 +336,23 @@
                                         {
                                             @FormatValue(value)
                                         }
+
+                                        // Inline ontology render (as normal link, same line)
+                                        if (inlineOntologyValue != null)
+                                        {
+                                            var ontoText = inlineOntologyValue.ToString()?.Trim();
+                                            if (!string.IsNullOrWhiteSpace(ontoText))
+                                            {
+                                                <span class="ms-2 ontology-link">
+                                                    @Html.Raw(AutoOntologyRenderer.Render(ontoText))
+                                                </span>
+                                            }
+                                        }
                                     }
-
-
                                 </td>
                             </tr>
                         }
+
                     </tbody>
 
                 </table>
