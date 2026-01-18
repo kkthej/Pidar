@@ -244,14 +244,15 @@
 
 <!-- HEADER -->
 <div>
-    <strong>Dataset ID:</strong> @Model.DisplayId
+    <h3 class="text-center mb-4"><strong>Dataset ID:</strong> @Model.DisplayId</h3>
 
     <div>
         @if (SignInManager.IsSignedIn(User))
         {
-            <a asp-action="Edit" asp-route-id="@Model.DatasetId">Edit</a>
+            <a asp-action="Edit" class="btn btn-outline-success" asp-route-id="@Model.DatasetId">Edit</a>
         }
-        <a asp-action="Index">Back to List</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+        
     </div>
 </div>
 
