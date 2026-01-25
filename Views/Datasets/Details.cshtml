@@ -318,39 +318,41 @@
                                 </th>
 
                                 <td class="align-middle">
-                                    @{
-                                        var fieldName = path.Split('.').Last();
+                                    <div class="value-with-onto">
+                                        <div class="value-main">
+                                            @{
+                                                var fieldName = path.Split('.').Last();
 
-                                        // Main value render
-                                        if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            // Wrap so CSS can target it reliably
-                                            <span class="ontology-link">
-                                                @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
-                                            </span>
-                                        }
-                                        else if (fieldName.Equals("License", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            @RenderLicense(value)
-                                        }
-                                        else
-                                        {
-                                            @FormatValue(value)
-                                        }
+                                                if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    <span class="ontology-link">
+                                                        @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
+                                                    </span>
+                                                }
+                                                else if (fieldName.Equals("License", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    @RenderLicense(value)
+                                                }
+                                                else
+                                                {
+                                                    @FormatValue(value)
+                                                }
+                                            }
+                                        </div>
 
-                                        // Inline ontology render (as normal link, same line)
-                                        if (inlineOntologyValue != null)
+                                        @if (inlineOntologyValue != null)
                                         {
                                             var ontoText = inlineOntologyValue.ToString()?.Trim();
                                             if (!string.IsNullOrWhiteSpace(ontoText))
                                             {
-                                                <span class="ms-2 ontology-link">
+                                                <div class="value-onto ontology-link">
                                                     @Html.Raw(AutoOntologyRenderer.Render(ontoText))
-                                                </span>
+                                                </div>
                                             }
                                         }
-                                    }
+                                    </div>
                                 </td>
+
                             </tr>
                         }
 

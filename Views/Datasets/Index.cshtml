@@ -144,8 +144,9 @@
                 <th>Disease Model</th>
                 <th>Organ / Tissue</th>
                 <th>License</th>
-                <th>Status</th>
-                <th>Year</th>
+                <th class="text-center text-nowrap">Status</th>
+                <th class="text-center text-nowrap">Year</th>
+
 
                 @if (SignInManager.IsSignedIn(User))
                 {
@@ -214,8 +215,8 @@
                         }
                     </td>
 
-                    <td>@GetNestedSafe(ds, "Analyzed.Status")</td>
-                    <td>@GetNestedSafe(ds, "Analyzed.UpdatedYear")</td>
+                    <td class="text-center text-nowrap">@GetNestedSafe(ds, "Analyzed.Status")</td>
+                    <td class="text-center text-nowrap">@GetNestedSafe(ds, "Analyzed.UpdatedYear")</td>
 
                     @if (SignInManager.IsSignedIn(User))
                     {

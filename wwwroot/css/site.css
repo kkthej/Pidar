@@ -1,11 +1,13 @@
 /* =========================================================
-   RESET & BASE
+   BASE / LAYOUT
    ========================================================= */
+
+/* Safer reset: keep box-sizing, don't globally wipe margins/padding (Bootstrap relies on defaults). */
 *, *::before, *::after {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
+
+
 
 html {
     font-size: 14px;
@@ -22,7 +24,20 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    padding-top: 56px; /* navbar offset */
+    padding-top: 56px; /* fixed navbar offset */
+
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+footer {
+    text-align: center;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    padding: 2rem 1rem;
 }
 
 /* =========================================================
@@ -37,22 +52,7 @@ body {
 }
 
 /* =========================================================
-   CONTENT & FOOTER
-   ========================================================= */
-.content {
-    flex: 1;
-    padding: 20px;
-}
-
-footer {
-    text-align: center;
-    background-color: #f8f9fa;
-    border-top: 1px solid #e0e0e0;
-    padding: 2rem 1rem;
-}
-
-/* =========================================================
-   FORMS & TYPOGRAPHY
+   FORMS
    ========================================================= */
 .form-floating > .form-control::placeholder,
 .form-floating > .form-control-plaintext::placeholder {
@@ -66,7 +66,7 @@ footer {
 }
 
 /* =========================================================
-   BUTTONS
+   BUTTONS / FOCUS
    ========================================================= */
 .btn-primary {
     transition: transform 0.2s ease-in-out;
@@ -79,11 +79,11 @@ footer {
 .btn:focus,
 .form-control:focus,
 .form-check-input:focus {
-    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem #258cfb;
 }
 
 /* =========================================================
-   HOVER EFFECTS
+   HOVER UTILITY
    ========================================================= */
 .hover-effect {
     transition: all 0.3s ease;
@@ -103,32 +103,34 @@ footer {
 /* =========================================================
    TABLES & SORTING
    ========================================================= */
-th.sortable {
-    cursor: pointer;
-}
-
-    th.sortable:hover {
-        background-color: #f5f5f5;
-    }
-
-th a {
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-    th a:hover {
-        color: #007bff;
-    }
-
 th {
     font-weight: 600;
 }
 
+    th.sortable {
+        cursor: pointer;
+    }
+
+        th.sortable:hover {
+            background-color: #f5f5f5;
+        }
+
+    /* Column header links */
+    th a {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        th a:hover {
+            color: #007bff;
+        }
+
+/* Better modern wrapping behavior */
 td {
-    word-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 
 /* =========================================================
@@ -140,7 +142,7 @@ td {
 }
 
 /* =========================================================
-   SEARCH HIGHLIGHT
+   SEARCH RESULTS
    ========================================================= */
 .highlight {
     background-color: #fffde7;
@@ -155,10 +157,9 @@ td {
     border-radius: 4px;
 }
 
-/* ============================================
-   PIDAR Modern Stat Cards (Final, Fixed Version)
-============================================ */
-
+/* =========================================================
+   PIDAR STAT CARDS
+   ========================================================= */
 .pidar-stat-container {
     padding: 10px;
 }
@@ -185,18 +186,17 @@ td {
     position: absolute;
     right: 20px;
     bottom: 15px;
-    opacity: 0.5; /* default visibility */
+    opacity: 0.5;
     pointer-events: none;
     line-height: 1;
 }
 
-/* WHITE CARD NEEDS DARK ICON */
+/* Icon color per theme */
 .pidar-white .pidar-icon {
     color: #444 !important;
     opacity: 0.8 !important;
 }
 
-/* COLORED CARDS NEED LIGHT ICON */
 .pidar-green .pidar-icon,
 .pidar-red .pidar-icon {
     color: rgba(255, 255, 255, 0.8) !important;
@@ -217,13 +217,13 @@ td {
     font-weight: 500;
 }
 
-/* PIDAR Color Themes */
+/* Themes */
 .pidar-green {
     background: linear-gradient(135deg, #198754, #157347);
 }
 
 .pidar-white {
-    background: #ffffff;
+    background: #fff;
     color: #212529;
     border: 1px solid #eee;
 }
@@ -233,47 +233,40 @@ td {
 }
 
 /* =========================================================
-   CONTRIBUTORS GRID (MAIN SECTION)
+   CONTRIBUTORS GRID
    ========================================================= */
 .contributors {
     display: grid;
     grid-template-columns: repeat(4, minmax(120px, 1fr));
     gap: 2rem;
     padding: 3rem 2rem;
-    background-color: #F2F4F6; /* neutral, logo-safe */
-
+    background-color: #F2F4F6;
     max-width: 1200px;
     margin: 0 auto;
     justify-items: center;
     align-items: center;
-    border-radius: 12px; /* subtle, modern */
+    border-radius: 12px;
 }
-
 
     .contributors h2 {
         grid-column: 1 / -1;
         text-align: center;
         margin: 0.5rem 0;
     }
-/* Generic logo styling */
+
+/* Logo images */
 .contributor img {
     width: 110px;
     height: auto;
     object-fit: contain;
-    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5  ));
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
 }
 
-/* =========================================================
-   SPECIAL: CENTER FUNDING SOURCES
-   ========================================================= */
-
-/* =========================================================
-   CENTER FUNDING SOURCES IN COLUMNS 2 AND 3
-   ========================================================= */
+/* Funding row inside contributors grid */
 .funding-row {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: repeat(5,1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
     justify-self: stretch;
     justify-items: center;
@@ -281,45 +274,30 @@ td {
     width: 100%;
 }
 
-    /* place logos in columns 2 and 3 */
-    /*.funding-row .contributor:nth-child(5) {
-        grid-column: 2 / span 2;
-    }*/
-
-    /*.funding-row .contributor:nth-child(2) {
-        grid-column: 3;
-    }*/
-
-    /* keep image size */
     .funding-row .contributor img {
         width: 110px;
     }
 
-
-/* ===========================
-   RESPONSIVE BEHAVIOR
-   =========================== */
-
-
-@media (max-width:768px) {
+/* Responsive */
+@media (max-width: 768px) {
     .contributors {
-        grid-template-columns: repeat(2,1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .funding-row {
-        grid-template-columns: repeat(2,1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
 
         .funding-row .contributor:nth-child(5) {
             grid-column: 1 / -1;
         }
-    /* center full width */
+
     .contributor img {
         width: 90px;
     }
 }
 
-@media (max-width:480px) {
+@media (max-width: 480px) {
     .contributors {
         grid-template-columns: 1fr;
     }
@@ -332,7 +310,6 @@ td {
         width: 70px;
     }
 }
-
 
 /* =========================================================
    LOGIN PAGE
@@ -369,16 +346,13 @@ body.login-page {
     margin-bottom: 1rem;
 }
 
-/* Mobile refinements */
+/* Mobile refinements: remove side gaps on small screens */
 @media (max-width: 576px) {
     html, body {
-        margin: 0 !important;
-        padding: 0 !important;
         overflow-x: hidden !important;
     }
 
-    .container, .container-fluid,
-    .content, .card {
+    .container, .container-fluid, .content, .card {
         padding-left: 0 !important;
         padding-right: 0 !important;
         margin-left: 0 !important;
@@ -404,16 +378,17 @@ body.login-page {
     }
 }
 
-
+/* =========================================================
+   LICENSE ICONS
+   ========================================================= */
 .license-logo {
     height: 20px;
     width: auto;
     vertical-align: middle;
 }
 
-
 /* =========================================================
-   ONTOLOGY LINKS – force normal link look (no pill, no bg)
+   ONTOLOGY LINKS (force normal link look, no pill/bg)
    ========================================================= */
 .ontology-link a,
 .ontology-link a:visited {
@@ -432,3 +407,22 @@ body.login-page {
         color: #0a58ca !important;
         text-decoration: underline !important;
     }
+
+/* =========================================================
+   INLINE VALUE + ONTOLOGY (Details page)
+   ========================================================= */
+.value-with-onto {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    max-width: 100%;
+}
+
+.value-main {
+    min-width: 0;
+}
+
+.value-onto {
+    white-space: nowrap; /* keep NCIT:C17204 on one piece */
+    flex: 0 0 auto;
+}
