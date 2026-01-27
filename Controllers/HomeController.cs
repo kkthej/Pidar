@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Diagnostics;
 using Pidar.Data;
 using Pidar.Models;
+using Pidar.Models.Ontology;
+using Pidar.Services.Analytics;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -12,11 +14,13 @@ namespace Pidar.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly PidarDbContext _context;
+        private readonly IAnalyticsService _analytics;
 
-        public HomeController(ILogger<HomeController> logger, PidarDbContext context)
+        public HomeController(ILogger<HomeController> logger, PidarDbContext context, IAnalyticsService analytics)
         {
             _logger = logger;
             _context = context;
+            _analytics = analytics;
         }
 
         public IActionResult Index()
@@ -166,6 +170,21 @@ namespace Pidar.Controllers
 
             var stats = GetMetadataStats();
             ViewBag.MetadataSections = stats.SectionCounts;
+
+            var traffic = await _analytics.GetPublicTrafficAsync();
+
+            var trafficConfigured =
+                traffic.VisitsLast30 > 0 ||
+                traffic.UniquesLast30 > 0 ||
+                (traffic.VisitsPerDayLast30?.Count ?? 0) > 0 ||
+                (traffic.TopCountriesLast30?.Count ?? 0) > 0;
+
+            ViewData["TrafficConfigured"] = traffic.Enabled;
+
+            ViewData["VisitsLast30"] = traffic.VisitsLast30;
+            ViewData["UniquesLast30"] = traffic.UniquesLast30;
+            ViewData["VisitsPerDayLast30"] = System.Text.Json.JsonSerializer.Serialize(traffic.VisitsPerDayLast30);
+            ViewData["TopCountriesLast30"] = System.Text.Json.JsonSerializer.Serialize(traffic.TopCountriesLast30);
 
 
             return View();

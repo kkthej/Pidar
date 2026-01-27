@@ -1,25 +1,64 @@
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OfficeOpenXml;
 using Pidar.Areas.Identity.Data;
 using Pidar.Data;
-using OfficeOpenXml;
-using Microsoft.AspNetCore.DataProtection;
-using System.IO;
-
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Pidar.Helpers;
+using Pidar.Services;
+using System.IO;
+using Hangfire;
+using Hangfire.PostgreSql;
+using Pidar.Infrastructure;
+using Pidar.Jobs;
+using System.Net.Http.Headers;
+using Pidar.Integration;
+using Pidar.Services.Analytics;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Set EPPlus license context
-ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+ExcelPackage.License.SetNonCommercialOrganization("PIDAR");
+
+
+
 
 // Register ApplicationDbContext for Identity
 var identityConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(identityConnectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+
+// ANALYTICS SERVICE
+builder.Services.Configure<MatomoOptions>(builder.Configuration.GetSection("Matomo"));
+builder.Services.AddHttpClient<IAnalyticsService, MatomoAnalyticsService>(http =>
+{
+    http.Timeout = TimeSpan.FromSeconds(8);
+});
+
+//XNAT UPLOADER
+builder.Services.AddScoped<IDatasetExportService, DatasetExportService>();
+
+builder.Services.AddHttpClient<IXnatUploader, XnatUploader>((sp, http) =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+
+    var user = cfg["Xnat:User"];
+    var pass = cfg["Xnat:Pass"];
+
+    if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(pass))
+        throw new InvalidOperationException("XNAT credentials not configured");
+
+    var token = Convert.ToBase64String(
+        System.Text.Encoding.UTF8.GetBytes($"{user}:{pass}")
+    );
+
+    http.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Basic", token);
+});
+
 
 // Register PidarDbContext with retry policy and sensitive data logging
 var pidarConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -39,6 +78,13 @@ builder.Services.AddDefaultIdentity<PidarUser>(options => options.SignIn.Require
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
+// Register OntologyIndexService
+builder.Services.AddScoped<OntologyIndexService>();
+builder.Services.AddScoped<OntologySearchService>();
+// Register DatasetXnatSyncJob
+builder.Services.AddScoped<DatasetXnatSyncJob>();
+
+
 
 // Register CategoryProvider for use in all Razor pages
 builder.Services.AddSingleton<ICategoryProvider, CategoryProvider>();
@@ -73,50 +119,65 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<PidarDbContext>()
     .AddDbContextCheck<ApplicationDbContext>();
 
+builder.Services.AddHangfire(cfg =>
+{
+    var cs =
+        builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? builder.Configuration["Hangfire:ConnectionString"];
+
+    cfg.UseSimpleAssemblyNameTypeSerializer()
+       .UseRecommendedSerializerSettings()
+       .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(cs));
+});
+
+builder.Services.AddHangfireServer();
+
+
+
 var app = builder.Build();
 // Simple health endpoint
 app.MapHealthChecks("/health");
 
 
-
-
-
-// Apply pending migrations on startup
-// Update your migration code to handle container startup delays
-using (var scope = app.Services.CreateScope())
+// Apply pending migrations on startup (ONLY in Docker)
+if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
 {
-    var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>>();
-    var retryCount = 5;
-    var retryDelay = TimeSpan.FromSeconds(10);
-
-    void ApplyMigrations(DbContext context, string contextName)
+    using (var scope = app.Services.CreateScope())
     {
-        for (int i = 0; i < retryCount; i++)
+        var services = scope.ServiceProvider;
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        var retryCount = 5;
+        var retryDelay = TimeSpan.FromSeconds(10);
+
+        void ApplyMigrations(DbContext context, string contextName)
         {
-            try
+            for (int i = 0; i < retryCount; i++)
             {
-                logger.LogInformation("Applying migrations for {Context} (Attempt {Attempt}/{Total})", contextName, i + 1, retryCount);
-                context.Database.Migrate();
-                logger.LogInformation("Migrations applied for {Context}", contextName);
-                break;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Migration attempt {Attempt}/{Total} failed for {Context}", i + 1, retryCount, contextName);
-                if (i == retryCount - 1)
+                try
                 {
-                    logger.LogCritical("All migration attempts failed for {Context}", contextName);
-                    throw;
+                    logger.LogInformation("Applying migrations for {Context} (Attempt {Attempt}/{Total})", contextName, i + 1, retryCount);
+                    context.Database.Migrate();
+                    logger.LogInformation("Migrations applied for {Context}", contextName);
+                    break;
                 }
-                Thread.Sleep(retryDelay);
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Migration attempt {Attempt}/{Total} failed for {Context}", i + 1, retryCount, contextName);
+                    if (i == retryCount - 1)
+                    {
+                        logger.LogCritical("All migration attempts failed for {Context}", contextName);
+                        throw;
+                    }
+                    Thread.Sleep(retryDelay);
+                }
             }
         }
-    }
 
-    ApplyMigrations(services.GetRequiredService<PidarDbContext>(), "PidarDbContext");
-    ApplyMigrations(services.GetRequiredService<ApplicationDbContext>(), "ApplicationDbContext");
+        ApplyMigrations(services.GetRequiredService<PidarDbContext>(), "PidarDbContext");
+        ApplyMigrations(services.GetRequiredService<ApplicationDbContext>(), "ApplicationDbContext");
+    }
 }
+
 
 
 // Run startup jobs
@@ -143,6 +204,11 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAllowAllDashboardAuthorizationFilter() }
+});
 
 
 

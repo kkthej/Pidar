@@ -75,3 +75,5 @@ Added features:
 31. Changed Create and Edit pages of Ontology to accommodate new fields.
 32. Minor chasnges to _layout.cshtml 
 33. Fixed issues with saving edit.cshtml form after adding new Ontology.
+34. Added Ontology code in the same line as Ontology name in Dataset details page.
+35. Added traffic tracking on Statistics page using Matomo.
