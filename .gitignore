@@ -66,6 +66,7 @@ node_modules/
 # Sensitive files (optional)
 appsettings.Development.json
 appsettings.Local.json
+appsettings.json
 secrets.json
 .env
 
@@ -74,3 +75,4 @@ secrets.json
 Thumbs.db
 # keys folder
 keys/
+

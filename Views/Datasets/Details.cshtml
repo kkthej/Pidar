@@ -9,8 +9,7 @@
 
 @{
     ViewData["Title"] = "Dataset Details";
-    var colorClasses = new[] { "primary", "success", "info", "warning", "danger", "secondary" };
-    var colorIndex = 0;
+    
 
     // ==========================================================
     // INLINE ONTOLOGY MAPPING (main field -> ontology field)
@@ -276,8 +275,7 @@
         if (!hasContent)
             continue;
 
-        var color = colorClasses[colorIndex % colorClasses.Length];
-        colorIndex++;
+        var color = CategoryProvider.GetColor(category.Key);
 
         <div class="card mb-4 shadow-sm border-@color">
             <div class="card-header bg-@color text-white text-center fw-bold">

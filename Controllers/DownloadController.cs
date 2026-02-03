@@ -1,22 +1,25 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Hosting;
-using System.Text;
-using System.Text.Json;
-using ClosedXML.Excel;
-using iText.Kernel.Pdf;
-using iText.Kernel.Geom;
-using iText.Kernel.Font;
-using iText.Kernel.Colors;
-using iText.Kernel.Pdf.Canvas;
+﻿using ClosedXML.Excel;
 using iText.IO.Font.Constants;
 using iText.IO.Image;
+using iText.Kernel.Colors;
+using iText.Kernel.Font;
+using iText.Kernel.Geom;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas;
 using iText.Layout;
 using iText.Layout.Element;
 using iText.Layout.Properties;
-using Pidar.Data;
-using Pidar.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Pidar.Data;
+using Pidar.Exports;
+using Pidar.Models;
 using System.Drawing;
+using System.Text;
+using System.Text.Json;
+using Pidar.Exports;
+
 
 namespace Pidar.Controllers
 {
@@ -447,6 +450,9 @@ namespace Pidar.Controllers
 
                     if (val is string s && string.IsNullOrWhiteSpace(s)) continue;
 
+                    var label = ExportLabelMap.Map.TryGetValue(p.Name, out var mapped)
+                        ? mapped
+                        : Pretty(p.Name);
                     dict[$"{sec.Key}: {Pretty(p.Name)}"] = val;
                 }
             }

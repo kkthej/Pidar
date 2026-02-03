@@ -1,11 +1,13 @@
 ﻿@model Pidar.Models.ViewModels.DatasetCreateViewModel
 @using Pidar.Helpers
+@inject Pidar.Helpers.ICategoryProvider CategoryProvider
+
 
 @{
     ViewData["Title"] = "Edit Dataset";
 
-    var colorClasses = new[] { "primary", "success", "info", "warning", "danger", "secondary" };
-    var colorIndex = 0;
+
+
 
     bool IsLong(string field)
     {
@@ -49,8 +51,8 @@
     <!-- CATEGORY RENDERING -->
     @foreach (var category in categories)
     {
-        var color = colorClasses[colorIndex % colorClasses.Length];
-        colorIndex++;
+        var color = CategoryProvider.GetColor(category.Key);
+
 
         <div class="card mb-4 shadow-sm border-@color">
             <div class="card-header bg-@color text-white fw-bold">

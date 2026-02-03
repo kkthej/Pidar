@@ -4,10 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Helpers;
 using Pidar.Models;
+using Pidar.Models.Ontology;
 using Pidar.Models.ViewModels;
+using Pidar.Services;
+using Pidar.Jobs;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Hangfire;
+
 
 namespace Pidar.Controllers
 {
@@ -17,12 +23,26 @@ namespace Pidar.Controllers
     {
         private readonly PidarDbContext _context;
         private readonly ILogger<DatasetsController> _logger;
+        private readonly OntologySearchService _ontologySearch;
+        private readonly OntologyIndexService _ontologyIndex;
+        private readonly IBackgroundJobClient _jobs;
 
-        public DatasetsController(PidarDbContext context, ILogger<DatasetsController> logger)
+
+
+        public DatasetsController(
+     PidarDbContext context,
+     ILogger<DatasetsController> logger,
+     OntologySearchService ontologySearch,
+     OntologyIndexService ontologyIndex,
+     IBackgroundJobClient jobs)
         {
             _context = context;
             _logger = logger;
+            _ontologySearch = ontologySearch;
+            _ontologyIndex = ontologyIndex;
+            _jobs = jobs;
         }
+
 
         // ===============================================================
         // INTERNAL CHILD PROCESSOR
@@ -127,9 +147,9 @@ namespace Pidar.Controllers
         // ===============================================================
         [Route("SearchResults")]
         public async Task<IActionResult> ShowSearchResults(
-            string? SearchPhrase,
-            string? sortOrder,
-            int pageNumber = 1)
+    string? SearchPhrase,
+    string? sortOrder,
+    int pageNumber = 1)
         {
             const int pageSize = 10;
 
@@ -139,36 +159,87 @@ namespace Pidar.Controllers
             if (string.IsNullOrWhiteSpace(SearchPhrase))
                 return RedirectToAction(nameof(Index));
 
-            var allData = await _context.Datasets
+            SearchPhrase = SearchPhrase.Trim();
+
+            // Base query (still include all, because Index view expects it)
+            IQueryable<Dataset> query = _context.Datasets
                 .IncludeAll()
-                .AsNoTracking()
-                .ToListAsync();
+                .AsNoTracking();
 
-            var results = allData.Where(m =>
-                GetAllStringValues(m)
-                    .Any(v => v.Contains(SearchPhrase, System.StringComparison.OrdinalIgnoreCase))
-            ).ToList();
+            // ------------------------------------------------------------
+            // ✅ BEST SEARCH: synonyms/code -> dataset_ontology_term (DB-side)
+            // ------------------------------------------------------------
+            var codes = await _ontologySearch.ResolveCodesAsync(SearchPhrase);
 
-            results = sortOrder switch
+            if (codes.Count > 0)
             {
-                "displayid_desc" => results.OrderByDescending(m => m.DisplayId).ToList(),
-                _ => results.OrderBy(m => m.DisplayId).ToList()
+                query = query.Where(d =>
+                    _context.DatasetOntologyTerms.Any(t =>
+                        t.DatasetId == d.DatasetId &&
+                        codes.Contains(t.Code)));
+            }
+            else
+            {
+                // Optional fallback:
+                // If no ontology code matched, keep your old global string search.
+                // WARNING: This loads all data in memory. Keep it only if you want "search everything".
+                var allData = await query.ToListAsync();
+
+                var resultsFallback = allData.Where(m =>
+                    GetAllStringValues(m)
+                        .Any(v => v.Contains(SearchPhrase, StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+
+                resultsFallback = sortOrder switch
+                {
+                    "displayid_desc" => resultsFallback.OrderByDescending(m => m.DisplayId).ToList(),
+                    _ => resultsFallback.OrderBy(m => m.DisplayId).ToList()
+                };
+
+                var pageFallback = resultsFallback
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                ViewData["DatasetCount"] = resultsFallback.Count;
+                ViewData["TotalSampleSize"] = CalculateSampleSize(resultsFallback);
+
+                var statsFallback = GetMetadataStats();
+                ViewData["TableColumnCount"] = statsFallback.TotalFields;
+                ViewBag.MetadataSections = statsFallback.SectionCounts;
+
+                return View("Index", new PaginatedList<Dataset>(pageFallback, resultsFallback.Count, pageNumber, pageSize));
+            }
+
+            // Sorting on DB query
+            query = sortOrder switch
+            {
+                "displayid_desc" => query.OrderByDescending(m => m.DisplayId),
+                _ => query.OrderBy(m => m.DisplayId)
             };
 
-            var page = results
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            // Count + page
+            var totalCount = await query.CountAsync();
 
-            ViewData["DatasetCount"] = results.Count;
-            ViewData["TotalSampleSize"] = CalculateSampleSize(results);
+            var pageQuery = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize);
+
+            var page = await pageQuery.ToListAsync();
+
+            // Only if you want sample size for ALL matching results:
+            var allResults = await query.ToListAsync();
+
+            ViewData["DatasetCount"] = totalCount;
+            ViewData["TotalSampleSize"] = CalculateSampleSize(allResults);
 
             var stats = GetMetadataStats();
             ViewData["TableColumnCount"] = stats.TotalFields;
             ViewBag.MetadataSections = stats.SectionCounts;
 
-            return View("Index", new PaginatedList<Dataset>(page, results.Count, pageNumber, pageSize));
+            return View("Index", new PaginatedList<Dataset>(page, totalCount, pageNumber, pageSize));
         }
+
 
         private IEnumerable<string> GetAllStringValues(Dataset ds)
         {
@@ -356,6 +427,8 @@ namespace Pidar.Controllers
 
                 // ⭐ regenerate sequential DisplayIds
                 await RegenerateDisplayIdsAsync();
+                // 🔁 rebuild ontology search index for THIS dataset
+                await _ontologyIndex.RebuildAsync(vm.Dataset.DatasetId);
 
                 return RedirectToAction(nameof(Index));
             }
@@ -443,6 +516,10 @@ namespace Pidar.Controllers
             UpdateChild(entity.Ontology, vm.Ontology, on => entity.Ontology = on);
 
             await _context.SaveChangesAsync();
+
+            // 🔁 rebuild ontology search index after edit
+            await _ontologyIndex.RebuildAsync(id);
+            _jobs.Enqueue<DatasetXnatSyncJob>(job => job.SyncDatasetAsync(id));
 
             return RedirectToAction(nameof(Index));
         }

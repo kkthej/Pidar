@@ -6,6 +6,9 @@ namespace Pidar.Helpers
     public interface ICategoryProvider
     {
         Dictionary<string, List<string>> GetCategories();
+        
+        // NEW: deterministic color for a category title
+        string GetColor(string categoryName);
     }
 
     public class CategoryProvider : ICategoryProvider
@@ -173,5 +176,35 @@ namespace Pidar.Helpers
             };
 
         public Dictionary<string, List<string>> GetCategories() => _categories;
+
+
+        // NEW: category title -> bootstrap color
+        private static readonly Dictionary<string, string> _categoryColors =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Study Design"] = "danger",
+                ["Publication"] = "secondary",
+                ["Study Component"] = "danger",
+                ["Dataset Information"] = "secondary",
+                ["In Vivo Experimental Parameters"] = "warning",
+                ["Experimental Procedures"] = "warning",
+                ["Image Acquisition"] = "success",
+                ["Image Data"] = "success",
+                ["Image Correlation"] = "info",
+                ["Analyzed Data"] = "primary"
+            };
+
+       
+
+        public string GetColor(string categoryName)
+        {
+            if (string.IsNullOrWhiteSpace(categoryName))
+                return "secondary";
+
+            return _categoryColors.TryGetValue(categoryName.Trim(), out var color)
+                ? color
+                : "secondary";
+        }
+
     }
 }

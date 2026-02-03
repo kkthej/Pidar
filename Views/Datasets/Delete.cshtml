@@ -3,8 +3,7 @@
 
 @{
     ViewData["Title"] = "Delete Dataset";
-    var colorClasses = new[] { "danger", "warning", "secondary" };
-    var colorIndex = 0;
+   
 }
 
 @functions {
@@ -107,8 +106,8 @@
 
         if (!hasContent) continue;
 
-        var color = colorClasses[colorIndex % colorClasses.Length];
-        colorIndex++;
+        var color = CategoryProvider.GetColor(category.Key);
+
 
         <div class="card mb-4 border-@color shadow-sm">
             <div class="card-header bg-@color text-white fw-bold text-center">

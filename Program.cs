@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -139,43 +139,31 @@ var app = builder.Build();
 app.MapHealthChecks("/health");
 
 
-// Apply pending migrations on startup (ONLY in Docker)
-if (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+// Apply migrations ONLY when explicitly enabled
+if (builder.Configuration.GetValue<bool>("ApplyMigrations"))
 {
-    using (var scope = app.Services.CreateScope())
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
     {
-        var services = scope.ServiceProvider;
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        var retryCount = 5;
-        var retryDelay = TimeSpan.FromSeconds(10);
+        logger.LogWarning("ApplyMigrations=true → applying EF Core migrations");
 
-        void ApplyMigrations(DbContext context, string contextName)
-        {
-            for (int i = 0; i < retryCount; i++)
-            {
-                try
-                {
-                    logger.LogInformation("Applying migrations for {Context} (Attempt {Attempt}/{Total})", contextName, i + 1, retryCount);
-                    context.Database.Migrate();
-                    logger.LogInformation("Migrations applied for {Context}", contextName);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Migration attempt {Attempt}/{Total} failed for {Context}", i + 1, retryCount, contextName);
-                    if (i == retryCount - 1)
-                    {
-                        logger.LogCritical("All migration attempts failed for {Context}", contextName);
-                        throw;
-                    }
-                    Thread.Sleep(retryDelay);
-                }
-            }
-        }
+        services.GetRequiredService<PidarDbContext>().Database.Migrate();
+        services.GetRequiredService<ApplicationDbContext>().Database.Migrate();
 
-        ApplyMigrations(services.GetRequiredService<PidarDbContext>(), "PidarDbContext");
-        ApplyMigrations(services.GetRequiredService<ApplicationDbContext>(), "ApplicationDbContext");
+        logger.LogInformation("EF Core migrations completed successfully");
     }
+    catch (Exception ex)
+    {
+        logger.LogCritical(ex, "Migration failed while ApplyMigrations=true");
+        throw; // FAIL FAST only when explicitly requested
+    }
+}
+else
+{
+    app.Logger.LogInformation("ApplyMigrations=false → skipping EF Core migrations");
 }
 
 
