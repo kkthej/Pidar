@@ -1,9 +1,7 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Text.Json;
 
 namespace Pidar.Services.Analytics;
 
@@ -34,17 +32,14 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
 
         try
         {
-            // range totals (Matomo sometimes returns { "value": ... } )
             var visitsRange = await CallApiIntAsync("VisitsSummary.getVisits", "range", "last30", ct);
             var uniquesRange = await CallApiIntAsync("VisitsSummary.getUniqueVisitors", "range", "last30", ct);
 
-            // day series: often { "YYYY-MM-DD": 12, ... }
             var visitsDaily = await CallApiAsync<Dictionary<string, int>>(
                 "VisitsSummary.getVisits", "day", "last30", ct);
 
-            // countries list: [{ label: "Italy", nb_visits: 10 }, ...]
             var countries = await CallApiAsync<List<Dictionary<string, object>>>(
-                "UserCountry.getCountry", "range", "last30", ct, extra: "&filter_limit=10");
+                "UserCountry.getCountry", "range", "last30", ct, extra: "filter_limit=10");
 
             return new PublicTrafficVm
             {
@@ -76,66 +71,37 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
            && !string.IsNullOrWhiteSpace(_opt.TokenAuth)
            && !_opt.TokenAuth.Equals("PUT_TOKEN_HERE", StringComparison.OrdinalIgnoreCase);
 
+    // IMPORTANT: No token_auth in query string anymore
     private string BuildUrl(string method, string period, string date, string extra)
     {
         var baseUrl = _opt.BaseUrl.TrimEnd('/') + "/index.php";
 
-        return
+        var url =
             $"{baseUrl}?module=API&format=JSON" +
             $"&idSite={Uri.EscapeDataString(_opt.SiteId)}" +
             $"&period={Uri.EscapeDataString(period)}" +
             $"&date={Uri.EscapeDataString(date)}" +
-            $"&method={Uri.EscapeDataString(method)}" +
-            $"&token_auth={Uri.EscapeDataString(_opt.TokenAuth)}" +
-            extra;
+            $"&method={Uri.EscapeDataString(method)}";
+
+        if (!string.IsNullOrWhiteSpace(extra))
+            url += $"&{extra}";
+
+        return url;
     }
 
-    private async Task<T> CallApiAsync<T>(string method, string period, string date, CancellationToken ct, string extra = "")
+    private async Task<T> CallApiAsync<T>(
+        string method,
+        string period,
+        string date,
+        CancellationToken ct,
+        string extra = "")
     {
-        var url = BuildUrl(method, period, date, extra);
-
-        // handle Matomo error objects even when we deserialize to T
-        using var resp = await _http.GetAsync(url, ct);
-        resp.EnsureSuccessStatusCode();
-
-        var json = await resp.Content.ReadAsStringAsync(ct);
-
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-
-        if (root.ValueKind == JsonValueKind.Object &&
-            root.TryGetProperty("result", out var r) &&
-            r.ValueKind == JsonValueKind.String &&
-            string.Equals(r.GetString(), "error", StringComparison.OrdinalIgnoreCase))
-        {
-            var msg = root.TryGetProperty("message", out var m) ? m.GetString() : "Unknown Matomo error";
-            throw new InvalidOperationException($"Matomo API error: {msg}");
-        }
-
-        // Re-serialize the root and deserialize into T (avoids issues with GetFromJsonAsync)
-        return JsonSerializer.Deserialize<T>(root.GetRawText())
-               ?? throw new InvalidOperationException("Matomo returned empty response.");
-    }
-
-    // Supports both:
-    // 1) 123
-    // 2) { "value": 123 } or { "value": "123" }
-    private async Task<int> CallApiIntAsync(
-    string method,
-    string period,
-    string date,
-    CancellationToken ct,
-    string extra = "")
-    {
-        // IMPORTANT:
-        // Keep BuildUrl as-is, but it must NOT include token_auth in the query string.
-        // token_auth will be sent in POST body (Matomo requires POST in your setup).
         var url = BuildUrl(method, period, date, extra);
 
         using var content = new FormUrlEncodedContent(new[]
         {
-        new KeyValuePair<string, string>("token_auth", _options.TokenAuth ?? string.Empty)
-    });
+            new KeyValuePair<string, string>("token_auth", _opt.TokenAuth)
+        });
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
@@ -150,7 +116,6 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
-        // Matomo error object
         if (root.ValueKind == JsonValueKind.Object &&
             root.TryGetProperty("result", out var r) &&
             r.ValueKind == JsonValueKind.String &&
@@ -160,17 +125,57 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
             throw new InvalidOperationException($"Matomo API error: {msg}");
         }
 
-        // Case 1: raw number
+        return JsonSerializer.Deserialize<T>(root.GetRawText())
+               ?? throw new InvalidOperationException("Matomo returned empty response.");
+    }
+
+    private async Task<int> CallApiIntAsync(
+        string method,
+        string period,
+        string date,
+        CancellationToken ct,
+        string extra = "")
+    {
+        var url = BuildUrl(method, period, date, extra);
+
+        using var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("token_auth", _opt.TokenAuth)
+        });
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = content
+        };
+
+        using var resp = await _http.SendAsync(req, ct);
+        resp.EnsureSuccessStatusCode();
+
+        var json = await resp.Content.ReadAsStringAsync(ct);
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        if (root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty("result", out var r) &&
+            r.ValueKind == JsonValueKind.String &&
+            string.Equals(r.GetString(), "error", StringComparison.OrdinalIgnoreCase))
+        {
+            var msg = root.TryGetProperty("message", out var m) ? m.GetString() : "Unknown Matomo error";
+            throw new InvalidOperationException($"Matomo API error: {msg}");
+        }
+
         if (root.ValueKind == JsonValueKind.Number && root.TryGetInt32(out var n))
             return n;
 
-        // Case 2: { "value": ... }
-        if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("value", out var v))
+        if (root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty("value", out var v))
         {
             if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var vn))
                 return vn;
 
-            if (v.ValueKind == JsonValueKind.String && int.TryParse(v.GetString(), out var vs))
+            if (v.ValueKind == JsonValueKind.String &&
+                int.TryParse(v.GetString(), out var vs))
                 return vs;
         }
 
