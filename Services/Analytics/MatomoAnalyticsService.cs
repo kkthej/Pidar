@@ -9,6 +9,14 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
     private readonly MatomoOptions _opt;
     private readonly ILogger<MatomoAnalyticsService> _logger;
 
+    // Strongly-typed DTO for Matomo country API
+    // Matomo returns: [{ "label": "Italy", "nb_visits": 10, ... }, ...]
+    private sealed class MatomoCountryRow
+    {
+        public string? label { get; set; }
+        public int nb_visits { get; set; }
+    }
+
     public MatomoAnalyticsService(
         HttpClient http,
         IOptions<MatomoOptions> opt,
@@ -30,8 +38,10 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
 
         try
         {
-            // range totals (Matomo sometimes returns { "value": ... } )
+            // Visits total (last 30)
             var visitsRange = await CallApiIntAsync("VisitsSummary.getVisits", "range", "last30", ct);
+
+            // Unique visitors may be unsupported for range on some Matomo setups -> don't fail whole UI
             int uniquesRange;
             try
             {
@@ -39,17 +49,17 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
             }
             catch (Exception ex)
             {
-                _logger.LogInformation(ex, "Matomo unique visitors not available for this period. Falling back to 0.");
+                _logger.LogInformation(ex,
+                    "Matomo unique visitors not available for this period. Falling back to 0.");
                 uniquesRange = 0;
             }
 
-            // day series: { "YYYY-MM-DD": 12, ... }
+            // Daily series (last 30)
             var visitsDaily = await CallApiAsync<Dictionary<string, int>>(
                 "VisitsSummary.getVisits", "day", "last30", ct);
 
-            // countries list: [{ label: "Italy", nb_visits: 10 }, ...]
-            // NOTE: extra should NOT start with '&' anymore (BuildUrl will add it)
-            var countries = await CallApiAsync<List<Dictionary<string, object>>>(
+            // Top countries (last 30)
+            var countries = await CallApiAsync<List<MatomoCountryRow>>(
                 "UserCountry.getCountry", "range", "last30", ct, extra: "filter_limit=10");
 
             return new PublicTrafficVm
@@ -63,8 +73,8 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
                     .ToList(),
                 TopCountriesLast30 = countries
                     .Select(x => new CountryPoint(
-                        Country: x.TryGetValue("label", out var c) ? c?.ToString() ?? "Unknown" : "Unknown",
-                        Visits: x.TryGetValue("nb_visits", out var v) ? Convert.ToInt32(v) : 0))
+                        Country: string.IsNullOrWhiteSpace(x.label) ? "Unknown" : x.label!,
+                        Visits: x.nb_visits))
                     .Where(x => x.Visits > 0)
                     .ToList()
             };
@@ -72,6 +82,7 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Matomo analytics request failed. Returning empty stats.");
+            // Keep Enabled=true so UI knows tracking is configured even if stats fail temporarily
             return new PublicTrafficVm { Enabled = true };
         }
     }
@@ -82,7 +93,7 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
            && !string.IsNullOrWhiteSpace(_opt.TokenAuth)
            && !_opt.TokenAuth.Equals("PUT_TOKEN_HERE", StringComparison.OrdinalIgnoreCase);
 
-    // IMPORTANT: token_auth must NOT be in querystring
+    // IMPORTANT: token_auth must NOT be in querystring (your server requires POST body)
     private string BuildUrl(string method, string period, string date, string extra)
     {
         var baseUrl = _opt.BaseUrl.TrimEnd('/') + "/index.php";
@@ -119,6 +130,7 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
+        // Matomo error object
         if (root.ValueKind == JsonValueKind.Object &&
             root.TryGetProperty("result", out var r) &&
             r.ValueKind == JsonValueKind.String &&
@@ -132,6 +144,9 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
                ?? throw new InvalidOperationException("Matomo returned empty response.");
     }
 
+    // Supports:
+    // 1) 123
+    // 2) { "value": 123 } or { "value": "123" }
     private async Task<int> CallApiIntAsync(string method, string period, string date, CancellationToken ct, string extra = "")
     {
         var url = BuildUrl(method, period, date, extra);
@@ -151,6 +166,7 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
+        // Matomo error object
         if (root.ValueKind == JsonValueKind.Object &&
             root.TryGetProperty("result", out var r) &&
             r.ValueKind == JsonValueKind.String &&
@@ -160,9 +176,11 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
             throw new InvalidOperationException($"Matomo API error: {msg}");
         }
 
+        // Case 1: raw number
         if (root.ValueKind == JsonValueKind.Number && root.TryGetInt32(out var n))
             return n;
 
+        // Case 2: { "value": ... }
         if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("value", out var v))
         {
             if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var vn))
