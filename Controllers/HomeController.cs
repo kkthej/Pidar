@@ -58,18 +58,11 @@ namespace Pidar.Controllers
             var datasetEntityType = _context.Model.FindEntityType(typeof(Dataset));
             ViewData["TableColumnCount"] = datasetEntityType?.GetProperties().Count() ?? 0;
 
-
-
-
-
             // ============================================================
             // -------------------- CHART DATA -----------------------------
             // ============================================================
 
-
-            // ------------------------------------------------------------
-            // 1. IMAGING MODALITY (StudyComponent.ImagingModality)
-            // ------------------------------------------------------------
+            // 1) IMAGING MODALITY
             var modalityRaw = await _context.StudyComponents
                 .Where(sc => sc.ImagingModality != null && sc.ImagingModality.Trim() != "")
                 .Select(sc => sc.ImagingModality!)
@@ -86,28 +79,22 @@ namespace Pidar.Controllers
 
             ViewData["ModalityDistribution"] = JsonSerializer.Serialize(modalityCounts);
 
-
-            // ------------------------------------------------------------
-            // 2. COUNTRY OF IMAGING FACILITY (DatasetInfo)
-            // ------------------------------------------------------------
+            // 2) COUNTRY OF IMAGING FACILITY
             var countryCounts = await _context.DatasetInfos
-                .Where(i => !string.IsNullOrWhiteSpace(i.CountryOfImagingFacility)) // Cleaner check
-                .GroupBy(i => i.CountryOfImagingFacility) // Grouping by the raw column is index-friendly
+                .Where(i => !string.IsNullOrWhiteSpace(i.CountryOfImagingFacility))
+                .GroupBy(i => i.CountryOfImagingFacility)
                 .Select(g => new {
-                        Country = g.Key.Trim(), // Trim here, after the heavy lifting is done
-                        Count = g.Count()
-                    })
+                    Country = g.Key.Trim(),
+                    Count = g.Count()
+                })
                 .OrderByDescending(x => x.Count)
                 .Take(10)
-                .AsNoTracking() //Performance Tip: Tells EF not to track these for changes
+                .AsNoTracking()
                 .ToListAsync();
 
             ViewData["CountryDistribution"] = JsonSerializer.Serialize(countryCounts);
 
-
-            // ------------------------------------------------------------
-            // 3. DISEASE MODEL (InVivo)
-            // ------------------------------------------------------------
+            // 3) DISEASE MODEL
             var diseaseCounts = await _context.InVivos
                 .Where(v => v.DiseaseModel != null && v.DiseaseModel.Trim() != "")
                 .GroupBy(v => v.DiseaseModel!.Trim())
@@ -118,10 +105,7 @@ namespace Pidar.Controllers
 
             ViewData["DiseaseModelDistribution"] = JsonSerializer.Serialize(diseaseCounts);
 
-
-            // ------------------------------------------------------------
-            // 4. ORGAN / TISSUE (InVivo)
-            // ------------------------------------------------------------
+            // 4) ORGAN / TISSUE
             var organsRaw = await _context.InVivos
                 .Where(v => v.OrganOrTissue != null && v.OrganOrTissue.Trim() != "")
                 .Select(v => v.OrganOrTissue!)
@@ -139,10 +123,7 @@ namespace Pidar.Controllers
 
             ViewData["OrganDistribution"] = JsonSerializer.Serialize(organCounts);
 
-
-            // ------------------------------------------------------------
-            // 5. YEARLY UPLOADS (Analyzed.UpdatedYear)
-            // ------------------------------------------------------------
+            // 5) YEARLY UPLOADS
             var yearlyUploads = await _context.Analyzed
                 .Where(a => a.UpdatedYear != null)
                 .GroupBy(a => a.UpdatedYear)
@@ -152,10 +133,7 @@ namespace Pidar.Controllers
 
             ViewData["YearlyUploads"] = JsonSerializer.Serialize(yearlyUploads);
 
-
-            // ------------------------------------------------------------
-            // 6. STATUS DISTRIBUTION (Analyzed.Status)
-            // ------------------------------------------------------------
+            // 6) STATUS DISTRIBUTION
             var statusCounts = await _context.Analyzed
                 .Where(a => a.Status != null && a.Status.Trim() != "")
                 .GroupBy(a => a.Status!.Trim())
@@ -164,28 +142,27 @@ namespace Pidar.Controllers
                 .ToListAsync();
 
             ViewData["StatusDistribution"] = JsonSerializer.Serialize(statusCounts);
-            // ------------------------------------------------------------
-            // 7. DISTRIBUTION OF METADATA
-            // ------------------------------------------------------------
 
+            // 7) DISTRIBUTION OF METADATA
             var stats = GetMetadataStats();
             ViewBag.MetadataSections = stats.SectionCounts;
 
+            // ------------------------------
+            // MATOMO TRAFFIC
+            // ------------------------------
             var traffic = await _analytics.GetPublicTrafficAsync();
 
-            var trafficConfigured =
-                traffic.VisitsLast30 > 0 ||
-                traffic.UniquesLast30 > 0 ||
-                (traffic.VisitsPerDayLast30?.Count ?? 0) > 0 ||
-                (traffic.TopCountriesLast30?.Count ?? 0) > 0;
-
+            // Configured means: Matomo options are present and service says Enabled
             ViewData["TrafficConfigured"] = traffic.Enabled;
+
+            // HasData means: we have at least 1 visit in last 30 days
+            // (Unique visitors may be unavailable in your Matomo range metrics)
+            ViewData["TrafficHasData"] = traffic.Enabled && traffic.VisitsLast30 > 0;
 
             ViewData["VisitsLast30"] = traffic.VisitsLast30;
             ViewData["UniquesLast30"] = traffic.UniquesLast30;
-            ViewData["VisitsPerDayLast30"] = System.Text.Json.JsonSerializer.Serialize(traffic.VisitsPerDayLast30);
-            ViewData["TopCountriesLast30"] = System.Text.Json.JsonSerializer.Serialize(traffic.TopCountriesLast30);
-
+            ViewData["VisitsPerDayLast30"] = JsonSerializer.Serialize(traffic.VisitsPerDayLast30);
+            ViewData["TopCountriesLast30"] = JsonSerializer.Serialize(traffic.TopCountriesLast30);
 
             return View();
         }
