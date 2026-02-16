@@ -1,6 +1,9 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace Pidar.Services.Analytics;
 
@@ -117,11 +120,29 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
     // Supports both:
     // 1) 123
     // 2) { "value": 123 } or { "value": "123" }
-    private async Task<int> CallApiIntAsync(string method, string period, string date, CancellationToken ct, string extra = "")
+    private async Task<int> CallApiIntAsync(
+    string method,
+    string period,
+    string date,
+    CancellationToken ct,
+    string extra = "")
     {
+        // IMPORTANT:
+        // Keep BuildUrl as-is, but it must NOT include token_auth in the query string.
+        // token_auth will be sent in POST body (Matomo requires POST in your setup).
         var url = BuildUrl(method, period, date, extra);
 
-        using var resp = await _http.GetAsync(url, ct);
+        using var content = new FormUrlEncodedContent(new[]
+        {
+        new KeyValuePair<string, string>("token_auth", _options.TokenAuth ?? string.Empty)
+    });
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = content
+        };
+
+        using var resp = await _http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
 
         var json = await resp.Content.ReadAsStringAsync(ct);
