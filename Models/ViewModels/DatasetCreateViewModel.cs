@@ -1,5 +1,4 @@
-﻿using Pidar.Models;
-
+﻿using OntologyEntity = Pidar.Models.Ontology.Ontology;
 
 namespace Pidar.Models.ViewModels
 {
@@ -16,6 +15,6 @@ namespace Pidar.Models.ViewModels
         public ImageData? ImageData { get; set; } = new();
         public ImageCorrelation? ImageCorrelation { get; set; } = new();
         public Analyzed? Analyzed { get; set; } = new();
-        public Ontology? Ontology { get; set; } = new();
+        public OntologyEntity? Ontology { get; set; } = new();
     }
 }

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 
-namespace Pidar.Models
+namespace Pidar.Models.Ontology
 {
     public class Ontology
     {

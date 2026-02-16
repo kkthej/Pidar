@@ -10,11 +10,8 @@ namespace Pidar.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // DROP duplicate (commercial name)
-            migrationBuilder.DropColumn(
-                name: "ChebiContrastAgentCommercialName",
-                schema: "public",
-                table: "ontology");
+            migrationBuilder.Sql(@"ALTER TABLE public.ontology DROP COLUMN IF EXISTS ""ChebiContrastAgentCommercialName"";");
+
 
             // RENAMES (preserve data)
             migrationBuilder.RenameColumn(

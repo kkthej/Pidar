@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pidar.Models;
+using Pidar.Models.Ontology;
+using System.Linq;
+
 
 namespace Pidar.Data
 {
@@ -25,6 +28,9 @@ namespace Pidar.Data
         public DbSet<ImageCorrelation> ImageCorrelations { get; set; } = null!;
         public DbSet<Analyzed> Analyzed { get; set; } = null!;
         public DbSet<Ontology> Ontologies { get; set; } = null!;
+        public DbSet<DatasetOntologyTerm> DatasetOntologyTerms { get; set; } = null!;
+        public DbSet<OntologySynonym> OntologySynonyms { get; set; } = null!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +77,44 @@ namespace Pidar.Data
             ConfigureOneToOne<ImageCorrelation>(modelBuilder, d => d.ImageCorrelation, "image_correlation");
             ConfigureOneToOne<Analyzed>(modelBuilder, d => d.Analyzed, "analyzed");
             ConfigureOneToOne<Ontology>(modelBuilder, d => d.Ontology, "ontology");
+            // --------------------
+            // ONTOLOGY SEARCH TABLES
+            // --------------------
+            modelBuilder.Entity<DatasetOntologyTerm>(entity =>
+            {
+                entity.ToTable("dataset_ontology_term");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Category).HasColumnType("text").IsRequired();
+                entity.Property(e => e.Code).HasColumnType("text").IsRequired();
+
+                entity.HasOne(e => e.Dataset)
+                    .WithMany() // no navigation collection required
+                    .HasForeignKey(e => e.DatasetId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.Code)
+                    .HasDatabaseName("ix_dataset_ontology_term_code");
+
+                entity.HasIndex(e => new { e.DatasetId, e.Category, e.Code })
+                    .IsUnique()
+                    .HasDatabaseName("ux_dataset_ontology_term_dataset_category_code");
+            });
+
+            modelBuilder.Entity<OntologySynonym>(entity =>
+            {
+                entity.ToTable("ontology_synonym");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Code).HasColumnType("text").IsRequired();
+                entity.Property(e => e.Synonym).HasColumnType("text").IsRequired();
+
+                entity.HasIndex(e => e.Code)
+                    .HasDatabaseName("ix_ontology_synonym_code");
+            });
+
         }
 
         /// <summary>

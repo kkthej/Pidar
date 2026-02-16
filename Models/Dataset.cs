@@ -1,5 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using OntologyEntity = Pidar.Models.Ontology.Ontology;
+
+
 
 namespace Pidar.Models
 {
@@ -25,7 +28,7 @@ namespace Pidar.Models
         public ImageData? ImageData { get; set; }
         public ImageCorrelation? ImageCorrelation { get; set; }
         public Analyzed? Analyzed { get; set; }
-        public Ontology? Ontology { get; set; }
+        public OntologyEntity? Ontology { get; set; }
 
         public Dataset() { }
     }

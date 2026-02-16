@@ -1,0 +1,15 @@
+When you WANT to run migrations
+
+Temporarily set:
+
+export ApplyMigrations=true
+docker-compose up -d --build web
+
+
+Once migrations succeed:
+
+unset ApplyMigrations
+docker-compose up -d
+
+
+This is intentional, explicit, reversible.
