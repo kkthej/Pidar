@@ -32,7 +32,16 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
         {
             // range totals (Matomo sometimes returns { "value": ... } )
             var visitsRange = await CallApiIntAsync("VisitsSummary.getVisits", "range", "last30", ct);
-            var uniquesRange = await CallApiIntAsync("VisitsSummary.getUniqueVisitors", "range", "last30", ct);
+            int uniquesRange;
+            try
+            {
+                uniquesRange = await CallApiIntAsync("VisitsSummary.getUniqueVisitors", "range", "last30", ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, "Matomo unique visitors not available for this period. Falling back to 0.");
+                uniquesRange = 0;
+            }
 
             // day series: { "YYYY-MM-DD": 12, ... }
             var visitsDaily = await CallApiAsync<Dictionary<string, int>>(
