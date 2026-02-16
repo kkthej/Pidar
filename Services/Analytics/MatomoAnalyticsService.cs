@@ -1,7 +1,5 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Options;
-using System.Collections.Generic;
-using System.Net.Http;
 
 namespace Pidar.Services.Analytics;
 
@@ -32,12 +30,16 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
 
         try
         {
+            // range totals (Matomo sometimes returns { "value": ... } )
             var visitsRange = await CallApiIntAsync("VisitsSummary.getVisits", "range", "last30", ct);
             var uniquesRange = await CallApiIntAsync("VisitsSummary.getUniqueVisitors", "range", "last30", ct);
 
+            // day series: { "YYYY-MM-DD": 12, ... }
             var visitsDaily = await CallApiAsync<Dictionary<string, int>>(
                 "VisitsSummary.getVisits", "day", "last30", ct);
 
+            // countries list: [{ label: "Italy", nb_visits: 10 }, ...]
+            // NOTE: extra should NOT start with '&' anymore (BuildUrl will add it)
             var countries = await CallApiAsync<List<Dictionary<string, object>>>(
                 "UserCountry.getCountry", "range", "last30", ct, extra: "filter_limit=10");
 
@@ -71,7 +73,7 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
            && !string.IsNullOrWhiteSpace(_opt.TokenAuth)
            && !_opt.TokenAuth.Equals("PUT_TOKEN_HERE", StringComparison.OrdinalIgnoreCase);
 
-    // IMPORTANT: No token_auth in query string anymore
+    // IMPORTANT: token_auth must NOT be in querystring
     private string BuildUrl(string method, string period, string date, string extra)
     {
         var baseUrl = _opt.BaseUrl.TrimEnd('/') + "/index.php";
@@ -84,7 +86,7 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
             $"&method={Uri.EscapeDataString(method)}";
 
         if (!string.IsNullOrWhiteSpace(extra))
-            url += $"&{extra}";
+            url += $"&{extra.TrimStart('&')}";
 
         return url;
     }
@@ -95,13 +97,10 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
 
         using var content = new FormUrlEncodedContent(new[]
         {
-        new KeyValuePair<string, string>("token_auth", _opt.TokenAuth ?? string.Empty)
-    });
+            new KeyValuePair<string, string>("token_auth", _opt.TokenAuth ?? string.Empty)
+        });
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = content
-        };
+        using var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
 
         using var resp = await _http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
@@ -124,24 +123,16 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
                ?? throw new InvalidOperationException("Matomo returned empty response.");
     }
 
-    private async Task<int> CallApiIntAsync(
-        string method,
-        string period,
-        string date,
-        CancellationToken ct,
-        string extra = "")
+    private async Task<int> CallApiIntAsync(string method, string period, string date, CancellationToken ct, string extra = "")
     {
         var url = BuildUrl(method, period, date, extra);
 
         using var content = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("token_auth", _opt.TokenAuth)
+            new KeyValuePair<string, string>("token_auth", _opt.TokenAuth ?? string.Empty)
         });
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = content
-        };
+        using var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
 
         using var resp = await _http.SendAsync(req, ct);
         resp.EnsureSuccessStatusCode();
@@ -163,14 +154,12 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
         if (root.ValueKind == JsonValueKind.Number && root.TryGetInt32(out var n))
             return n;
 
-        if (root.ValueKind == JsonValueKind.Object &&
-            root.TryGetProperty("value", out var v))
+        if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("value", out var v))
         {
             if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var vn))
                 return vn;
 
-            if (v.ValueKind == JsonValueKind.String &&
-                int.TryParse(v.GetString(), out var vs))
+            if (v.ValueKind == JsonValueKind.String && int.TryParse(v.GetString(), out var vs))
                 return vs;
         }
 
