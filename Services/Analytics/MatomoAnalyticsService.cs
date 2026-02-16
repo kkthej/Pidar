@@ -89,19 +89,14 @@ public sealed class MatomoAnalyticsService : IAnalyticsService
         return url;
     }
 
-    private async Task<T> CallApiAsync<T>(
-        string method,
-        string period,
-        string date,
-        CancellationToken ct,
-        string extra = "")
+    private async Task<T> CallApiAsync<T>(string method, string period, string date, CancellationToken ct, string extra = "")
     {
         var url = BuildUrl(method, period, date, extra);
 
         using var content = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("token_auth", _opt.TokenAuth)
-        });
+        new KeyValuePair<string, string>("token_auth", _opt.TokenAuth ?? string.Empty)
+    });
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
