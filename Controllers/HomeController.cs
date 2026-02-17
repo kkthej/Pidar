@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Models;
 using Pidar.Models.Ontology;
-using Pidar.Services.Analytics;
+
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -14,13 +14,13 @@ namespace Pidar.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly PidarDbContext _context;
-        private readonly IAnalyticsService _analytics;
+       
 
-        public HomeController(ILogger<HomeController> logger, PidarDbContext context, IAnalyticsService analytics)
+        public HomeController(ILogger<HomeController> logger, PidarDbContext context)
         {
             _logger = logger;
             _context = context;
-            _analytics = analytics;
+           
         }
 
         public IActionResult Index()

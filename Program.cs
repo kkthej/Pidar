@@ -14,7 +14,7 @@ using Pidar.Infrastructure;
 using Pidar.Jobs;
 using System.Net.Http.Headers;
 using Pidar.Integration;
-using Pidar.Services.Analytics;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,12 +31,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
-// ANALYTICS SERVICE
-builder.Services.Configure<MatomoOptions>(builder.Configuration.GetSection("Matomo"));
-builder.Services.AddHttpClient<IAnalyticsService, MatomoAnalyticsService>(http =>
-{
-    http.Timeout = TimeSpan.FromSeconds(8);
-});
+
 
 //XNAT UPLOADER
 builder.Services.AddScoped<IDatasetExportService, DatasetExportService>();
