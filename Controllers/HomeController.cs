@@ -152,21 +152,27 @@ namespace Pidar.Controllers
             // ------------------------------
             var traffic = await _analytics.GetPublicTrafficAsync();
 
-            // Configured means: Matomo options are present and service says Enabled
+            // Configured = service is enabled (Matomo options exist + API reachable)
             ViewData["TrafficConfigured"] = traffic.Enabled;
 
-            // HasData means: we have at least 1 visit in last 30 days
-            // (Unique visitors may be unavailable in your Matomo range metrics)
-            ViewData["TrafficHasData"] = traffic.Enabled && traffic.VisitsLast30 > 0;
+            // Use last-30-days KPIs to decide "has data" (NOT today)
+            var visitsLast30 = traffic.VisitsLast30;
+            var uniquesLast30 = traffic.UniquesLast30;
 
-            ViewData["VisitsLast30"] = traffic.VisitsLast30;
-            ViewData["UniquesLast30"] = traffic.UniquesLast30;
-            ViewData["VisitsPerDayLast30"] = JsonSerializer.Serialize(traffic.VisitsPerDayLast30);
-            ViewData["TopCountriesLast30"] = JsonSerializer.Serialize(traffic.TopCountriesLast30);
+            // HasData = show traffic section if there is meaningful activity in the last 30 days.
+            // Some Matomo setups may return 0 uniques for range metrics, so we allow either.
+            ViewData["TrafficHasData"] = traffic.Enabled && (visitsLast30 > 0 || uniquesLast30 > 0);
 
-            return View();
-        }
+            // KPIs
+            ViewData["VisitsLast30"] = visitsLast30;
+            ViewData["UniquesLast30"] = uniquesLast30;
 
+            // Charts (keep your existing JSON serialization pattern)
+            ViewData["VisitsPerDayLast30"] = JsonSerializer.Serialize(
+                traffic.VisitsPerDayLast30 ?? new List<DailyVisitPoint>());
+
+            ViewData["TopCountriesLast30"] = JsonSerializer.Serialize(
+                traffic.TopCountriesLast30 ?? new List<CountryPoint>());
 
         // -------------------------
         // OTHER PAGES
