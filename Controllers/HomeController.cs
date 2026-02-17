@@ -83,7 +83,8 @@ namespace Pidar.Controllers
             var countryCounts = await _context.DatasetInfos
                 .Where(i => !string.IsNullOrWhiteSpace(i.CountryOfImagingFacility))
                 .GroupBy(i => i.CountryOfImagingFacility)
-                .Select(g => new {
+                .Select(g => new
+                {
                     Country = g.Key.Trim(),
                     Count = g.Count()
                 })
@@ -173,6 +174,8 @@ namespace Pidar.Controllers
 
             ViewData["TopCountriesLast30"] = JsonSerializer.Serialize(
                 traffic.TopCountriesLast30 ?? new List<CountryPoint>());
+            return View();
+        }
 
         // -------------------------
         // OTHER PAGES

@@ -3,26 +3,16 @@
 }
 <h2 class="text-center mb-4">Statistics</h2>
 
-
-@{
-    var enabled = (ViewData["TrafficConfigured"] as bool?) ?? false;
-    var hasData = (ViewData["TrafficHasData"] as bool?) ?? false;
-}
-
-
 <!-- ========================================================= -->
 <!-- TRAFFIC ANALYTICS (PUBLIC, GDPR-SAFE) -->
 <!-- ========================================================= -->
 @{
-    // These should be set by your controller from the Matomo service (last30)
-    var enabled = (ViewData["TrafficEnabled"] as bool?) ?? false;
-
+    var enabled = (ViewData["TrafficConfigured"] as bool?) ?? false;
+    var hasData = (ViewData["TrafficHasData"] as bool?) ?? false;
     var visitsLast30 = (ViewData["VisitsLast30"] as int?) ?? 0;
     var uniquesLast30 = (ViewData["UniquesLast30"] as int?) ?? 0;
-
-    // "Has data" should be based on the last-30-days window, not "today"
-    var hasData = enabled && (visitsLast30 > 0 || uniquesLast30 > 0);
 }
+
 
 @if (!enabled)
 {
