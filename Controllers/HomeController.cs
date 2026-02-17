@@ -134,46 +134,9 @@ namespace Pidar.Controllers
 
             ViewData["YearlyUploads"] = JsonSerializer.Serialize(yearlyUploads);
 
-            // 6) STATUS DISTRIBUTION
-            var statusCounts = await _context.Analyzed
-                .Where(a => a.Status != null && a.Status.Trim() != "")
-                .GroupBy(a => a.Status!.Trim())
-                .Select(g => new { Status = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
-                .ToListAsync();
+          
 
-            ViewData["StatusDistribution"] = JsonSerializer.Serialize(statusCounts);
-
-            // 7) DISTRIBUTION OF METADATA
-            var stats = GetMetadataStats();
-            ViewBag.MetadataSections = stats.SectionCounts;
-
-            // ------------------------------
-            // MATOMO TRAFFIC
-            // ------------------------------
-            var traffic = await _analytics.GetPublicTrafficAsync();
-
-            // Configured = service is enabled (Matomo options exist + API reachable)
-            ViewData["TrafficConfigured"] = traffic.Enabled;
-
-            // Use last-30-days KPIs to decide "has data" (NOT today)
-            var visitsLast30 = traffic.VisitsLast30;
-            var uniquesLast30 = traffic.UniquesLast30;
-
-            // HasData = show traffic section if there is meaningful activity in the last 30 days.
-            // Some Matomo setups may return 0 uniques for range metrics, so we allow either.
-            ViewData["TrafficHasData"] = traffic.Enabled && (visitsLast30 > 0 || uniquesLast30 > 0);
-
-            // KPIs
-            ViewData["VisitsLast30"] = visitsLast30;
-            ViewData["UniquesLast30"] = uniquesLast30;
-
-            // Charts (keep your existing JSON serialization pattern)
-            ViewData["VisitsPerDayLast30"] = JsonSerializer.Serialize(
-                traffic.VisitsPerDayLast30 ?? new List<DailyVisitPoint>());
-
-            ViewData["TopCountriesLast30"] = JsonSerializer.Serialize(
-                traffic.TopCountriesLast30 ?? new List<CountryPoint>());
+          
             return View();
         }
 

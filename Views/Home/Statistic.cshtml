@@ -3,85 +3,6 @@
 }
 <h2 class="text-center mb-4">Statistics</h2>
 
-<!-- ========================================================= -->
-<!-- TRAFFIC ANALYTICS (PUBLIC, GDPR-SAFE) -->
-<!-- ========================================================= -->
-@{
-    var enabled = (ViewData["TrafficConfigured"] as bool?) ?? false;
-    var hasData = (ViewData["TrafficHasData"] as bool?) ?? false;
-    var visitsLast30 = (ViewData["VisitsLast30"] as int?) ?? 0;
-    var uniquesLast30 = (ViewData["UniquesLast30"] as int?) ?? 0;
-}
-
-
-@if (!enabled)
-{
-    <div class="alert alert-info shadow-sm mb-4">
-        <strong>Traffic analytics not enabled yet.</strong><br />
-        Aggregated and anonymized usage statistics will appear here once analytics is configured.
-    </div>
-}
-else if (!hasData)
-{
-    <div class="alert alert-secondary shadow-sm mb-4">
-        <strong>Traffic analytics is enabled.</strong><br />
-        No traffic recorded in the last 30 days. Visit a few pages and refresh this section.
-    </div>
-}
-else
-{
-    <div class="row mb-4">
-
-        <div class="col-md-3">
-            <div class="card shadow h-100">
-                <div class="card-body">
-                    <div class="text-muted">Visits (last 30 days)</div>
-                    <div class="display-6 fw-bold">@visitsLast30</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card shadow h-100">
-                <div class="card-body">
-                    <div class="text-muted">Unique visitors (last 30 days)</div>
-                    <div class="display-6 fw-bold">@uniquesLast30</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card shadow h-100">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="mb-0">Visits per day (last 30 days)</h4>
-                </div>
-                <div class="card-body">
-                    <div style="position: relative; height:250px;">
-                        <canvas id="visitsPerDayChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="row mb-5">
-        <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Top countries (last 30 days)</h4>
-                </div>
-                <div class="card-body">
-                    <div style="position: relative; height:300px;">
-                        <canvas id="topCountriesChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-
 <div class="container mt-4">
 
     <!-- Row 1 -->
@@ -150,24 +71,6 @@ else
 
     </div>
 
-    @* <!-- Row 2.5 --> *@
-    @* <div class="row mb-4"> *@
-
-    @*     <!-- Status --> *@
-    @*     <div class="col-md-6"> *@
-    @*         <div class="card shadow h-100"> *@
-    @*             <div class="card-header bg-info text-white"> *@
-    @*                 <h4 class="mb-0">Study Status Distribution</h4> *@
-    @*             </div> *@
-    @*             <div class="card-body"> *@
-    @*                 <div class="chart-container" style="position: relative; height:400px;"> *@
-    @*                     <canvas id="statusChart"></canvas> *@
-    @*                 </div> *@
-    @*             </div> *@
-    @*         </div> *@
-    @*     </div> *@
-
-    @* </div> *@
 
     <!-- Row 3 -->
     <div class="row mb-4">
@@ -198,55 +101,6 @@ else
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-
-            /* ============================================================
-   TRAFFIC ANALYTICS (optional)
-   ============================================================ */
-const trafficConfigured =
-    '@(((bool?)ViewData["TrafficConfigured"]) ?? false)'.toLowerCase() === 'true';
-
-if (trafficConfigured) {
-    const visitsPerDay = parse('@Html.Raw(ViewData["VisitsPerDayLast30"] ?? "[]")');
-    const topCountries = parse('@Html.Raw(ViewData["TopCountriesLast30"] ?? "[]")');
-
-    const vpCanvas = document.getElementById('visitsPerDayChart');
-    if (vpCanvas && visitsPerDay.length) {
-        new Chart(vpCanvas, {
-            type: 'line',
-            data: {
-                labels: visitsPerDay.map(x => x.Date),
-                datasets: [{
-                    data: visitsPerDay.map(x => x.Visits),
-                    borderWidth: 2,
-                    tension: 0.25
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-
-    const tcCanvas = document.getElementById('topCountriesChart');
-    if (tcCanvas && topCountries.length) {
-        new Chart(tcCanvas, {
-            type: 'bar',
-            data: {
-                labels: topCountries.map(x => x.Country),
-                datasets: [{
-                    data: topCountries.map(x => x.Visits),
-                    borderWidth: 1
-                }]
-            },
-            options: barOptions("Top countries (last 30 days)", true)
-        });
-    }
-}
-
-
 
             /* ============================================================
                COLOR PALETTE
@@ -432,19 +286,7 @@ if (trafficConfigured) {
                 options: legendWithCounts("Most studied organs/tissues")
             });
 
-            // new Chart(document.getElementById('statusChart'), {
-            //     type: 'pie',
-            //     data: {
-            //         labels: status.map(x => x.Status),
-            //         datasets: [{
-            //             data: status.map(x => x.Count),
-            //             backgroundColor: colors,
-            //             borderColor: borderColors
-            //         }]
-            //     },
-            //     options: legendWithCounts("Distribution of study statuses")
-            // });
-
+            
             new Chart(document.getElementById('yearlyChart'), {
                 type: 'line',
                 data: {
