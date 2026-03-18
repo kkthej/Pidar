@@ -322,13 +322,19 @@ namespace Pidar.Controllers
         public async Task<IActionResult> Index(string? sortOrder, int pageNumber = 1)
         {
             ViewData["ActivePage"] = "Dataset";
+            ViewData["CurrentSort"] = sortOrder;
             ViewData["DisplayIdSortParam"] =
                 sortOrder == "displayid_asc" ? "displayid_desc" : "displayid_asc";
 
             var query = _context.Datasets
                 .IncludeAll()
-                .AsNoTracking()
-                .OrderBy(x => x.DisplayId);
+                .AsNoTracking();
+
+            query = sortOrder switch
+            {
+                "displayid_desc" => query.OrderByDescending(x => x.DisplayId),
+                _ => query.OrderBy(x => x.DisplayId)
+            };
 
             var paginated = await PaginatedList<Dataset>
                 .CreateAsync(query, pageNumber, 10);

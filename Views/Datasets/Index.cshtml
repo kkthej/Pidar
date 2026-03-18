@@ -123,9 +123,12 @@
         <thead class="table-light">
             <tr>
                 <th>
-                    <a asp-action="Index" asp-route-sortOrder="@ViewData["DisplayIdSortParam"]">
+                    <a asp-action="Index"
+                       asp-route-sortOrder="@ViewData["DisplayIdSortParam"]">
+
                         Dataset ID
-                        @if (ViewBag.CurrentSort == "displayid_desc")
+
+                        @if ((string?)ViewData["CurrentSort"] == "displayid_desc")
                         {
                             <i class="fas fa-sort-down"></i>
                         }
@@ -133,6 +136,7 @@
                         {
                             <i class="fas fa-sort-up"></i>
                         }
+
                     </a>
                 </th>
 
