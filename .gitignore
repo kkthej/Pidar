@@ -76,3 +76,7 @@ Thumbs.db
 # keys folder
 keys/
 
+
+.env
+appsettings.json
+keys/

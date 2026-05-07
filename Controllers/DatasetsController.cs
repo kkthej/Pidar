@@ -27,14 +27,16 @@ namespace Pidar.Controllers
         private readonly OntologyIndexService _ontologyIndex;
         private readonly IBackgroundJobClient _jobs;
 
-
+        // Cached once per app lifetime — GetMetadataStats() result never changes at runtime
+        private static (int TotalFields, Dictionary<string, int> SectionCounts)? _cachedStats;
+        private static readonly object _statLock = new();
 
         public DatasetsController(
-     PidarDbContext context,
-     ILogger<DatasetsController> logger,
-     OntologySearchService ontologySearch,
-     OntologyIndexService ontologyIndex,
-     IBackgroundJobClient jobs)
+            PidarDbContext context,
+            ILogger<DatasetsController> logger,
+            OntologySearchService ontologySearch,
+            OntologyIndexService ontologyIndex,
+            IBackgroundJobClient jobs)
         {
             _context = context;
             _logger = logger;
@@ -70,32 +72,26 @@ namespace Pidar.Controllers
         {
             foreach (var prop in typeof(T).GetProperties())
             {
-                // Skip keys and navigations
                 if (prop.Name == "DatasetId" || prop.Name == "Dataset")
                     continue;
 
                 var value = prop.GetValue(entity);
 
-                // Strings: meaningful if not empty/whitespace
                 if (prop.PropertyType == typeof(string))
                 {
                     if (!string.IsNullOrWhiteSpace(value as string))
                         return false;
-
                     continue;
                 }
 
-                // Value types: meaningful only if not default(T)
                 if (prop.PropertyType.IsValueType)
                 {
                     var defaultValue = Activator.CreateInstance(prop.PropertyType);
                     if (!Equals(value, defaultValue))
                         return false;
-
                     continue;
                 }
 
-                // Reference types (non-string): meaningful if not null
                 if (value != null)
                     return false;
             }
@@ -116,9 +112,7 @@ namespace Pidar.Controllers
 
             int next = 1;
             foreach (var ds in all)
-            {
                 ds.DisplayId = next++;
-            }
 
             await _context.SaveChangesAsync();
         }
@@ -147,9 +141,9 @@ namespace Pidar.Controllers
         // ===============================================================
         [Route("SearchResults")]
         public async Task<IActionResult> ShowSearchResults(
-    string? SearchPhrase,
-    string? sortOrder,
-    int pageNumber = 1)
+            string? SearchPhrase,
+            string? sortOrder,
+            int pageNumber = 1)
         {
             const int pageSize = 10;
 
@@ -161,13 +155,14 @@ namespace Pidar.Controllers
 
             SearchPhrase = SearchPhrase.Trim();
 
-            // Base query (still include all, because Index view expects it)
             IQueryable<Dataset> query = _context.Datasets
                 .IncludeAll()
                 .AsNoTracking();
 
             // ------------------------------------------------------------
-            // ✅ BEST SEARCH: synonyms/code -> dataset_ontology_term (DB-side)
+            // TIER 1: Ontology-based search (DB-side, fast)
+            // Resolves free text -> ontology codes via OntologySynonyms,
+            // then filters datasets by their indexed DatasetOntologyTerms.
             // ------------------------------------------------------------
             var codes = await _ontologySearch.ResolveCodesAsync(SearchPhrase);
 
@@ -180,58 +175,52 @@ namespace Pidar.Controllers
             }
             else
             {
-                // Optional fallback:
-                // If no ontology code matched, keep your old global string search.
-                // WARNING: This loads all data in memory. Keep it only if you want "search everything".
-                var allData = await query.ToListAsync();
+                // ------------------------------------------------------------
+                // TIER 2: Fallback — DB-side ILike on key searchable fields.
+                // Does NOT load data into memory. Case-insensitive substring match.
+                // Add more fields here if needed.
+                // ------------------------------------------------------------
+                var pattern = $"%{SearchPhrase}%";
 
-                var resultsFallback = allData.Where(m =>
-                    GetAllStringValues(m)
-                        .Any(v => v.Contains(SearchPhrase, StringComparison.OrdinalIgnoreCase))
-                ).ToList();
-
-                resultsFallback = sortOrder switch
-                {
-                    "displayid_desc" => resultsFallback.OrderByDescending(m => m.DisplayId).ToList(),
-                    _ => resultsFallback.OrderBy(m => m.DisplayId).ToList()
-                };
-
-                var pageFallback = resultsFallback
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-                ViewData["DatasetCount"] = resultsFallback.Count;
-                ViewData["TotalSampleSize"] = CalculateSampleSize(resultsFallback);
-
-                var statsFallback = GetMetadataStats();
-                ViewData["TableColumnCount"] = statsFallback.TotalFields;
-                ViewBag.MetadataSections = statsFallback.SectionCounts;
-
-                return View("Index", new PaginatedList<Dataset>(pageFallback, resultsFallback.Count, pageNumber, pageSize));
+                query = query.Where(d =>
+                    EF.Functions.ILike(d.InVivo!.Species ?? "", pattern) ||
+                    EF.Functions.ILike(d.InVivo!.DiseaseModel ?? "", pattern) ||
+                    EF.Functions.ILike(d.InVivo!.OrganOrTissue ?? "", pattern) ||
+                    EF.Functions.ILike(d.StudyComponent!.ImagingModality ?? "", pattern) ||
+                    EF.Functions.ILike(d.DatasetInfo!.Institution ?? "", pattern) ||
+                    EF.Functions.ILike(d.DatasetInfo!.ImagingFacility ?? "", pattern) ||
+                    EF.Functions.ILike(d.Publication!.PaperDoi ?? "", pattern) ||
+                    EF.Functions.ILike(d.Analyzed!.Status ?? "", pattern)
+                );
             }
 
-            // Sorting on DB query
+            // Sorting
             query = sortOrder switch
             {
                 "displayid_desc" => query.OrderByDescending(m => m.DisplayId),
                 _ => query.OrderBy(m => m.DisplayId)
             };
 
-            // Count + page
+            // Count — single lightweight query, no data loaded into memory
             var totalCount = await query.CountAsync();
 
-            var pageQuery = query
+            // Sample size — pulls only OverallSampleSize strings for matching rows
+            var sampleSizeStrings = await query
+                .Where(d => d.InVivo != null && d.InVivo.OverallSampleSize != null)
+                .Select(d => d.InVivo!.OverallSampleSize)
+                .ToListAsync();
+
+            var totalSampleSize = sampleSizeStrings
+                .Sum(v => int.TryParse(v, out int n) ? n : 0);
+
+            // Page — only the rows needed for this page
+            var page = await query
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
-
-            var page = await pageQuery.ToListAsync();
-
-            // Only if you want sample size for ALL matching results:
-            var allResults = await query.ToListAsync();
+                .Take(pageSize)
+                .ToListAsync();
 
             ViewData["DatasetCount"] = totalCount;
-            ViewData["TotalSampleSize"] = CalculateSampleSize(allResults);
+            ViewData["TotalSampleSize"] = totalSampleSize;
 
             var stats = GetMetadataStats();
             ViewData["TableColumnCount"] = stats.TotalFields;
@@ -241,56 +230,41 @@ namespace Pidar.Controllers
         }
 
 
-        private IEnumerable<string> GetAllStringValues(Dataset ds)
-        {
-            foreach (var prop in typeof(Dataset).GetProperties())
-            {
-                if (prop.PropertyType == typeof(string) &&
-                    prop.GetValue(ds) is string s &&
-                    !string.IsNullOrWhiteSpace(s))
-                    yield return s;
-            }
-
-            object?[] children =
-            {
-                ds.StudyDesign, ds.Publication, ds.StudyComponent, ds.DatasetInfo,
-                ds.InVivo, ds.Procedures, ds.ImageAcquisition, ds.ImageData,
-                ds.ImageCorrelation, ds.Analyzed, ds.Ontology
-            };
-
-            foreach (var child in children)
-            {
-                if (child == null) continue;
-
-                foreach (var prop in child.GetType().GetProperties())
-                {
-                    if (prop.PropertyType == typeof(string) &&
-                        prop.GetValue(child) is string cv &&
-                        !string.IsNullOrWhiteSpace(cv))
-                        yield return cv;
-                }
-            }
-        }
-
         // ===============================================================
-        // METADATA STATS
+        // METADATA STATS — computed once, cached for app lifetime
         // ===============================================================
         private (int TotalFields, Dictionary<string, int> SectionCounts) GetMetadataStats()
         {
+            if (_cachedStats.HasValue)
+                return _cachedStats.Value;
+
+            lock (_statLock)
+            {
+                if (_cachedStats.HasValue)
+                    return _cachedStats.Value;
+
+                _cachedStats = ComputeMetadataStats();
+            }
+
+            return _cachedStats.Value;
+        }
+
+        private (int TotalFields, Dictionary<string, int> SectionCounts) ComputeMetadataStats()
+        {
             var entities = new Dictionary<string, System.Type>
             {
-                {"Dataset", typeof(Dataset)},
-                {"Study Design", typeof(StudyDesign)},
-                {"Publication", typeof(Publication)},
-                {"Study Component", typeof(StudyComponent)},
-                {"Dataset Info", typeof(DatasetInfo)},
-                {"In Vivo", typeof(InVivo)},
-                {"Procedures", typeof(Procedures)},
+                {"Dataset",           typeof(Dataset)},
+                {"Study Design",      typeof(StudyDesign)},
+                {"Publication",       typeof(Publication)},
+                {"Study Component",   typeof(StudyComponent)},
+                {"Dataset Info",      typeof(DatasetInfo)},
+                {"In Vivo",           typeof(InVivo)},
+                {"Procedures",        typeof(Procedures)},
                 {"Image Acquisition", typeof(ImageAcquisition)},
-                {"Image Data", typeof(ImageData)},
+                {"Image Data",        typeof(ImageData)},
                 {"Image Correlation", typeof(ImageCorrelation)},
-                {"Analyzed", typeof(Analyzed)},
-                {"Ontology", typeof(Ontology)}
+                {"Analyzed",          typeof(Analyzed)},
+                {"Ontology",          typeof(Ontology)}
             };
 
             var sections = new Dictionary<string, int>();
@@ -391,7 +365,6 @@ namespace Pidar.Controllers
             });
         }
 
-
         // ===============================================================
         // CREATE (POST)
         // ===============================================================
@@ -431,9 +404,7 @@ namespace Pidar.Controllers
                     await tx.CommitAsync();
                 });
 
-                // ⭐ regenerate sequential DisplayIds
                 await RegenerateDisplayIdsAsync();
-                // 🔁 rebuild ontology search index for THIS dataset
                 await _ontologyIndex.RebuildAsync(vm.Dataset.DatasetId);
 
                 return RedirectToAction(nameof(Index));
@@ -491,7 +462,6 @@ namespace Pidar.Controllers
             if (!ModelState.IsValid)
                 return View(vm);
 
-            // 1) Load with tracking + children
             var entity = await _context.Datasets
                 .IncludeAll()
                 .FirstOrDefaultAsync(x => x.DatasetId == id);
@@ -499,16 +469,12 @@ namespace Pidar.Controllers
             if (entity == null)
                 return NotFound();
 
-            // 2) Preserve DisplayId (never trust the client)
             vm.Dataset.DisplayId = entity.DisplayId;
 
-            // 3) Ensure FKs for incoming children
             AssignFK(vm, id);
 
-            // 4) Update root entity safely
             _context.Entry(entity).CurrentValues.SetValues(vm.Dataset);
 
-            // 5) Update children safely (add / update / delete)
             UpdateChild(entity.StudyDesign, vm.StudyDesign, ds => entity.StudyDesign = ds);
             UpdateChild(entity.Publication, vm.Publication, p => entity.Publication = p);
             UpdateChild(entity.StudyComponent, vm.StudyComponent, sc => entity.StudyComponent = sc);
@@ -523,7 +489,6 @@ namespace Pidar.Controllers
 
             await _context.SaveChangesAsync();
 
-            // 🔁 rebuild ontology search index after edit
             await _ontologyIndex.RebuildAsync(id);
             _jobs.Enqueue<DatasetXnatSyncJob>(job => job.SyncDatasetAsync(id));
 
@@ -532,18 +497,16 @@ namespace Pidar.Controllers
 
 
         private void UpdateChild<T>(
-    T? tracked,
-    T? incoming,
-    Action<T?> assignToParent
-) where T : class
+            T? tracked,
+            T? incoming,
+            Action<T?> assignToParent
+        ) where T : class
         {
             var hasIncoming = incoming != null && !IsEntityEmpty(incoming);
 
-            // Nothing exists and nothing meaningful came in
             if (tracked == null && !hasIncoming)
                 return;
 
-            // Remove existing entity
             if (tracked != null && !hasIncoming)
             {
                 _context.Remove(tracked);
@@ -551,7 +514,6 @@ namespace Pidar.Controllers
                 return;
             }
 
-            // Add new entity
             if (tracked == null && hasIncoming)
             {
                 _context.Add(incoming!);
@@ -559,11 +521,8 @@ namespace Pidar.Controllers
                 return;
             }
 
-            // Update existing entity
             _context.Entry(tracked!).CurrentValues.SetValues(incoming!);
         }
-
-
 
 
         // ===============================================================
@@ -593,7 +552,6 @@ namespace Pidar.Controllers
             _context.Datasets.Remove(ds);
             await _context.SaveChangesAsync();
 
-            // ⭐ regenerate sequential DisplayIds
             await RegenerateDisplayIdsAsync();
 
             return RedirectToAction(nameof(Index));
@@ -620,14 +578,12 @@ namespace Pidar.Controllers
         private int CalculateSampleSize(List<Dataset> results)
         {
             int total = 0;
-
             foreach (var ds in results)
             {
                 if (ds.InVivo == null) continue;
                 if (int.TryParse(ds.InVivo.OverallSampleSize, out int n))
                     total += n;
             }
-
             return total;
         }
 

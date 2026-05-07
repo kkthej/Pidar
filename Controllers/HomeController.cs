@@ -1,12 +1,18 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
+using Pidar.Mapping;
 using Pidar.Models;
 using Pidar.Models.Ontology;
-
+using Pidar.Models.Summaries;
+using Pidar.Models.Xnat;
+using Pidar.Services.Xnat;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text.Json;
+
 
 namespace Pidar.Controllers
 {
@@ -14,13 +20,21 @@ namespace Pidar.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly PidarDbContext _context;
-       
+        
+        private readonly IConfiguration _config;
+        private readonly IXnatMultiService _xnatMulti;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public HomeController(ILogger<HomeController> logger, PidarDbContext context)
+
+        public HomeController(ILogger<HomeController> logger, PidarDbContext context,
+    IConfiguration config,IXnatMultiService xnatMulti, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _context = context;
-           
+            _config = config;
+            
+            _xnatMulti = xnatMulti;
+            _httpClientFactory = httpClientFactory;
         }
 
         public IActionResult Index()
@@ -161,12 +175,49 @@ namespace Pidar.Controllers
             return View();
         }
 
-        public IActionResult Xnat()
+        public async Task<IActionResult> Xnat(CancellationToken ct)
         {
             ViewData["ActivePage"] = "Xnat";
-            return View();
-        }
+            ViewBag.XnatBaseUrl = _config["Xnat:BaseUrl"]!.TrimEnd('/');
 
+            try
+            {
+                var projects = await _xnatMulti.GetAllPublicProjectsAsync(ct);
+                return View(projects);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load XNAT projects.");
+                return View(new List<XnatProjectsApiResponse.ProjectRow>());
+            }
+        }
+        // ============================================================
+        // xnat data summary end point
+        // ============================================================
+        [HttpGet]
+        public async Task<IActionResult> XnatSummary(string instanceKey, string projectId, CancellationToken ct)
+        {
+            var instances = _config.GetSection("XnatInstances").Get<List<XnatInstanceOptions>>() ?? new();
+            var inst = instances.FirstOrDefault(x => x.Key == instanceKey);
+            if (inst == null) return NotFound();
+
+            var baseUrl = inst.BaseUrl.TrimEnd('/');
+            var url =
+                $"{baseUrl}/data/projects/{Uri.EscapeDataString(projectId)}/resources/metadata/files/{Uri.EscapeDataString(projectId)}.json";
+
+            using var client = _httpClientFactory.CreateClient();
+            var resp = await client.GetAsync(url, ct);
+
+            if (!resp.IsSuccessStatusCode)
+                return StatusCode((int)resp.StatusCode);
+
+            var json = await resp.Content.ReadAsStringAsync(ct);
+
+            var summary = XnatMetadataSummaryMapper.FromMetadataJson(json);
+           
+
+            return Ok(summary);
+        }
 
         // -------------------------
         // ERROR HANDLER

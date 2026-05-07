@@ -127,7 +127,8 @@ builder.Services.AddHangfire(cfg =>
 
 builder.Services.AddHangfireServer();
 
-
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<Pidar.Services.Xnat.IXnatMultiService, Pidar.Services.Xnat.XnatMultiService>();
 
 var app = builder.Build();
 // Simple health endpoint
