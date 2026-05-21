@@ -1,9 +1,64 @@
 ﻿@model IReadOnlyList<Pidar.Models.Xnat.XnatPublicProject>
+@using System.Text.Json
+@using Pidar.Models.Xnat
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <div class="container py-4">
-    <h2 class="mb-3">Public preclinical datasets in XNAT instances</h2>
+    <h2 class="text-center mb-4">Public preclinical projects on XNAT instances</h2>
 
+    @{
+        var xnatInstances = (ViewBag.XnatInstances as List<XnatInstanceOptions>) ?? new List<XnatInstanceOptions>();
+        var mapInstancesJson = JsonSerializer.Serialize(
+        xnatInstances.Select(x => new
+        {
+            name = x.Name,
+            url = x.BaseUrl,
+            lat = x.Latitude,
+            lng = x.Longitude
+        })
+        );
+    }
 
+    <div id="xnat-map" style="height: 340px; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.12);"></div>
+
+    <script>
+        (function () {
+            const instances = @Html.Raw(mapInstancesJson);
+
+            const map = L.map('xnat-map', { scrollWheelZoom: false }).setView([44.5, 10.5], 6);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18
+            }).addTo(map);
+
+            const pinIcon = L.divIcon({
+                className: '',
+                html: `<div style="
+                    width:16px; height:16px; border-radius:50%;
+                    background:#1a6ebd; border:3px solid #fff;
+                    box-shadow:0 0 0 2px #1a6ebd, 0 2px 6px rgba(0,0,0,0.35);
+                "></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8],
+                popupAnchor: [0, -10]
+            });
+
+            instances.forEach(inst => {
+                if (!inst.lat || !inst.lng) return;
+                const popup = `
+                    <div style="min-width:180px">
+                        <strong>${inst.name}</strong><br>
+                        <a href="${inst.url}" target="_blank" style="font-size:0.85em">Open XNAT instance ↗</a>
+                    </div>`;
+                L.marker([inst.lat, inst.lng], { icon: pinIcon })
+                    .addTo(map)
+                    .bindPopup(popup);
+            });
+        })();
+    </script>
 
     @if (!Model.Any())
     {

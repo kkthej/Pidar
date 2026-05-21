@@ -179,7 +179,8 @@ namespace Pidar.Controllers
         {
             ViewData["ActivePage"] = "Xnat";
             ViewBag.XnatBaseUrl = _config["Xnat:BaseUrl"]!.TrimEnd('/');
-
+            ViewBag.XnatInstances = _config.GetSection("XnatInstances")
+                                  .Get<List<XnatInstanceOptions>>() ?? new();
             try
             {
                 var projects = await _xnatMulti.GetAllPublicProjectsAsync(ct);
