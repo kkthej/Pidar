@@ -189,9 +189,24 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Protect /hangfire route before dashboard middleware
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/hangfire"))
+    {
+        if (context.User.Identity?.IsAuthenticated != true)
+        {
+            var returnUrl = Uri.EscapeDataString(context.Request.PathBase + context.Request.Path);
+            context.Response.Redirect($"/Identity/Account/Login?ReturnUrl={returnUrl}");
+            return;
+        }
+    }
+    await next();
+});
+
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    Authorization = new[] { new HangfireAllowAllDashboardAuthorizationFilter() }
+    Authorization = new[] { new HangfireAuthorizationFilter() }
 });
 
 
