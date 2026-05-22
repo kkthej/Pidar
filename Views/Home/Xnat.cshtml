@@ -5,58 +5,167 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
+<style>
+    #xnat-map {
+        height: 420px;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        z-index: 0;
+    }
+
+    .leaflet-popup-content-wrapper {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .map-hint {
+        text-align: center;
+        font-size: 0.8em;
+        color: #888;
+        margin-bottom: 1.5rem;
+    }
+
+    @@keyframes xnat-pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.6;
+        }
+
+        70% {
+            transform: scale(2.2);
+            opacity: 0;
+        }
+
+        100% {
+            transform: scale(2.2);
+            opacity: 0;
+        }
+    }
+</style>
+
 <div class="container py-4">
     <h2 class="text-center mb-4">Public preclinical projects on XNAT instances</h2>
 
     @{
         var xnatInstances = (ViewBag.XnatInstances as List<XnatInstanceOptions>) ?? new List<XnatInstanceOptions>();
+
+        var projectCountByKey = Model
+        .GroupBy(x => x.InstanceKey)
+        .ToDictionary(g => g.Key, g => g.Count());
+
         var mapInstancesJson = JsonSerializer.Serialize(
         xnatInstances.Select(x => new
         {
+            key = x.Key,
             name = x.Name,
             url = x.BaseUrl,
             lat = x.Latitude,
-            lng = x.Longitude
+            lng = x.Longitude,
+            count = projectCountByKey.TryGetValue(x.Key, out var c) ? c : 0
         })
         );
     }
 
-    <div id="xnat-map" style="height: 340px; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.12);"></div>
+    <div id="xnat-map"></div>
+    <p class="map-hint">🖱 Scroll to zoom &nbsp;·&nbsp; Drag to pan &nbsp;·&nbsp; Click a pin for details</p>
 
     <script>
         (function () {
             const instances = @Html.Raw(mapInstancesJson);
 
-            const map = L.map('xnat-map', { scrollWheelZoom: false }).setView([44.5, 10.5], 6);
+            const map = L.map('xnat-map', {
+                scrollWheelZoom: true,
+                worldCopyJump: true
+            });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
                 maxZoom: 18
             }).addTo(map);
 
-            const pinIcon = L.divIcon({
-                className: '',
-                html: `<div style="
-                    width:16px; height:16px; border-radius:50%;
-                    background:#1a6ebd; border:3px solid #fff;
-                    box-shadow:0 0 0 2px #1a6ebd, 0 2px 6px rgba(0,0,0,0.35);
-                "></div>`,
-                iconSize: [16, 16],
-                iconAnchor: [8, 8],
-                popupAnchor: [0, -10]
-            });
+            // ── Country highlight ──────────────────────────────────────────
+            // Simple bounding-box lookup: lat range, lng range → ISO-A3 code
+            // Add a new entry here whenever you add a new XNAT instance
+            const countryBoxes = [
+                { lat: [36, 47],   lng: [6,   18],  iso: 'ITA' },  // Italy
+                { lat: [-44, -10], lng: [113, 154], iso: 'AUS' }   // Australia
+            ];
+
+            function guessCountry(lat, lng) {
+                for (const c of countryBoxes) {
+                    if (lat >= c.lat[0] && lat <= c.lat[1] &&
+                        lng >= c.lng[0] && lng <= c.lng[1]) return c.iso;
+                }
+                return null;
+            }
+
+            const toHighlight = new Set(
+                instances.map(i => guessCountry(i.lat, i.lng)).filter(Boolean)
+            );
+
+            fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+                .then(r => r.json())
+                .then(geojson => {
+                    L.geoJSON(geojson, {
+                        filter: f => toHighlight.has(f.properties.ISO_A3),
+                        style: {
+                            fillColor:   '#1a6ebd',
+                            fillOpacity: 0.15,
+                            color:       '#1a6ebd',
+                            weight:      1.5,
+                            opacity:     0.5
+                        },
+                        interactive: false
+                    }).addTo(map);
+                });
+
+            // ── Markers ────────────────────────────────────────────────────
+            const markers = [];
 
             instances.forEach(inst => {
                 if (!inst.lat || !inst.lng) return;
+
+                const pinIcon = L.divIcon({
+                    className: '',
+                    html: `
+                        <div style="position:relative;width:22px;height:22px;">
+                            <div style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+                                background:#1a6ebd;border:3px solid #fff;
+                                box-shadow:0 0 0 2px #1a6ebd,0 2px 8px rgba(0,0,0,0.4);"></div>
+                            <div style="position:absolute;top:0;left:0;width:22px;height:22px;border-radius:50%;
+                                background:rgba(26,110,189,0.25);
+                                animation:xnat-pulse 2s ease-out infinite;"></div>
+                        </div>`,
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11],
+                    popupAnchor: [0, -14]
+                });
+
+                const projectText = inst.count === 1 ? '1 public project' : `${inst.count} public projects`;
+
                 const popup = `
-                    <div style="min-width:180px">
-                        <strong>${inst.name}</strong><br>
-                        <a href="${inst.url}" target="_blank" style="font-size:0.85em">Open XNAT instance ↗</a>
+                    <div style="min-width:200px;padding:4px 2px;">
+                        <div style="font-weight:700;color:#1a3a5c;margin-bottom:4px;">${inst.name}</div>
+                        <div style="font-size:0.82em;color:#555;margin-bottom:6px;">📁 ${projectText}</div>
+                        <a href="${inst.url}" target="_blank" style="font-size:0.82em;color:#1a6ebd;">Open XNAT instance ↗</a>
                     </div>`;
-                L.marker([inst.lat, inst.lng], { icon: pinIcon })
+
+                const marker = L.marker([inst.lat, inst.lng], { icon: pinIcon })
                     .addTo(map)
                     .bindPopup(popup);
+
+                markers.push(marker);
             });
+
+            // Auto-fit to show all markers
+            if (markers.length === 1) {
+                map.setView(markers[0].getLatLng(), 6);
+            } else if (markers.length > 1) {
+                map.fitBounds(L.featureGroup(markers).getBounds(), { padding: [60, 60], maxZoom: 8 });
+            } else {
+                map.setView([20, 10], 2);
+            }
         })();
     </script>
 
@@ -79,14 +188,9 @@
                     <div class="col-12 col-md-6 col-lg-4">
                         <div class="card h-100 shadow-sm">
                             <div class="card-body">
-                                
                                 <h5 class="card-title mb-1">@p.Id</h5>
-
-
-                                
                                 <div class="mt-2 small text-muted" id="summary-@group.Key.InstanceKey-@p.Id">Loading summary…</div>
-
-                                <a class="btn btn-sm btn-outline-primary"
+                                <a class="btn btn-sm btn-outline-primary mt-2"
                                    href="@(p.InstanceBaseUrl + p.Uri)"
                                    target="_blank">
                                     Open in XNAT
@@ -98,8 +202,6 @@
             </div>
         }
     }
-
-
 </div>
 
 
@@ -115,22 +217,18 @@
             const instanceKey = parts[1];
             const projectId = parts.slice(2).join("-");
 
-            // The card column wrapper is 3 levels up: summary-div → card-body → card → col
             const cardCol = el.closest(".col-12");
 
             try {
                 const url = `/Home/XnatSummary?instanceKey=${encodeURIComponent(instanceKey)}&projectId=${encodeURIComponent(projectId)}`;
                 const resp = await fetch(url, { signal: controller.signal });
 
-                // 404 means the project was deleted (no metadata JSON) — remove the card entirely
                 if (resp.status === 404) {
                     if (cardCol) cardCol.remove();
                     return;
                 }
 
-                if (!resp.ok) {
-                    throw new Error(`HTTP ${resp.status}`);
-                }
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
                 const s = await resp.json();
 
@@ -153,8 +251,6 @@
             }
         }));
 
-        // After all cards are processed, hide any instance group headings
-        // whose row ended up with no remaining cards
         document.querySelectorAll(".row.g-3").forEach(row => {
             if (row.querySelectorAll(".col-12").length === 0) {
                 const heading = row.previousElementSibling;

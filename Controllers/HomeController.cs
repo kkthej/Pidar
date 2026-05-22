@@ -11,6 +11,7 @@ using Pidar.Models.Xnat;
 using Pidar.Services.Xnat;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 
@@ -20,19 +21,19 @@ namespace Pidar.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly PidarDbContext _context;
-        
+
         private readonly IConfiguration _config;
         private readonly IXnatMultiService _xnatMulti;
         private readonly IHttpClientFactory _httpClientFactory;
 
 
         public HomeController(ILogger<HomeController> logger, PidarDbContext context,
-    IConfiguration config,IXnatMultiService xnatMulti, IHttpClientFactory httpClientFactory)
+    IConfiguration config, IXnatMultiService xnatMulti, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _context = context;
             _config = config;
-            
+
             _xnatMulti = xnatMulti;
             _httpClientFactory = httpClientFactory;
         }
@@ -148,9 +149,6 @@ namespace Pidar.Controllers
 
             ViewData["YearlyUploads"] = JsonSerializer.Serialize(yearlyUploads);
 
-          
-
-          
             return View();
         }
 
@@ -192,8 +190,9 @@ namespace Pidar.Controllers
                 return View(new List<XnatProjectsApiResponse.ProjectRow>());
             }
         }
+
         // ============================================================
-        // xnat data summary end point
+        // XNAT DATA SUMMARY ENDPOINT
         // ============================================================
         [HttpGet]
         public async Task<IActionResult> XnatSummary(string instanceKey, string projectId, CancellationToken ct)
@@ -207,6 +206,15 @@ namespace Pidar.Controllers
                 $"{baseUrl}/data/projects/{Uri.EscapeDataString(projectId)}/resources/metadata/files/{Uri.EscapeDataString(projectId)}.json";
 
             using var client = _httpClientFactory.CreateClient();
+
+            if (!string.IsNullOrWhiteSpace(inst.Username) && !string.IsNullOrWhiteSpace(inst.Password))
+            {
+                var token = Convert.ToBase64String(
+                    System.Text.Encoding.UTF8.GetBytes($"{inst.Username}:{inst.Password}"));
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Basic", token);
+            }
+
             var resp = await client.GetAsync(url, ct);
 
             if (!resp.IsSuccessStatusCode)
@@ -215,7 +223,6 @@ namespace Pidar.Controllers
             var json = await resp.Content.ReadAsStringAsync(ct);
 
             var summary = XnatMetadataSummaryMapper.FromMetadataJson(json);
-           
 
             return Ok(summary);
         }
@@ -252,19 +259,19 @@ namespace Pidar.Controllers
         private (int TotalFields, Dictionary<string, int> SectionCounts) GetMetadataStats()
         {
             var entities = new Dictionary<string, Type>
-    {
-        { "Study Design", typeof(StudyDesign) },
-        { "Publication", typeof(Publication) },
-        { "Study Component", typeof(StudyComponent) },
-        { "Dataset Info", typeof(DatasetInfo) },
-        { "In Vivo", typeof(InVivo) },
-        { "Procedures", typeof(Procedures) },
-        { "Image Acquisition", typeof(ImageAcquisition) },
-        { "Image Data", typeof(ImageData) },
-        { "Image Correlation", typeof(ImageCorrelation) },
-        { "Analyzed", typeof(Analyzed) },
-        { "Ontology", typeof(Ontology) }
-    };
+            {
+                { "Study Design", typeof(StudyDesign) },
+                { "Publication", typeof(Publication) },
+                { "Study Component", typeof(StudyComponent) },
+                { "Dataset Info", typeof(DatasetInfo) },
+                { "In Vivo", typeof(InVivo) },
+                { "Procedures", typeof(Procedures) },
+                { "Image Acquisition", typeof(ImageAcquisition) },
+                { "Image Data", typeof(ImageData) },
+                { "Image Correlation", typeof(ImageCorrelation) },
+                { "Analyzed", typeof(Analyzed) },
+                { "Ontology", typeof(Ontology) }
+            };
 
             var sectionCounts = new Dictionary<string, int>();
             var distinctFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -281,16 +288,13 @@ namespace Pidar.Controllers
                     .Where(p => !p.Equals("DatasetId", StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                // count fields in this section
                 sectionCounts[section.Key] = fields.Count;
 
-                // add to global distinct set
                 foreach (var f in fields)
                     distinctFields.Add(f);
             }
 
             return (distinctFields.Count, sectionCounts);
         }
-
     }
 }

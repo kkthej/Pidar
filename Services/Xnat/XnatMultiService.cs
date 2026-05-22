@@ -38,9 +38,16 @@ public sealed class XnatMultiService : IXnatMultiService
                 var baseUrl = inst.BaseUrl.TrimEnd('/');
                 var url = $"{baseUrl}/data/projects?format=json";
 
+                string? authToken = null;
+                if (!string.IsNullOrWhiteSpace(inst.Username) && !string.IsNullOrWhiteSpace(inst.Password))
+                {
+                    authToken = Convert.ToBase64String(
+                        System.Text.Encoding.UTF8.GetBytes($"{inst.Username}:{inst.Password}"));
+                }
+
                 try
                 {
-                    var json = await GetJsonHandling202Async(url, baseUrl, inst.Key, inst.Name, ct);
+                    var json = await GetJsonHandling202Async(url, baseUrl, inst.Key, inst.Name, ct, authToken);
                     if (string.IsNullOrWhiteSpace(json))
                         continue;
 
@@ -93,14 +100,13 @@ public sealed class XnatMultiService : IXnatMultiService
         string baseUrl,
         string instKey,
         string instName,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? authToken = null)
     {
-        // First request
-        using var firstResp = await SendXnatGetAsync(url, baseUrl, ct);
+        using var firstResp = await SendXnatGetAsync(url, baseUrl, ct, authToken);
 
         if ((int)firstResp.StatusCode == 202)
         {
-            // If Location exists, poll Location
             var location = firstResp.Headers.Location?.ToString();
 
             if (!string.IsNullOrWhiteSpace(location))
@@ -112,7 +118,7 @@ public sealed class XnatMultiService : IXnatMultiService
                     "XNAT {Key} ({Name}) returned 202 with Location. Polling Location={Location}",
                     instKey, instName, location);
 
-                using var finalResp = await PollUrlUntilNot202Async(location, baseUrl, instKey, instName, ct);
+                using var finalResp = await PollUrlUntilNot202Async(location, baseUrl, instKey, instName, ct, authToken);
                 if (!finalResp.IsSuccessStatusCode)
                 {
                     var err = await finalResp.Content.ReadAsStringAsync(ct);
@@ -126,13 +132,11 @@ public sealed class XnatMultiService : IXnatMultiService
                 return await finalResp.Content.ReadAsStringAsync(ct);
             }
 
-            // No Location: retry the same URL with backoff
             _logger.LogWarning(
                 "XNAT {Key} ({Name}) returned 202 but no Location header. Will retry same URL with backoff. URL={Url}",
                 instKey, instName, url);
 
-            // We already got one 202; now retry url a few times
-            return await RetrySameUrlUntil200Async(url, baseUrl, instKey, instName, ct);
+            return await RetrySameUrlUntil200Async(url, baseUrl, instKey, instName, ct, authToken);
         }
 
         if (!firstResp.IsSuccessStatusCode)
@@ -154,13 +158,14 @@ public sealed class XnatMultiService : IXnatMultiService
         string baseUrl,
         string instKey,
         string instName,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? authToken = null)
     {
         var delaysMs = new[] { 400, 800, 1200, 2000, 3000 };
 
         for (int attempt = 0; attempt < delaysMs.Length; attempt++)
         {
-            using var resp = await SendXnatGetAsync(url, baseUrl, ct);
+            using var resp = await SendXnatGetAsync(url, baseUrl, ct, authToken);
 
             if ((int)resp.StatusCode == 202)
             {
@@ -169,7 +174,6 @@ public sealed class XnatMultiService : IXnatMultiService
                     "XNAT {Key} ({Name}) still 202 (attempt {Attempt}). URL={Url}. Headers={Headers}",
                     instKey, instName, attempt + 1, url, headers);
 
-                // Prefer Retry-After if present
                 if (resp.Headers.TryGetValues("Retry-After", out var vals) &&
                     int.TryParse(vals.FirstOrDefault(), out var retryAfterSeconds) &&
                     retryAfterSeconds > 0 && retryAfterSeconds <= 30)
@@ -183,8 +187,9 @@ public sealed class XnatMultiService : IXnatMultiService
 
                 continue;
             }
+
             if (resp.Headers.TryGetValues("x-amzn-waf-action", out var waf) &&
-    waf.Any(v => v.Equals("challenge", StringComparison.OrdinalIgnoreCase)))
+                waf.Any(v => v.Equals("challenge", StringComparison.OrdinalIgnoreCase)))
             {
                 _logger.LogWarning("XNAT {Key} ({Name}) blocked by AWS WAF challenge. URL={Url}", instKey, instName, url);
                 return null;
@@ -216,33 +221,41 @@ public sealed class XnatMultiService : IXnatMultiService
         string baseUrl,
         string instKey,
         string instName,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? authToken = null)
     {
         var delaysMs = new[] { 300, 600, 1000, 1500, 2000 };
 
         for (int attempt = 0; attempt < delaysMs.Length; attempt++)
         {
-            var resp = await SendXnatGetAsync(pollUrl, baseUrl, ct);
+            var resp = await SendXnatGetAsync(pollUrl, baseUrl, ct, authToken);
 
             if ((int)resp.StatusCode != 202)
-                return resp; // caller disposes
+                return resp;
 
             resp.Dispose();
             await Task.Delay(delaysMs[attempt], ct);
         }
 
-        // last attempt
-        return await SendXnatGetAsync(pollUrl, baseUrl, ct);
+        return await SendXnatGetAsync(pollUrl, baseUrl, ct, authToken);
     }
 
     // ---- HTTP GET helper with headers to survive strict gateways ----
-    private Task<HttpResponseMessage> SendXnatGetAsync(string url, string baseUrl, CancellationToken ct)
+    private Task<HttpResponseMessage> SendXnatGetAsync(
+        string url,
+        string baseUrl,
+        CancellationToken ct,
+        string? authToken = null)
     {
         var req = new HttpRequestMessage(HttpMethod.Get, url);
         req.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 PIDAR/1.0");
         req.Headers.TryAddWithoutValidation("Accept", "application/json,text/plain,*/*");
         req.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
         req.Headers.TryAddWithoutValidation("Referer", baseUrl + "/");
+
+        if (!string.IsNullOrWhiteSpace(authToken))
+            req.Headers.TryAddWithoutValidation("Authorization", $"Basic {authToken}");
+
         return _http.SendAsync(req, ct);
     }
 }
