@@ -45,7 +45,13 @@
 </style>
 
 <div class="container py-4">
-    <h2 class="text-center mb-4">Open preclinical imaging datasets available on XNAT instances</h2>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0">Open preclinical imaging datasets available on XNAT instances</h2>
+        <a href="~/plugins/metadata-plugin.zip" asp-append-version="true"
+           download class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> PIDAR Metadata Plugin
+        </a>
+    </div>
 
     @{
         var xnatInstances = (ViewBag.XnatInstances as List<XnatInstanceOptions>) ?? new List<XnatInstanceOptions>();
