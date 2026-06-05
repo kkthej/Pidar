@@ -31,67 +31,77 @@ public sealed class XnatMultiService : IXnatMultiService
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
             var instances = _config.GetSection("XnatInstances").Get<List<XnatInstanceOptions>>() ?? new();
-            var results = new List<XnatPublicProject>();
 
-            foreach (var inst in instances.Where(x => !string.IsNullOrWhiteSpace(x.BaseUrl)))
-            {
-                var baseUrl = inst.BaseUrl.TrimEnd('/');
-                var url = $"{baseUrl}/data/projects?format=json";
+            var tasks = instances
+                .Where(x => !string.IsNullOrWhiteSpace(x.BaseUrl))
+                .Select(inst => FetchInstanceProjectsAsync(inst, ct));
 
-                string? authToken = null;
-                if (!string.IsNullOrWhiteSpace(inst.Username) && !string.IsNullOrWhiteSpace(inst.Password))
-                {
-                    authToken = Convert.ToBase64String(
-                        System.Text.Encoding.UTF8.GetBytes($"{inst.Username}:{inst.Password}"));
-                }
+            var allResults = await Task.WhenAll(tasks);
 
-                try
-                {
-                    var json = await GetJsonHandling202Async(url, baseUrl, inst.Key, inst.Name, ct, authToken);
-                    if (string.IsNullOrWhiteSpace(json))
-                        continue;
-
-                    var parsed = JsonSerializer.Deserialize<XnatProjectsApiResponse>(
-                        json,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    var rows = parsed?.ResultSet?.Result ?? new();
-
-                    foreach (var p in rows)
-                    {
-                        if (string.IsNullOrWhiteSpace(p.ID)) continue;
-
-                        var uri = p.URI ?? $"/data/projects/{p.ID}";
-
-                        var piFullName = $"{p.pi_firstname} {p.pi_lastname}".Trim();
-                        if (string.IsNullOrWhiteSpace(piFullName))
-                            piFullName = null;
-
-                        results.Add(new XnatPublicProject(
-                            InstanceKey: inst.Key,
-                            InstanceName: inst.Name,
-                            InstanceBaseUrl: baseUrl,
-                            Id: p.ID,
-                            Description: p.description,
-                            PiFullName: piFullName,
-                            Uri: uri
-                        ));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex,
-                        "XNAT instance {Key} ({Name}) crashed while fetching projects. URL={Url}",
-                        inst.Key, inst.Name, url);
-                }
-            }
-
-            return (IReadOnlyList<XnatPublicProject>)results
+            return (IReadOnlyList<XnatPublicProject>)allResults
+                .SelectMany(r => r)
                 .OrderBy(x => x.InstanceName)
                 .ThenBy(x => x.Id)
                 .ToList();
 
         }) ?? Array.Empty<XnatPublicProject>();
+    }
+
+    // ---- Fetch all projects from a single XNAT instance ----
+    private async Task<List<XnatPublicProject>> FetchInstanceProjectsAsync(XnatInstanceOptions inst, CancellationToken ct)
+    {
+        var results = new List<XnatPublicProject>();
+        var baseUrl = inst.BaseUrl.TrimEnd('/');
+        var url = $"{baseUrl}/data/projects?format=json";
+
+        string? authToken = null;
+        if (!string.IsNullOrWhiteSpace(inst.Username) && !string.IsNullOrWhiteSpace(inst.Password))
+        {
+            authToken = Convert.ToBase64String(
+                System.Text.Encoding.UTF8.GetBytes($"{inst.Username}:{inst.Password}"));
+        }
+
+        try
+        {
+            var json = await GetJsonHandling202Async(url, baseUrl, inst.Key, inst.Name, ct, authToken);
+            if (string.IsNullOrWhiteSpace(json))
+                return results;
+
+            var parsed = JsonSerializer.Deserialize<XnatProjectsApiResponse>(
+                json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var rows = parsed?.ResultSet?.Result ?? new();
+
+            foreach (var p in rows)
+            {
+                if (string.IsNullOrWhiteSpace(p.ID)) continue;
+
+                var uri = p.URI ?? $"/data/projects/{p.ID}";
+
+                var piFullName = $"{p.pi_firstname} {p.pi_lastname}".Trim();
+                if (string.IsNullOrWhiteSpace(piFullName))
+                    piFullName = null;
+
+                results.Add(new XnatPublicProject(
+                    InstanceKey: inst.Key,
+                    InstanceName: inst.Name,
+                    InstanceBaseUrl: baseUrl,
+                    Id: p.ID,
+                    Description: p.description,
+                    PiFullName: piFullName,
+                    Uri: uri
+                ));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "XNAT instance {Key} ({Name}) crashed while fetching projects. URL={Url}",
+                inst.Key, inst.Name, url);
+        }
+
+        return results;
     }
 
     // ---- Core logic: GET JSON with robust 202 handling ----

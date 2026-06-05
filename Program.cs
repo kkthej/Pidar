@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+﻿using Hangfire;
+using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -6,14 +8,13 @@ using OfficeOpenXml;
 using Pidar.Areas.Identity.Data;
 using Pidar.Data;
 using Pidar.Helpers;
-using Pidar.Services;
-using System.IO;
-using Hangfire;
-using Hangfire.PostgreSql;
 using Pidar.Infrastructure;
-using Pidar.Jobs;
-using System.Net.Http.Headers;
 using Pidar.Integration;
+using Pidar.Jobs;
+using Pidar.Services;
+using Pidar.Services.Xnat;
+using System.IO;
+using System.Net.Http.Headers;
 
 
 
@@ -53,6 +54,9 @@ builder.Services.AddHttpClient<IXnatUploader, XnatUploader>((sp, http) =>
     http.DefaultRequestHeaders.Authorization =
         new AuthenticationHeaderValue("Basic", token);
 });
+
+// XNAT cache warmup service
+builder.Services.AddHostedService<XnatCacheWarmupService>();
 
 
 // Register PidarDbContext with retry policy and sensitive data logging
