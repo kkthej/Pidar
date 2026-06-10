@@ -16,7 +16,7 @@ namespace Pidar.Models
         public string? Institution { get; set; }
         public string? RorCodeOwner { get; set; }
         public string? Pi { get; set; }
-        public string? PiOrchid { get; set; }
+        public string? PiOrcid { get; set; }
         public string? CoPi { get; set; }
         public string? CountryOfInstitution { get; set; }
         public string? ImagingFacility { get; set; }

@@ -42,7 +42,7 @@ namespace Pidar.Helpers
                 ["Dataset Information"] = new()
                 {
                     "DatasetInfo.Institution","DatasetInfo.RorCodeOwner","DatasetInfo.Pi",
-                    "DatasetInfo.PiOrchid","DatasetInfo.CoPi","DatasetInfo.CountryOfInstitution",
+                    "DatasetInfo.PiOrcid","DatasetInfo.CoPi","DatasetInfo.CountryOfInstitution",
                     "DatasetInfo.ImagingFacility","DatasetInfo.EuroBioImagingNode",
                     "DatasetInfo.CountryOfImagingFacility","DatasetInfo.LinkToDataset",
                     "DatasetInfo.Funding","DatasetInfo.FundingAgency","DatasetInfo.GrantNumber",
