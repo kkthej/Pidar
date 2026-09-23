@@ -427,4 +427,153 @@ body.login-page {
     flex: 0 0 auto;
 }
 
+/* =========================================================
+   XNAT PAGE
+   ========================================================= */
 
+.xnat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+    .xnat-header h2 {
+        margin: 0;
+        min-width: 0;
+    }
+
+/* isolation: Leaflet controls use z-index 1000 — keep them below the fixed navbar */
+#xnat-map {
+    height: 420px;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    background: #eef1f4;
+    isolation: isolate;
+}
+
+    #xnat-map .leaflet-popup-content-wrapper {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+.map-hint {
+    text-align: center;
+    font-size: 0.8em;
+    color: #888;
+    margin-bottom: 1.5rem;
+}
+
+/* Map pin (Leaflet divIcon) */
+.xnat-pin {
+    background: none;
+    border: none;
+}
+
+.xnat-pin-inner {
+    position: relative;
+    width: 22px;
+    height: 22px;
+}
+
+.xnat-pin-dot {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1a6ebd;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #1a6ebd, 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.xnat-pin-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(26, 110, 189, 0.25);
+    animation: xnat-pulse 2s ease-out infinite;
+}
+
+@keyframes xnat-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    70% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .xnat-pin-pulse {
+        animation: none;
+    }
+}
+
+/* Map popup */
+.xnat-popup {
+    min-width: 200px;
+    padding: 4px 2px;
+}
+
+.xnat-popup-title {
+    font-weight: 700;
+    color: #1a3a5c;
+    margin-bottom: 4px;
+}
+
+.xnat-popup-count {
+    font-size: 0.82em;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.xnat-popup-link,
+.xnat-popup-link:visited {
+    font-size: 0.82em;
+    color: #1a6ebd;
+}
+
+/* Project cards */
+.xnat-instance-title {
+    margin-top: 1.5rem;
+}
+
+.xnat-summary {
+    margin-top: 0.5rem;
+    font-size: 0.875em;
+}
+
+    .xnat-summary.is-loading,
+    .xnat-summary .is-empty {
+        color: var(--bs-secondary-color);
+    }
+
+/* Mobile: match the site's edge-to-edge layout */
+@media (max-width: 576px) {
+    #xnat-map {
+        height: 340px;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .xnat-header,
+    .xnat-instance-title {
+        padding: 0 0.75rem;
+    }
+}

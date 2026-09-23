@@ -179,6 +179,7 @@ namespace Pidar.Controllers
             ViewBag.XnatBaseUrl = _config["Xnat:BaseUrl"]!.TrimEnd('/');
             ViewBag.XnatInstances = _config.GetSection("XnatInstances")
                                   .Get<List<XnatInstanceOptions>>() ?? new();
+            ViewBag.CartoApiKey = _config["Maps:CartoApiKey"] ?? "";
             try
             {
                 var projects = await _xnatMulti.GetAllPublicProjectsAsync(ct);
