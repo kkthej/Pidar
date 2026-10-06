@@ -162,7 +162,12 @@
         if (String.IsNullOrWhiteSpace(str))
             return HtmlString.Empty;
 
-        if (Uri.TryCreate(str, UriKind.Absolute, out var uri))
+        // Only real web/mail addresses become links. Uri.TryCreate alone accepts ANY
+        // "word:text" as an absolute URI (scheme = word), which turned values like
+        // "CT: head" or "DUO:0000042" into broken links.
+        if (Uri.TryCreate(str, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps ||
+             uri.Scheme == Uri.UriSchemeMailto))
         {
             if (uri.Scheme == Uri.UriSchemeMailto || str.Contains("@"))
                 return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
@@ -173,17 +178,9 @@
         if (str.Contains("@") && str.Contains("."))
             return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
 
-        str = str.Replace("/", " ");
-        var formatted = System.Text.RegularExpressions.Regex.Replace(
-            str,
-            @"(?<=[a-z0-9])(?=[A-Z][a-z])",
-            " "
-        ).Trim();
-
-        if (formatted.Length > 0)
-            formatted = Char.ToUpper(formatted[0]) + formatted[1..];
-
-        return new HtmlString(System.Net.WebUtility.HtmlEncode(formatted));
+        // Values are shown as entered (keeps "/" and casing, e.g. "Balb/c", "mg/kg", "mRNA").
+        // Label-style formatting belongs to FormatLabel only.
+        return new HtmlString(System.Net.WebUtility.HtmlEncode(Pidar.Helpers.ValueText.Display(str)));
     }
 
     public IHtmlContent RenderLicense(object? value)
@@ -321,7 +318,12 @@
                                             @{
                                                 var fieldName = path.Split('.').Last();
 
-                                                if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
+                                                // Ontology.* fields and the DUO fields (DatasetInfo.Duo*) hold ontology
+                                                // codes and are linked via OntologyUrlHelper (DUO → EBI OLS page).
+                                                bool isCodeField = path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase)
+                                                    || fieldName.StartsWith("Duo", StringComparison.OrdinalIgnoreCase);
+
+                                                if (isCodeField)
                                                 {
                                                     <span class="ontology-link">
                                                         @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
