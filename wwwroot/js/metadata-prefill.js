@@ -441,7 +441,7 @@
     // DUO ontology table rows, and other non-data rows.
     // ------------------------------------------------------------------
     const SKIP_LABELS = new Set([
-        "dataset id", "dataset id - do not edit this line", "updated year",
+        "dataset id", "dataset id - do not edit this line",
         "module", "metadata", "comments/instructions", "dataset",
         "section study design", "subsection background", "subsection publication",
         "section study component", "subsection imaging technique",
@@ -449,8 +449,7 @@
         "section ivep (in vivo experimental parameters)",
         "subsection study design", "subsection subject details",
         "section experimental procedures", "subsection procedures",
-        "sample size", "exclusion and inclusion criteria",
-        "randomisation", "blinding", "outcome measures", "statistical methods",
+        "exclusion and inclusion criteria",
         "study design", "publication", "study component", "dataset info",
         "in vivo", "procedures", "image acquisition", "image data", "analyzed",
         "label", "data use permission", "general research use", "no restriction",
@@ -474,6 +473,18 @@
         "b) reagents", "c) equipment and software",
         "(contains image data and analysed data)",
         "(result of image acquisition, or processing of image data)",
+    ]);
+
+    // ------------------------------------------------------------------
+    // TEMPLATE_ONLY_HEADERS — group headings in the blank template (FORMAT A)
+    // that share their text with REAL data rows in a PIDAR export (FORMAT B).
+    // e.g. template: "Sample size" (heading) → "Overall sample size" (data)
+    //      export:   "Sample size" = 57      (data, maps to OverallSampleSize)
+    // So they are skipped ONLY when the file is FORMAT A.
+    // ------------------------------------------------------------------
+    const TEMPLATE_ONLY_HEADERS = new Set([
+        "sample size", "randomisation", "blinding",
+        "outcome measures", "statistical methods",
     ]);
 
     // ------------------------------------------------------------------
@@ -709,6 +720,7 @@
 
             if (!val || val === "None") return;   // nothing to fill
             if (SKIP_LABELS.has(key)) return;
+            if (format === "A" && TEMPLATE_ONLY_HEADERS.has(key)) return;
 
             var hit = findElement(key, rawLabel, currentSection, serverMap);
             if (!hit) {
