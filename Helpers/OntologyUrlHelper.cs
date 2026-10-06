@@ -24,10 +24,23 @@ namespace Pidar.Helpers
                 var prefix = m.Groups["prefix"].Value.ToUpperInvariant();
                 var id = m.Groups["id"].Value;
 
-                list.Add(($"{prefix}:{id}", $"https://purl.obolibrary.org/obo/{prefix}_{id}"));
+                list.Add(($"{prefix}:{id}", BuildUrl(prefix, id)));
             }
 
             return list;
+        }
+
+        private static string BuildUrl(string prefix, string id)
+        {
+            var purl = $"http://purl.obolibrary.org/obo/{prefix}_{id}";
+
+            // DUO → EBI OLS term page, e.g.
+            // https://www.ebi.ac.uk/ols4/ontologies/duo/classes/http%3A%2F%2Fpurl.obolibrary.org%2Fobo%2FDUO_0000042
+            if (prefix == "DUO")
+                return "https://www.ebi.ac.uk/ols4/ontologies/duo/classes/" + Uri.EscapeDataString(purl);
+
+            // Everything else: OBO PURL (existing mapping)
+            return "https://purl.obolibrary.org/obo/" + prefix + "_" + id;
         }
     }
 }

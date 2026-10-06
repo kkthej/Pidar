@@ -318,9 +318,12 @@
                                             @{
                                                 var fieldName = path.Split('.').Last();
 
-                                                // Only Ontology.* fields are linked (OntologyUrlHelper URL mapping).
-                                                // DUO codes in DatasetInfo are shown as plain text by FormatValue.
-                                                if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
+                                                // Ontology.* fields and the DUO fields (DatasetInfo.Duo*) hold ontology
+                                                // codes and are linked via OntologyUrlHelper (DUO → EBI OLS page).
+                                                bool isCodeField = path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase)
+                                                    || fieldName.StartsWith("Duo", StringComparison.OrdinalIgnoreCase);
+
+                                                if (isCodeField)
                                                 {
                                                     <span class="ontology-link">
                                                         @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
