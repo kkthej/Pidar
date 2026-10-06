@@ -47,18 +47,9 @@
         if (str.Contains("@") && str.Contains("."))
             return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
 
-        str = str.Replace("/", " ");
-
-        var formatted = System.Text.RegularExpressions.Regex.Replace(
-            str,
-            @"(?<=[a-z0-9])(?=[A-Z][a-z])",
-            " "
-        ).Trim();
-
-        if (formatted.Length > 0)
-            formatted = Char.ToUpper(formatted[0]) + formatted[1..];
-
-        return new HtmlString(System.Net.WebUtility.HtmlEncode(formatted));
+        // Values are shown as entered (keeps "/" and casing, e.g. "Balb/c", "mg/kg", "mRNA").
+        // Label-style formatting belongs to FormatLabel only.
+        return new HtmlString(System.Net.WebUtility.HtmlEncode(Pidar.Helpers.ValueText.Display(str)));
     }
 
     public object? GetNested(object? root, string path)
