@@ -31,7 +31,12 @@
         if (String.IsNullOrWhiteSpace(str))
             return HtmlString.Empty;
 
-        if (Uri.TryCreate(str, UriKind.Absolute, out var uri))
+        // Only real web/mail addresses become links. Uri.TryCreate alone accepts ANY
+        // "word:text" as an absolute URI (scheme = word), which turned values like
+        // "CT: head" or "DUO:0000042" into broken links.
+        if (Uri.TryCreate(str, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps ||
+             uri.Scheme == Uri.UriSchemeMailto))
         {
             if (uri.Scheme == Uri.UriSchemeMailto || str.Contains("@"))
                 return new HtmlString($"<a href=\"mailto:{str}\">{str}</a>");
