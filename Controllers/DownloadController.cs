@@ -238,25 +238,11 @@ namespace Pidar.Controllers
             var ids = ParseDisplayIds(displayIds);
             var data = await FetchSelectedAsync(ids);
 
-            var flat = data.Select(Flatten).ToList();
-            if (!flat.Any()) return Content("No data available.");
+            if (!data.Any()) return Content("No data available.");
 
-            var headers = flat.First().Keys.ToList();
-            var sb = new StringBuilder();
-            sb.AppendLine(string.Join(",", headers));
+            var csv = BuildCsv(data);
 
-            foreach (var row in flat)
-            {
-                sb.AppendLine(string.Join(",", row.Select(v =>
-                {
-                    var s = v.Value?.ToString() ?? "";
-                    s = s.Replace("\r", " ").Replace("\n", " ");
-                    return s.Contains(",") ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
-                })));
-            }
-
-            return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv",
-                    PidarFileName("selected", "csv"));
+            return File(CsvBytes(csv), "text/csv", PidarFileName("selected", "csv"));
         }
 
         // ========================================================
@@ -429,6 +415,60 @@ namespace Pidar.Controllers
         }
 
         // ========================================================
+        // CSV BUILDER (shared by DownloadCsv + DownloadSelectedCsv)
+        // ========================================================
+        // One fixed column list for the whole file, built from the model
+        // properties in section order. Every row is written against that list,
+        // so empty fields become empty cells instead of shifting the columns.
+        private string BuildCsv(List<Dataset> data)
+        {
+            var headers = new List<string>();
+            foreach (var sec in Sections)
+            {
+                // Property order from the first dataset that has this section
+                var sample = data.Select(d => sec.Value(d)).FirstOrDefault(o => o != null);
+                if (sample == null) continue;
+
+                foreach (var p in sample.GetType().GetProperties())
+                {
+                    if (SkipProp(p.Name)) continue;
+                    if (!IsSimpleType(p.PropertyType)) continue;
+
+                    var key = $"{sec.Key}: {Pretty(p.Name)}";
+                    if (!headers.Contains(key)) headers.Add(key);
+                }
+            }
+
+            var sb = new StringBuilder();
+            sb.Append(string.Join(",", headers.Select(CsvField))).Append("\r\n");
+
+            foreach (var ds in data)
+            {
+                var row = Flatten(ds);
+                sb.Append(string.Join(",", headers.Select(h =>
+                    CsvField(row.TryGetValue(h, out var v)
+                        ? Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture)
+                        : null))))
+                  .Append("\r\n");
+            }
+
+            return sb.ToString();
+        }
+
+        // RFC 4180 field: quote when the value contains a comma, quote or line
+        // break, and double any quotes inside it.
+        private static string CsvField(string? value)
+        {
+            var s = value ?? "";
+            if (s.IndexOfAny(new[] { ',', '"', '\r', '\n' }) < 0) return s;
+            return "\"" + s.Replace("\"", "\"\"") + "\"";
+        }
+
+        // UTF-8 with BOM so Excel shows µ, β, Ö, – correctly when opening the file.
+        private static byte[] CsvBytes(string csv) =>
+            Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+
+        // ========================================================
         // FLATTEN FOR JSON + CSV
         // ========================================================
         private Dictionary<string, object?> Flatten(Dataset ds)
@@ -477,24 +517,12 @@ namespace Pidar.Controllers
         // ========================================================
         public async Task<IActionResult> DownloadCsv()
         {
-            var flat = (await FetchAsync()).Select(Flatten).ToList();
-            if (!flat.Any()) return Content("No data available.");
+            var data = await FetchAsync();
+            if (!data.Any()) return Content("No data available.");
 
-            var headers = flat.First().Keys.ToList();
-            var sb = new StringBuilder();
-            sb.AppendLine(string.Join(",", headers));
+            var csv = BuildCsv(data);
 
-            foreach (var row in flat)
-            {
-                sb.AppendLine(string.Join(",", row.Select(v =>
-                {
-                    var s = v.Value?.ToString() ?? "";
-                    return s.Contains(",") ? $"\"{s}\"" : s;
-                })));
-            }
-
-            return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv",
-                    PidarFileName("all", "csv"));
+            return File(CsvBytes(csv), "text/csv", PidarFileName("all", "csv"));
         }
 
         // ========================================================
