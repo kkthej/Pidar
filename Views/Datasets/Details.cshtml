@@ -318,11 +318,9 @@
                                             @{
                                                 var fieldName = path.Split('.').Last();
 
-                                                // DUO fields live in DatasetInfo but hold ontology codes
-                                                bool isCodeField = path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase)
-                                                    || fieldName.StartsWith("Duo", StringComparison.OrdinalIgnoreCase);
-
-                                                if (isCodeField)
+                                                // Only Ontology.* fields are linked (OntologyUrlHelper URL mapping).
+                                                // DUO codes in DatasetInfo are shown as plain text by FormatValue.
+                                                if (path.StartsWith("Ontology.", StringComparison.OrdinalIgnoreCase))
                                                 {
                                                     <span class="ontology-link">
                                                         @Html.Raw(AutoOntologyRenderer.Render(value?.ToString()))
