@@ -27,6 +27,15 @@
                     </a>
                 </li>
 
+                @if (User.IsInRole("Admin") || User.IsInRole("Curator"))
+                {
+                    <li>
+                        <a class="dropdown-item" asp-area="" asp-controller="Synonyms" asp-action="Index">
+                            Synonyms
+                        </a>
+                    </li>
+                }
+
                 @if (User.IsInRole("Admin"))
                 {
                     <li>
