@@ -243,7 +243,7 @@
     <h3 class="text-center mb-4"><strong>Dataset ID:</strong> @Model.DisplayId</h3>
 
     <div>
-        @if (SignInManager.IsSignedIn(User))
+        @if (User.IsInRole("Admin") || User.IsInRole("Curator"))
         {
             <a asp-action="Edit" class="btn btn-outline-success" asp-route-id="@Model.DatasetId">Edit</a>
         }
@@ -366,7 +366,7 @@
 
 <!-- FOOTER -->
 <div class="mb-4">
-    @if (SignInManager.IsSignedIn(User))
+    @if (User.IsInRole("Admin") || User.IsInRole("Curator"))
     {
         <a asp-action="Edit" asp-route-id="@Model.DatasetId">Edit</a>
     }

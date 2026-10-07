@@ -1,6 +1,7 @@
 ﻿using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -73,7 +74,15 @@ builder.Services.AddDbContext<PidarDbContext>(options =>
 
 // Register Identity
 builder.Services.AddDefaultIdentity<PidarUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// Role / lockout changes made on the Users page take effect within a minute
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
+
+// Real email sender (Gmail SMTP via Smtp__* environment variables)
+builder.Services.Configure<Pidar.Services.Email.SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, Pidar.Services.Email.SmtpEmailSender>();
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
@@ -167,6 +176,9 @@ else
 }
 
 
+
+// Ensure Admin/Curator roles exist and configured admins have the Admin role
+await IdentitySeeder.SeedAsync(app.Services);
 
 // Run startup jobs
 await StartupJobs.RunAsync(app.Services);

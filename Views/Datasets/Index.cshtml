@@ -87,9 +87,9 @@
 <!-- ---------------- SEARCH + CREATE ---------------- -->
 <div class="row justify-content-between align-items-center mb-2">
 
-    @if (SignInManager.IsSignedIn(User))
+    @if (User.IsInRole("Admin") || User.IsInRole("Curator"))
     {
-        <!-- Left side (only when logged in) -->
+        <!-- Left side (Admins and Curators) -->
         <div class="col-auto">
             <a class="btn btn-primary" href="/Datasets/Create">
                 Create New Dataset
@@ -153,7 +153,7 @@
                 <th class="text-center text-nowrap">Year</th>
 
 
-                @if (SignInManager.IsSignedIn(User))
+                @if (User.IsInRole("Admin") || User.IsInRole("Curator"))
                 {
                     <th>Actions</th>
                 }
@@ -223,11 +223,14 @@
                     <td class="text-center text-nowrap">@GetNestedSafe(ds, "Analyzed.Status")</td>
                     <td class="text-center text-nowrap">@GetNestedSafe(ds, "Analyzed.UpdatedYear")</td>
 
-                    @if (SignInManager.IsSignedIn(User))
+                    @if (User.IsInRole("Admin") || User.IsInRole("Curator"))
                     {
                         <td>
                             <a asp-action="Edit" asp-route-id="@ds.DatasetId" class="me-2">Edit</a>
-                            <a asp-action="Delete" asp-route-id="@ds.DatasetId" class="text-danger">Delete</a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Delete" asp-route-id="@ds.DatasetId" class="text-danger">Delete</a>
+                            }
                         </td>
                     }
                 </tr>

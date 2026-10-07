@@ -9,8 +9,7 @@ using Pidar.Services;
 
 namespace Pidar.Controllers;
 
-// IMPORTANT: lock this down. If you don't have roles, keep [Authorize] at least.
-[Authorize]
+[Authorize(Roles = Pidar.Infrastructure.AppRoles.Admin)]
 [Route("admin/ontology")]
 public sealed class AdminOntologyController : Controller
 {
