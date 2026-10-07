@@ -1,343 +1,268 @@
-﻿@{
-    ViewData["Title"] = "Statistic";
+@model Pidar.Helpers.StatisticsBuilder.Result
+@using Pidar.Helpers
+@{
+    ViewData["Title"] = "Statistics";
+
+    // segment colours for the "Study design & sharing" bars; "Not stated" is always grey
+    string SegColor(string label, int i) =>
+        label == StatisticsBuilder.NotStated ? "#c9c8c2" : new[] { "#2a78d6", "#eb6834", "#1baf7a", "#8a8984" }[Math.Min(i, 3)];
 }
-<h2 class="text-center mb-4">Statistics</h2>
 
-<div class="container mt-4">
+@functions {
+    // Horizontal bar list: label · bar · count. Zero rows are grey with an empty track.
+    public Microsoft.AspNetCore.Html.IHtmlContent Bars(IEnumerable<StatisticsBuilder.Bar> bars, int labelWidth, bool hintInline = false)
+    {
+        var list = bars.ToList();
+        var max = Math.Max(1, list.Count == 0 ? 1 : list.Max(b => b.Count));
+        var sb = new System.Text.StringBuilder($"<div class=\"st-bars\" style=\"--lw:{labelWidth}px\">");
+        var index = 0;
+        foreach (var b in list)
+        {
+            var label = System.Net.WebUtility.HtmlEncode(b.Label);
+            var hint = System.Net.WebUtility.HtmlEncode(b.Hint ?? "");
+            var width = b.Count == 0 ? 0 : Math.Max(2.0, b.Count * 100.0 / max);
+            var tip = $"{label}: {b.Count} dataset{(b.Count == 1 ? "" : "s")}{(hint.Length > 0 && !hintInline ? " · " + hint : "")}";
+            sb.Append($"<div class=\"st-row{(b.Count == 0 ? " zero" : "")}\" style=\"--i:{index++}\" title=\"{tip}\">");
+            sb.Append($"<div class=\"st-lab\">{label}{(hintInline && hint.Length > 0 ? $" <small>{hint}</small>" : "")}</div>");
+            sb.Append($"<div class=\"st-track\"><div class=\"st-fill\" style=\"width:{width.ToString(System.Globalization.CultureInfo.InvariantCulture)}%\"></div></div>");
+            sb.Append($"<div class=\"st-num\">{b.Count}</div></div>");
+        }
+        return new Microsoft.AspNetCore.Html.HtmlString(sb.Append("</div>").ToString());
+    }
+}
 
-    <!-- Row 1 -->
-    <div class="row mb-4">
+<style>
+    .st-page { --ink2:#52514e; --muted:#8a8984; --gray:#c9c8c2; --s1:#2a78d6; }
+    .st-sub { color: var(--ink2); }
+    .st-kpis { display:grid; grid-template-columns:repeat(6, 1fr); gap:14px; margin-bottom:18px; }
+    .st-kpi { background:#fff; border:1px solid #e6e6e3; border-radius:12px; padding:14px 16px; }
+    .st-kpi .v { font-size:30px; font-weight:650; line-height:1.1; }
+    .st-kpi .v small { font-size:17px; color:var(--muted); font-weight:500; }
+    .st-kpi .l { color:var(--ink2); font-size:13.5px; margin-top:4px; }
+    .st-kpi .h { color:var(--muted); font-size:12px; }
+    .st-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .st-card { background:#fff; border:1px solid #e6e6e3; border-radius:12px; padding:18px 20px; min-width:0; }
+    .st-card.full { grid-column:1 / -1; }
+    .st-card h3 { font-size:17px; font-weight:600; margin:0; }
+    .st-card .d { color:var(--ink2); font-size:13px; margin:3px 0 14px; }
+    .st-note { color:var(--muted); font-size:12px; margin-top:10px; }
+    .st-row { display:grid; grid-template-columns:var(--lw) 1fr 34px; gap:10px; align-items:center; font-size:13.5px; margin:7px 0; }
+    .st-lab { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .st-lab small { color:var(--muted); }
+    .st-fill { height:16px; background:var(--s1); border-radius:0 4px 4px 0; }
+    .st-num { text-align:right; color:var(--ink2); font-variant-numeric:tabular-nums; }
+    .st-row.zero .st-lab, .st-row.zero .st-num { color:var(--muted); }
+    .st-row.zero .st-track { border-left:2px solid var(--gray); height:16px; }
+    .st-years { display:flex; align-items:flex-end; gap:24px; height:180px; padding:0 8px; border-bottom:1px solid #ecebe7; }
+    .st-years .c { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+    .st-years .bar { width:56%; max-width:120px; background:var(--s1); border-radius:4px 4px 0 0; }
+    .st-years .n { font-size:13px; color:var(--ink2); margin-bottom:4px; }
+    .st-yearlab { display:flex; gap:24px; padding:6px 8px 0; }
+    .st-yearlab div { flex:1; text-align:center; font-size:13px; color:var(--ink2); }
+    .st-seg-block { margin:4px 0 18px; }
+    .st-seg-head { display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:5px; }
+    .st-seg-head span { color:var(--ink2); }
+    .st-seg { display:flex; gap:2px; height:22px; }
+    .st-seg div { display:flex; align-items:center; padding-left:7px; color:#fff; font-size:12px; font-weight:600; overflow:hidden; white-space:nowrap; }
+    .st-seg div:first-child { border-radius:4px 0 0 4px; }
+    .st-seg div:last-child { border-radius:0 4px 4px 0; }
+    .st-legend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12.5px; color:var(--ink2); margin-top:6px; }
+    .st-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+    /* ---- animation: bars grow in when their card scrolls into view; numbers count up ----
+       Only active when the script below has run (class st-anim), so without JavaScript
+       everything is simply shown. Turned off for "reduce motion" users. */
+    .st-anim .st-fill { transform-origin:left center; transform:scaleX(0); }
+    .st-anim .st-years .bar { transform-origin:center bottom; transform:scaleY(0); }
+    .st-anim .st-seg { transform-origin:left center; transform:scaleX(0); }
+    .st-anim .st-card.st-in .st-fill { animation:st-grow-x .9s cubic-bezier(.22,1,.36,1) forwards; animation-delay:calc(var(--i, 0) * 60ms); }
+    .st-anim .st-card.st-in .st-years .bar { animation:st-grow-y .9s cubic-bezier(.22,1,.36,1) forwards; animation-delay:calc(var(--i, 0) * 90ms); }
+    .st-anim .st-card.st-in .st-seg { animation:st-grow-x 1s cubic-bezier(.22,1,.36,1) forwards; animation-delay:calc(var(--i, 0) * 150ms); }
+    @@keyframes st-grow-x { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+    @@keyframes st-grow-y { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+    .st-card { transition:box-shadow .2s, transform .2s; }
+    .st-card:hover { box-shadow:0 6px 18px rgba(0,0,0,.07); }
+    .st-row, .st-years .c, .st-seg div { cursor:default; }
+    .st-fill, .st-years .bar { transition:filter .15s; }
+    .st-row:hover .st-fill, .st-years .c:hover .bar, .st-seg div:hover { filter:brightness(.85); }
+    .st-row:hover .st-lab { font-weight:600; }
+    .st-tip { position:fixed; z-index:1080; pointer-events:none; background:#1f1f1e; color:#fff; font-size:12.5px; line-height:1.35;
+              padding:6px 9px; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.18); max-width:280px; opacity:0; transition:opacity .12s; }
+    .st-tip.show { opacity:1; }
+    @@media (prefers-reduced-motion: reduce) {
+        .st-anim .st-fill, .st-anim .st-years .bar, .st-anim .st-seg { transform:none !important; animation:none !important; }
+    }
+    @@media (max-width: 991.98px) { .st-kpis { grid-template-columns:repeat(3, 1fr); } }
+    @@media (max-width: 767.98px) {
+        .st-grid { grid-template-columns:1fr; }
+        .st-kpis { grid-template-columns:repeat(2, 1fr); gap:10px; }
+        .st-kpi .v { font-size:26px; }
+        .st-years { gap:10px; } .st-yearlab { gap:10px; }
+        .st-row { grid-template-columns:min(var(--lw), 46%) 1fr 28px; font-size:13px; }
+        .st-lab { white-space:normal; line-height:1.25; }
+    }
+</style>
 
-        <!-- Imaging Modality -->
-        <div class="col-md-6">
-            <div class="card shadow h-100">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Imaging Modality Distribution</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="modalityChart"></canvas>
-                    </div>
-                </div>
-            </div>
+<div class="container mt-4 mb-5 st-page">
+    <h2 class="mb-1">Statistics</h2>
+    <p class="st-sub mb-4">A summary of everything in PIDAR — key numbers first, then one chart per question. Hover a bar for details.</p>
+
+    <!-- KEY NUMBERS -->
+    <div class="st-kpis">
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.Datasets">@Model.Datasets</span></div><div class="l">datasets</div><div class="h">in the repository</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.Animals">@Model.Animals</span></div><div class="l">animals imaged</div><div class="h">sum of sample sizes</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.Countries">@Model.Countries</span></div><div class="l">countries</div><div class="h">imaging facilities</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.ModalitiesUsed">@Model.ModalitiesUsed</span><small>/@Model.ModalitiesTotal</small></div><div class="l">imaging modalities</div><div class="h">groups represented</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.CategoriesUsed">@Model.CategoriesUsed</span><small>/@Model.CategoriesTotal</small></div><div class="l">disease categories</div><div class="h">main categories covered</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.WithPublication">@Model.WithPublication</span></div><div class="l">with a publication</div><div class="h">of @Model.Datasets datasets</div></div>
+    </div>
+
+    <div class="st-grid">
+
+        <div class="st-card">
+            <h3>Imaging modality</h3>
+            <div class="d">Datasets per modality group · a dataset with several modalities counts in each</div>
+            @Bars(Model.Modalities, 80)
+            <div class="st-note">Grey = no dataset yet. Hover a row for the full name.</div>
         </div>
 
-        <!-- Imaging Facility Countries -->
-        <div class="col-md-6">
-            <div class="card shadow h-100">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">Imaging Facility Countries</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="countryChart"></canvas>
+        <div class="st-card">
+            <h3>Main disease category</h3>
+            <div class="d">Datasets per main category (Disease Ontology)</div>
+            @Bars(Model.Categories, 225)
+            @if (Model.WithoutCategory > 0)
+            {
+                <div class="st-note">@Model.WithoutCategory @(Model.WithoutCategory == 1 ? "dataset" : "datasets") without a category (e.g. healthy animals).</div>
+            }
+        </div>
+
+        <div class="st-card">
+            <h3>Organs / tissues studied</h3>
+            <div class="d">Top 10 · a dataset can study several organs</div>
+            @Bars(Model.Organs, 130)
+        </div>
+
+        <div class="st-card">
+            <h3>Country of imaging facility</h3>
+            <div class="d">Where the images were acquired</div>
+            @Bars(Model.CountryBars, 130)
+        </div>
+
+        <div class="st-card">
+            <h3>Animals</h3>
+            <div class="d">Datasets and animals per species</div>
+            @Bars(Model.Species, 150, hintInline: true)
+        </div>
+
+        <div class="st-card">
+            <h3>Study design &amp; sharing</h3>
+            <div class="d">How datasets are described and shared</div>
+            @{ var si = 0; }
+            @foreach (var (title, segs) in new[] { ("Sex of animals", Model.Sex), ("Data access", Model.Access), ("Study status", Model.Status) })
+            {
+                var total = segs.Sum(s => s.Count);
+                <div class="st-seg-block" style="--i:@(si++)">
+                    <div class="st-seg-head"><b>@title</b><span>@total datasets</span></div>
+                    <div class="st-seg">
+                        @for (var i = 0; i < segs.Count; i++)
+                        {
+                            if (segs[i].Count == 0) { continue; }
+                            <div style="flex:@segs[i].Count;background:@SegColor(segs[i].Label, i)" title="@segs[i].Label: @segs[i].Count">@segs[i].Count</div>
+                        }
+                    </div>
+                    <div class="st-legend">
+                        @for (var i = 0; i < segs.Count; i++)
+                        {
+                            <span><i style="background:@SegColor(segs[i].Label, i)"></i>@segs[i].Label (@segs[i].Count)</span>
+                        }
                     </div>
                 </div>
-            </div>
+            }
+        </div>
+
+        <div class="st-card full">
+            <h3>Datasets added per year</h3>
+            <div class="d">By year of last update</div>
+            @if (Model.Years.Count == 0)
+            {
+                <p class="text-muted">No year recorded yet.</p>
+            }
+            else
+            {
+                var maxYear = Math.Max(1, Model.Years.Max(y => y.Count));
+                <div class="st-years">
+                    @{ var yi = 0; }
+                    @foreach (var y in Model.Years)
+                    {
+                        <div class="c" style="--i:@(yi++)" title="@y.Label: @y.Count @(y.Count == 1 ? "dataset" : "datasets")">
+                            <div class="n">@y.Count</div>
+                            <div class="bar" style="height:@((y.Count * 140 / maxYear).ToString())px"></div>
+                        </div>
+                    }
+                </div>
+                <div class="st-yearlab">
+                    @foreach (var y in Model.Years) { <div>@y.Label</div> }
+                </div>
+            }
         </div>
 
     </div>
-
-    <!-- Row 2 -->
-    <div class="row mb-4">
-
-        <!-- Disease Categories -->
-        <div class="col-md-6">
-            <div class="card shadow h-100">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Main Disease Categories</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="diseaseCategoryChart"></canvas>
-                        <p id="diseaseCategoryEmpty" class="text-muted text-center mt-5" hidden>No main disease category entered yet.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Disease Models -->
-        <div class="col-md-6">
-            <div class="card shadow h-100">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Specific Disease Models</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="diseaseChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Organs / Tissues -->
-        <div class="col-md-6">
-            <div class="card shadow h-100">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">Organs / Tissues</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="organChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-
-    <!-- Row 3 -->
-    <div class="row mb-4">
-
-        <!-- Yearly uploads -->
-        <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header bg-secondary text-white">
-                    <h4 class="mb-0">Datasets Uploaded by Year</h4>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="yearlyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
 </div>
 
-
-
 @section Scripts {
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        (function () {
+            "use strict";
+            var page = document.querySelector(".st-page");
+            if (!page) return;
+            var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-            /* ============================================================
-               COLOR PALETTE
-               ============================================================ */
-            const colors = [
-                'rgba(54, 162, 235, 0.7)',
-                'rgba(255, 99, 132, 0.7)',
-                'rgba(75, 192, 192, 0.7)',
-                'rgba(255, 206, 86, 0.7)',
-                'rgba(153, 102, 255, 0.7)',
-                'rgba(255, 159, 64, 0.7)',
-                'rgba(199, 199, 199, 0.7)',
-                'rgba(83, 102, 255, 0.7)',
-                'rgba(40, 167, 69, 0.7)',
-                'rgba(108, 117, 125, 0.7)'
-            ];
-            const borderColors = colors.map(c => c.replace("0.7", "1"));
-
-
-            /* ============================================================
-               SAFE JSON PARSER
-               ============================================================ */
-            function parse(json) {
-                try { return json ? JSON.parse(json) : []; }
-                catch { return []; }
+            // ---- bars grow in when each card becomes visible ----
+            var cards = page.querySelectorAll(".st-card");
+            if (!reduce && "IntersectionObserver" in window) {
+                page.classList.add("st-anim");
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) {
+                        if (e.isIntersecting) { e.target.classList.add("st-in"); io.unobserve(e.target); }
+                    });
+                }, { threshold: 0.15 });
+                cards.forEach(function (c) { io.observe(c); });
             }
 
-
-            /* ============================================================
-               REUSABLE OPTIONS HELPERS
-               ============================================================ */
-
-            function legendWithCounts(title, isDonut = false) {
-                return {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                generateLabels(chart) {
-                                    const ds = chart.data.datasets[0];
-                                    const total = ds.data.reduce((a, b) => a + b, 0);
-
-                                    const items = chart.data.labels.map((lbl, i) => ({
-                                        text: `${lbl} (${ds.data[i]})`,
-                                        fillStyle: ds.backgroundColor[i],
-                                        hidden: !chart.getDataVisibility(i),
-                                        index: i
-                                    }));
-
-                                    // Add total (no color box)
-                                    items.push({
-                                        text: `Total: ${total}`,
-                                        fillStyle: 'transparent',
-                                        strokeStyle: 'transparent',
-                                        hidden: true
-                                    });
-
-                                    return items;
-                                },
-                                filter(item) {
-                                    return !item.text.startsWith("Total:");
-                                },
-                                boxWidth: 20,
-                                boxHeight: 12
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: title,
-                            font: { size: 16 }
-                        }
-                    },
-                    cutout: isDonut ? "70%" : undefined
-                };
-            }
-
-            function barOptions(title, horizontal = false) {
-                return {
-                    indexAxis: horizontal ? 'y' : 'x',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: title, font: { size: 16 } }
-                    },
-                    scales: {
-                        x: horizontal ? {
-                            beginAtZero: true,
-                            title: { display: true, text: 'Number of Datasets' }
-                        } : {},
-                        y: !horizontal ? {
-                            beginAtZero: true,
-                            title: { display: true, text: 'Number of Datasets' }
-                        } : {}
+            // ---- key numbers count up from 0 ----
+            if (!reduce) {
+                page.querySelectorAll(".st-count").forEach(function (el) {
+                    var target = parseInt(el.dataset.count, 10) || 0, start = null, dur = 1100;
+                    if (target <= 0) return;
+                    el.textContent = "0";
+                    function step(t) {
+                        if (start === null) start = t;
+                        var p = Math.min(1, (t - start) / dur), eased = 1 - Math.pow(1 - p, 3);
+                        el.textContent = Math.round(target * eased).toLocaleString();
+                        if (p < 1) requestAnimationFrame(step); else el.textContent = target.toLocaleString();
                     }
-                };
-            }
-
-            function lineOptions(title) {
-                return {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: title, font: { size: 16 } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: 'Datasets' }},
-                        x: { title: { display: true, text: 'Year' }}
-                    }
-                };
-            }
-
-
-            /* ============================================================
-               FETCH DATA FROM ViewData
-               ============================================================ */
-
-            const modality = parse('@Html.Raw(ViewData["ModalityDistribution"])');
-            const countries = parse('@Html.Raw(ViewData["CountryDistribution"])');
-            const disease = parse('@Html.Raw(ViewData["DiseaseModelDistribution"])');
-            const diseaseCategories = parse('@Html.Raw(ViewData["DiseaseCategoryDistribution"])');
-            const organs = parse('@Html.Raw(ViewData["OrganDistribution"])');
-            const status = parse('@Html.Raw(ViewData["StatusDistribution"])');
-            const yearly = parse('@Html.Raw(ViewData["YearlyUploads"])');
-
-
-            /* ============================================================
-               RENDER CHARTS
-               ============================================================ */
-
-            new Chart(document.getElementById('modalityChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: modality.map(x => x.Label),
-                    datasets: [{
-                        data: modality.map(x => x.Count),
-                        backgroundColor: colors,
-                        borderColor: borderColors,
-                        borderWidth: 1
-                    }]
-                },
-                options: legendWithCounts("Distribution across imaging modalities", true)
-            });
-
-            new Chart(document.getElementById('countryChart'), {
-                type: 'bar',
-                data: {
-                    labels: countries.map(x => x.Country),
-                    datasets: [{
-                        data: countries.map(x => x.Count),
-                        backgroundColor: colors,
-                        borderColor: borderColors
-                    }]
-                },
-                options: barOptions("Countries where imaging was performed")
-            });
-
-            // Main disease categories: all eight, in the agreed order, as horizontal bars
-            if (diseaseCategories.every(x => x.Count === 0)) {
-                document.getElementById('diseaseCategoryChart').hidden = true;
-                document.getElementById('diseaseCategoryEmpty').hidden = false;
-            } else {
-                new Chart(document.getElementById('diseaseCategoryChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: diseaseCategories.map(x => x.Category),
-                        datasets: [{
-                            data: diseaseCategories.map(x => x.Count),
-                            backgroundColor: colors,
-                            borderColor: borderColors
-                        }]
-                    },
-                    options: barOptions("Datasets per main disease category", true)
+                    requestAnimationFrame(step);
                 });
             }
 
-            new Chart(document.getElementById('diseaseChart'), {
-                type: 'bar',
-                data: {
-                    labels: disease.map(x => x.Disease),
-                    datasets: [{
-                        data: disease.map(x => x.Count),
-                        backgroundColor: colors,
-                        borderColor: borderColors
-                    }]
-                },
-                options: barOptions("Most studied specific disease models", true)
+            // ---- tooltip (replaces the browser's slow native one) ----
+            var tip = document.createElement("div");
+            tip.className = "st-tip";
+            document.body.appendChild(tip);
+            page.querySelectorAll("[title]").forEach(function (el) {
+                el.dataset.tip = el.getAttribute("title");
+                el.removeAttribute("title");
             });
-
-            new Chart(document.getElementById('organChart'), {
-                type: 'pie',
-                data: {
-                    labels: organs.map(x => x.Organ),
-                    datasets: [{
-                        data: organs.map(x => x.Count),
-                        backgroundColor: colors,
-                        borderColor: borderColors
-                    }]
-                },
-                options: legendWithCounts("Most studied organs/tissues")
+            page.addEventListener("mousemove", function (e) {
+                var el = e.target.closest("[data-tip]");
+                if (!el || !page.contains(el)) { tip.classList.remove("show"); return; }
+                tip.textContent = el.dataset.tip;
+                var x = e.clientX + 14, y = e.clientY + 16, w = tip.offsetWidth, h = tip.offsetHeight;
+                if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+                if (y + h > window.innerHeight - 8) y = e.clientY - h - 12;
+                tip.style.left = x + "px"; tip.style.top = y + "px";
+                tip.classList.add("show");
             });
-
-            
-            new Chart(document.getElementById('yearlyChart'), {
-                type: 'line',
-                data: {
-                    labels: yearly.map(x => x.Year),
-                    datasets: [{
-                        data: yearly.map(x => x.Count),
-                        backgroundColor: colors[0],
-                        borderColor: colors[0].replace("0.7", "1"),
-                        borderWidth: 2,
-                        tension: 0.2
-                    }]
-                },
-                options: lineOptions("Datasets uploaded by year")
-            });
-
-        });
+            page.addEventListener("mouseleave", function () { tip.classList.remove("show"); });
+        })();
     </script>
-
 }
