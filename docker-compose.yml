@@ -24,6 +24,9 @@
       - Matomo__SiteId=${MATOMO_SITE_ID}
       # Put real token later (or leave empty for now - your code already handles "not configured")
       - Matomo__TokenAuth=${MATOMO_TOKEN_AUTH}
+      # dotnet watch adds a "browser refresh" script that connects to localhost from the visitor's
+      # browser; Chrome then asks every visitor to "access other apps and services on this device".
+      - DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH=1
     volumes:
       - .:/app
       - /app/.git   # hide .git from dotnet watch (git checkout/pull crashed its file poller)
