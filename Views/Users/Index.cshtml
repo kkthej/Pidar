@@ -54,78 +54,92 @@
     </div>
 </div>
 
-<!-- User list -->
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var u in Model)
-            {
-                <tr>
-                    <td>
-                        @u.Email
-                        @if (u.IsSelf) { <span class="badge bg-secondary ms-1">you</span> }
-                        @if (!u.EmailConfirmed) { <span class="badge bg-warning text-dark ms-1" title="Email never confirmed">unconfirmed</span> }
-                    </td>
-                    <td style="min-width:210px">
-                        <form asp-action="SetRole" method="post" class="d-flex gap-1">
+<!-- User list: rows on wide screens, stacked cards on phones -->
+<style>
+    .user-list .user-row { border-bottom: 1px solid var(--bs-border-color); padding: .75rem 0; }
+    .user-list .user-email { word-break: break-all; font-weight: 500; }
+    @@media (max-width: 991.98px) {
+        .user-list .user-row { border: 1px solid var(--bs-border-color); border-radius: .5rem;
+                               padding: .75rem; margin-bottom: .75rem; background: var(--bs-body-bg); }
+    }
+</style>
+
+<div class="user-list">
+    <div class="row d-none d-lg-flex fw-bold border-bottom pb-2 mx-0">
+        <div class="col-lg-4 ps-0">Email</div>
+        <div class="col-lg-3">Role</div>
+        <div class="col-lg-1">Status</div>
+        <div class="col-lg-4 text-end pe-0">Actions</div>
+    </div>
+
+    @foreach (var u in Model)
+    {
+        <div class="user-row row align-items-center g-2 mx-0">
+            <!-- Email + badges -->
+            <div class="col-12 col-lg-4 ps-lg-0">
+                <span class="user-email">@u.Email</span>
+                @if (u.IsSelf) { <span class="badge bg-secondary ms-1">you</span> }
+                @if (!u.EmailConfirmed) { <span class="badge bg-warning text-dark ms-1" title="Email never confirmed">unconfirmed</span> }
+            </div>
+
+            <!-- Role -->
+            <div class="col-8 col-lg-3">
+                <form asp-action="SetRole" method="post" class="d-flex gap-1">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@u.Id" />
+                    <select name="role" class="form-select form-select-sm" aria-label="Role for @u.Email"
+                            disabled="@(u.IsSelf ? "disabled" : null)">
+                        @foreach (var r in roles)
+                        {
+                            <option value="@r" selected="@(r == u.Role ? "selected" : null)">@r</option>
+                        }
+                    </select>
+                    @if (!u.IsSelf)
+                    {
+                        <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Save</button>
+                    }
+                </form>
+            </div>
+
+            <!-- Status -->
+            <div class="col-4 col-lg-1 text-end text-lg-start">
+                @if (u.IsActive)
+                {
+                    <span class="badge bg-success">active</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">deactivated</span>
+                }
+            </div>
+
+            <!-- Actions -->
+            <div class="col-12 col-lg-4 pe-lg-0">
+                <div class="d-flex flex-wrap gap-1 justify-content-lg-end">
+                    <form asp-action="SendReset" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">Send password link</button>
+                    </form>
+                    @if (!u.IsSelf)
+                    {
+                        <form asp-action="SetActive" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@u.Id" />
-                            <select name="role" class="form-select form-select-sm" disabled="@(u.IsSelf ? "disabled" : null)">
-                                @foreach (var r in roles)
-                                {
-                                    <option value="@r" selected="@(r == u.Role ? "selected" : null)">@r</option>
-                                }
-                            </select>
-                            @if (!u.IsSelf)
-                            {
-                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Save</button>
-                            }
+                            <input type="hidden" name="active" value="@(u.IsActive ? "false" : "true")" />
+                            <button type="submit" class="btn btn-sm text-nowrap @(u.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                                @(u.IsActive ? "Deactivate" : "Activate")
+                            </button>
                         </form>
-                    </td>
-                    <td>
-                        @if (u.IsActive)
-                        {
-                            <span class="badge bg-success">active</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-danger">deactivated</span>
-                        }
-                    </td>
-                    <td class="text-end text-nowrap">
-                        <form asp-action="SendReset" method="post" class="d-inline">
+                        <form asp-action="Delete" method="post"
+                              onsubmit="return confirm('Delete @u.Email permanently?');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@u.Id" />
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">Send password link</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
-                        @if (!u.IsSelf)
-                        {
-                            <form asp-action="SetActive" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@u.Id" />
-                                <input type="hidden" name="active" value="@(u.IsActive ? "false" : "true")" />
-                                <button type="submit" class="btn btn-sm @(u.IsActive ? "btn-outline-warning" : "btn-outline-success")">
-                                    @(u.IsActive ? "Deactivate" : "Activate")
-                                </button>
-                            </form>
-                            <form asp-action="Delete" method="post" class="d-inline"
-                                  onsubmit="return confirm('Delete @u.Email permanently?');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@u.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    }
+                </div>
+            </div>
+        </div>
+    }
 </div>
