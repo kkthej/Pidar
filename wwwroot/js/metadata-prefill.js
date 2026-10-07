@@ -233,6 +233,8 @@
         "number of groups": "InVivo.NumberOfGroups",
         "types of groups": "InVivo.TypesOfGroups",
         "animal condition": "InVivo.AnimalCondition",
+        "disease category": "InVivo.DiseaseCategory",
+        "category of disease": "InVivo.DiseaseCategory",
         "sample size for each group": "InVivo.SampleSizeForEachGroup",
         "power calculation": "InVivo.PowerCalculation",
         "inclusion criteria": "InVivo.InclusionCriteria",
@@ -488,6 +490,27 @@
     ]);
 
     // ------------------------------------------------------------------
+    // setFieldValue: inputs/textareas get the text as is. Dropdowns (e.g. Disease Category)
+    // pick the option whose value or label matches case-insensitively; a value that is not
+    // in the list is added as an extra option so nothing from the file is lost. A "change"
+    // event lets dependent fields (the DOID code) update.
+    // ------------------------------------------------------------------
+    function setFieldValue(el, val) {
+        if (el.tagName !== "SELECT") { el.value = val; return; }
+        var wanted = norm(val);
+        var opt = Array.prototype.find.call(el.options, function (o) {
+            return norm(o.value) === wanted || norm(o.text.replace(/\s*\(DOID:[^)]*\)\s*$/, "")) === wanted;
+        });
+        if (!opt) {
+            opt = new Option(val + " (not in list)", val);
+            opt.dataset.doid = "";
+            el.add(opt);
+        }
+        el.value = opt.value;
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    // ------------------------------------------------------------------
     // norm: lower-case + collapse whitespace (trim included)
     // ------------------------------------------------------------------
     function norm(s) {
@@ -728,7 +751,7 @@
                 return;
             }
 
-            hit.el.value = val;
+            setFieldValue(hit.el, val);
             hit.el.style.backgroundColor = FILLED_COLOR;
             hit.el.style.transition = "background-color 2s";
             hit.el.classList.add("prefill-filled");

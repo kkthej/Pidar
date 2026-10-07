@@ -14,6 +14,7 @@ public static class DatasetSummaryMapper
             DisplayId = dataset.DisplayId,
             Species = dataset.InVivo?.Species,
             OrganOrTissue = dataset.InVivo?.OrganOrTissue,
+            DiseaseCategory = dataset.InVivo?.DiseaseCategory,
             DiseaseModel = dataset.InVivo?.DiseaseModel,
             SampleSize = dataset.InVivo?.OverallSampleSize,
             ImagingModality = dataset.StudyComponent?.ImagingModality

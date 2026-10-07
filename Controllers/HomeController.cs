@@ -109,6 +109,16 @@ namespace Pidar.Controllers
 
             ViewData["CountryDistribution"] = JsonSerializer.Serialize(countryCounts);
 
+            // 3a) DISEASE CATEGORY
+            var categoryCounts = await _context.InVivos
+                .Where(v => v.DiseaseCategory != null && v.DiseaseCategory.Trim() != "")
+                .GroupBy(v => v.DiseaseCategory!.Trim())
+                .Select(g => new { Category = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .ToListAsync();
+
+            ViewData["DiseaseCategoryDistribution"] = JsonSerializer.Serialize(categoryCounts);
+
             // 3) DISEASE MODEL
             var diseaseCounts = await _context.InVivos
                 .Where(v => v.DiseaseModel != null && v.DiseaseModel.Trim() != "")

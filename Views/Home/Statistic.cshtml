@@ -41,6 +41,21 @@
     <!-- Row 2 -->
     <div class="row mb-4">
 
+        <!-- Disease Categories -->
+        <div class="col-md-6">
+            <div class="card shadow h-100">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Disease Categories</h4>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="diseaseCategoryChart"></canvas>
+                        <p id="diseaseCategoryEmpty" class="text-muted text-center mt-5" hidden>No disease categories entered yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Disease Models -->
         <div class="col-md-6">
             <div class="card shadow h-100">
@@ -224,6 +239,7 @@
             const modality = parse('@Html.Raw(ViewData["ModalityDistribution"])');
             const countries = parse('@Html.Raw(ViewData["CountryDistribution"])');
             const disease = parse('@Html.Raw(ViewData["DiseaseModelDistribution"])');
+            const diseaseCategories = parse('@Html.Raw(ViewData["DiseaseCategoryDistribution"])');
             const organs = parse('@Html.Raw(ViewData["OrganDistribution"])');
             const status = parse('@Html.Raw(ViewData["StatusDistribution"])');
             const yearly = parse('@Html.Raw(ViewData["YearlyUploads"])');
@@ -259,6 +275,25 @@
                 },
                 options: barOptions("Countries where imaging was performed")
             });
+
+            if (diseaseCategories.length === 0) {
+                document.getElementById('diseaseCategoryChart').hidden = true;
+                document.getElementById('diseaseCategoryEmpty').hidden = false;
+            } else {
+                new Chart(document.getElementById('diseaseCategoryChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: diseaseCategories.map(x => x.Category),
+                        datasets: [{
+                            data: diseaseCategories.map(x => x.Count),
+                            backgroundColor: colors,
+                            borderColor: borderColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: legendWithCounts("Datasets per disease category", true)
+                });
+            }
 
             new Chart(document.getElementById('diseaseChart'), {
                 type: 'bar',

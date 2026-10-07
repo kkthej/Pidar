@@ -114,7 +114,11 @@
                         </div>
                         <div class="col-sm-8">
 
-                            @if (IsLong(label))
+                            @if (field == DiseaseCategories.FieldName)
+                            {
+                                @DiseaseCategories.RenderSelect(value)
+                            }
+                            else if (IsLong(label))
                             {
                                 <textarea class="form-control"
                               name="@field"
@@ -148,4 +152,5 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <!-- Prefill logic: reads data-field-map, detects column layout, fills form -->
     <script src="~/js/metadata-prefill.js" asp-append-version="true"></script>
+    <script src="~/js/disease-category.js" asp-append-version="true"></script>
 }

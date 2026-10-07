@@ -24,6 +24,7 @@ namespace Pidar.Controllers
                     DisplayId = d.DisplayId,
                     Species = d.InVivo != null ? d.InVivo.Species : null,
                     OrganOrTissue = d.InVivo != null ? d.InVivo.OrganOrTissue : null,
+                    DiseaseCategory = d.InVivo != null ? d.InVivo.DiseaseCategory : null,
                     DiseaseModel = d.InVivo != null ? d.InVivo.DiseaseModel : null,
                     SampleSize = d.InVivo != null ? d.InVivo.OverallSampleSize : null,
                     ImagingModality = d.StudyComponent != null ? d.StudyComponent.ImagingModality : null
@@ -45,6 +46,7 @@ namespace Pidar.Controllers
                     DisplayId = d.DisplayId,
                     Species = d.InVivo != null ? d.InVivo.Species : null,
                     OrganOrTissue = d.InVivo != null ? d.InVivo.OrganOrTissue : null,
+                    DiseaseCategory = d.InVivo != null ? d.InVivo.DiseaseCategory : null,
                     DiseaseModel = d.InVivo != null ? d.InVivo.DiseaseModel : null,
                     SampleSize = d.InVivo != null ? d.InVivo.OverallSampleSize : null,
                     ImagingModality = d.StudyComponent != null ? d.StudyComponent.ImagingModality : null

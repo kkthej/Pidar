@@ -73,7 +73,11 @@
                         </div>
                         <div class="col-sm-8">
 
-                            @if (IsLong(property))
+                            @if (field == DiseaseCategories.FieldName)
+                            {
+                                @DiseaseCategories.RenderSelect(value)
+                            }
+                            else if (IsLong(property))
                             {
                                 <textarea class="form-control"
                                           name="@field"
@@ -103,4 +107,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/disease-category.js" asp-append-version="true"></script>
 }

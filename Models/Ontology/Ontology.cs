@@ -18,6 +18,7 @@ namespace Pidar.Models.Ontology
         public string? NcitImagingModality { get; set; }         // was NcitImaging
         public string? NcitImagingSubmodality { get; set; }      // same
         public string? UberonOrganOrTissue { get; set; }         // was NcitAnatomy
+        public string? DoidDiseaseCategory { get; set; }         // DOID of the disease category
         public string? DoidDiseaseModel { get; set; }            // was Doid
         public string? NcitSpecies { get; set; }                 // same
         public string? EfoStrain { get; set; }                   // was NcitStrain

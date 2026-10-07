@@ -7,6 +7,7 @@ public static class ExportLabelMap
         { "DisplayId", "Dataset ID" },
         { "OverallSampleSize", "Sample size" },
         { "OrganOrTissue", "Organ/Tissue" },
+        { "DiseaseCategory", "Disease category" },
         { "DiseaseModel", "Disease model" },
         { "ImagingModality", "Imaging modality" },
         { "PaperTitle", "Paper title" },
