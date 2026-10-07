@@ -360,6 +360,8 @@ namespace Pidar.Controllers
         [Route("Create")]
         public async Task<IActionResult> Create(DatasetCreateViewModel vm)
         {
+            NormaliseModality(vm);
+
             if (!ModelState.IsValid)
                 return View(vm);
 
@@ -403,6 +405,13 @@ namespace Pidar.Controllers
             }
         }
 
+        // Imaging Modality is saved in the standard form: "PET/CT, MRI" (+ items not in the 12 groups)
+        private static void NormaliseModality(DatasetCreateViewModel vm)
+        {
+            if (vm.StudyComponent != null)
+                vm.StudyComponent.ImagingModality = ImagingModalityGroups.ToStoredValue(vm.StudyComponent.ImagingModality);
+        }
+
         // ===============================================================
         // EDIT (GET)
         // ===============================================================
@@ -444,6 +453,8 @@ namespace Pidar.Controllers
         {
             if (id != vm.Dataset.DatasetId)
                 return NotFound();
+
+            NormaliseModality(vm);
 
             if (!ModelState.IsValid)
                 return View(vm);

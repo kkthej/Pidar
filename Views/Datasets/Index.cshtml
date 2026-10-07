@@ -164,6 +164,7 @@
                 </th>
 
                 <th>Imaging Modality</th>
+                <th class="text-nowrap">Modality Group</th>
                 <th>Institution</th>
                 <th>Facility</th>
                 <th>Species</th>
@@ -197,6 +198,14 @@
 
                     <!-- NESTED FROM CHILD TABLES -->
                     <td>@GetNestedSafe(ds, "StudyComponent.ImagingModality")</td>
+                    <td class="text-nowrap">
+                        @foreach (var g in Pidar.Helpers.ImagingModalityGroups.Classify(ds.StudyComponent?.ImagingModality))
+                        {
+                            var known = g != Pidar.Helpers.ImagingModalityGroups.Other;
+                            <span class="badge @(known ? "text-bg-primary" : "text-bg-secondary") me-1"
+                                  title="@(known ? Pidar.Helpers.ImagingModalityGroups.FullNames[g] : "Not one of the 12 groups")">@g</span>
+                        }
+                    </td>
                     <td>@GetNestedSafe(ds, "DatasetInfo.Institution")</td>
                     <td>@GetNestedSafe(ds, "DatasetInfo.ImagingFacility")</td>
                     <td>@GetNestedSafe(ds, "InVivo.Species")</td>
