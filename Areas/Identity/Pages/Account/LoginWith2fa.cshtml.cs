@@ -102,7 +102,8 @@ namespace Pidar.Areas.Identity.Pages.Account
 
             var authenticatorCode = Input.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
 
-            var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, rememberMe, Input.RememberMachine);
+            // isPersistent: false — closing the browser signs the user out
+            var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, isPersistent: false, Input.RememberMachine);
 
             var userId = await _userManager.GetUserIdAsync(user);
 
