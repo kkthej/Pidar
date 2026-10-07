@@ -143,7 +143,21 @@ builder.Services.AddHangfireServer();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient<Pidar.Services.Xnat.IXnatMultiService, Pidar.Services.Xnat.XnatMultiService>();
 
+// PIDAR runs behind a reverse proxy that terminates HTTPS. Trust its X-Forwarded-Proto/For
+// headers so generated links (password reset, confirmation) use https:// and the real host.
+builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                       | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    // The proxy reaches the container through the Docker network, whose address isn't fixed
+    o.KnownNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+// Must run first, before anything that reads Request.Scheme
+app.UseForwardedHeaders();
 // Simple health endpoint
 app.MapHealthChecks("/health");
 

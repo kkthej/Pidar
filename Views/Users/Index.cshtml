@@ -74,7 +74,7 @@
                         @if (u.IsSelf) { <span class="badge bg-secondary ms-1">you</span> }
                         @if (!u.EmailConfirmed) { <span class="badge bg-warning text-dark ms-1" title="Email never confirmed">unconfirmed</span> }
                     </td>
-                    <td style="min-width:170px">
+                    <td style="min-width:210px">
                         <form asp-action="SetRole" method="post" class="d-flex gap-1">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@u.Id" />
@@ -86,7 +86,7 @@
                             </select>
                             @if (!u.IsSelf)
                             {
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Save</button>
                             }
                         </form>
                     </td>
