@@ -1,5 +1,6 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 
@@ -21,6 +22,8 @@ public sealed class SmtpOptions
     /// <summary>Sender address. For Gmail this must be the Gmail account (or a verified alias).</summary>
     public string? From { get; set; }
     public string FromName { get; set; } = "PIDAR";
+    /// <summary>Optional Reply-To, e.g. a real inbox, so replies and bounces don't go to a no-reply address.</summary>
+    public string? ReplyTo { get; set; }
 
     /// <summary>Host and a sender address are enough; User/Password are optional (internal relays often need no login).</summary>
     public bool IsConfigured =>
@@ -56,14 +59,21 @@ public sealed class SmtpEmailSender : IEmailSender
             return;
         }
 
-        using var message = new MailMessage
-        {
-            From = new MailAddress((_options.From ?? _options.User)!, _options.FromName),
-            Subject = subject,
-            Body = htmlMessage,
-            IsBodyHtml = true
-        };
+        var from = new MailAddress((_options.From ?? _options.User)!, _options.FromName);
+
+        // Build a "normal looking" message: plain-text + HTML alternatives, Message-ID and
+        // Reply-To. HTML-only mail with a link and no Message-ID is often dropped by Gmail.
+        using var message = new MailMessage { From = from, Subject = subject };
         message.To.Add(email);
+        message.Headers.Add("Message-ID", $"<{Guid.NewGuid():N}@{from.Host}>");
+        if (!string.IsNullOrWhiteSpace(_options.ReplyTo))
+            message.ReplyToList.Add(new MailAddress(_options.ReplyTo));
+
+        var text = HtmlToText(htmlMessage);
+        message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
+            text, System.Text.Encoding.UTF8, MediaTypeNames.Text.Plain));
+        message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
+            WrapHtml(htmlMessage), System.Text.Encoding.UTF8, MediaTypeNames.Text.Html));
 
         using var client = new SmtpClient(_options.Host, _options.Port)
         {
@@ -84,4 +94,22 @@ public sealed class SmtpEmailSender : IEmailSender
             throw;
         }
     }
+
+    // Plain-text version: links become "text: url", tags removed
+    private static string HtmlToText(string html)
+    {
+        var t = System.Text.RegularExpressions.Regex.Replace(html,
+            "<a\\s[^>]*href\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>(.*?)</a>", "$2: $1",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+        t = System.Text.RegularExpressions.Regex.Replace(t, "</p>|<br\\s*/?>", "\n\n",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        t = System.Text.RegularExpressions.Regex.Replace(t, "<[^>]+>", "");
+        t = System.Net.WebUtility.HtmlDecode(t);
+        return System.Text.RegularExpressions.Regex.Replace(t, "\n{3,}", "\n\n").Trim() + "\n";
+    }
+
+    private static string WrapHtml(string body) =>
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head>" +
+        "<body style=\"font-family:Arial,sans-serif;font-size:14px;color:#222\">" + body +
+        "<p style=\"color:#888;font-size:12px\">PIDAR - Preclinical Image DAtaset Repository</p></body></html>";
 }
