@@ -1,0 +1,214 @@
+@model Pidar.Controllers.SynonymsController.PageModel
+@using Pidar.Controllers
+@{
+    ViewData["Title"] = "Synonyms";
+    var q = Model.Query;
+}
+
+<style>
+    .syn-chip { display: inline-flex; align-items: center; gap: .25rem; border: 1px solid var(--bs-border-color);
+                border-radius: 999px; padding: .2rem .35rem .2rem .75rem; background: var(--bs-tertiary-bg);
+                max-width: 100%; }
+    .syn-chip .syn-text { overflow-wrap: anywhere; }
+    .syn-chip .btn-icon { border: 0; background: none; padding: 0 .3rem; line-height: 1; color: var(--bs-secondary-color); }
+    .syn-chip .btn-icon:hover { color: var(--bs-emphasis-color); }
+    .syn-chip .btn-icon.del:hover { color: var(--bs-danger); }
+    .syn-edit { display: inline-flex; gap: .25rem; max-width: 100%; }
+    .syn-edit input { min-width: 12rem; }
+    .code-card { scroll-margin-top: 90px; }
+    .code-card:target { box-shadow: 0 0 0 .2rem rgba(13,110,253,.35); }
+</style>
+
+<div class="text-center mb-4">
+    <h2 class="mb-1">Ontology synonyms</h2>
+    <p class="text-muted small mb-0">
+        Synonyms let the search bar find datasets by other names: searching <em>brain</em> also finds datasets tagged
+        <code>UBERON:0000955</code>. @Model.TotalSynonyms synonyms for @Model.TotalCodes codes.
+    </p>
+</div>
+
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @msg <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        @err <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <!-- Add synonyms -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold"><i class="bi bi-plus-circle me-1"></i> Add synonyms</div>
+            <div class="card-body">
+                <form asp-action="Add" method="post" id="add-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="q" value="@q" />
+                    <div class="mb-2">
+                        <label for="add-code" class="form-label small mb-1">Ontology code</label>
+                        <input id="add-code" name="code" class="form-control" list="known-codes"
+                               placeholder="e.g. UBERON:0000955" autocomplete="off" required />
+                        <datalist id="known-codes">
+                            @foreach (var c in Model.KnownCodes) { <option value="@c"></option> }
+                        </datalist>
+                    </div>
+                    <div class="mb-2">
+                        <label for="add-synonyms" class="form-label small mb-1">Synonyms — one per line, or separated by <code>;</code></label>
+                        <textarea id="add-synonyms" name="synonyms" class="form-control" rows="3"
+                                  placeholder="brain&#10;encephalon&#10;cerebrum" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Add</button>
+                    <span class="text-muted small ms-2">Existing synonyms are skipped automatically.</span>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold"><i class="bi bi-funnel me-1"></i> Find</div>
+            <div class="card-body">
+                <form asp-action="Index" method="get" class="d-flex gap-2">
+                    <input name="q" value="@q" class="form-control" placeholder="Code or synonym, e.g. brain" />
+                    <button type="submit" class="btn btn-outline-primary">Filter</button>
+                    @if (!string.IsNullOrEmpty(q))
+                    {
+                        <a asp-action="Index" class="btn btn-outline-secondary" title="Clear filter">Clear</a>
+                    }
+                </form>
+                <p class="text-muted small mt-2 mb-0">
+                    Showing @Model.Groups.Count code@(Model.Groups.Count == 1 ? "" : "s") with synonyms@(string.IsNullOrEmpty(q) ? "" : $" matching “{q}”").
+                    @if (Model.CodesWithoutSynonyms.Count > 0)
+                    {
+                        <br /><a href="#without-synonyms">@Model.CodesWithoutSynonyms.Count code@(Model.CodesWithoutSynonyms.Count == 1 ? "" : "s") used in datasets have no synonyms yet</a>
+                    }
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Codes with synonyms -->
+@if (Model.Groups.Count == 0)
+{
+    <p class="text-center text-muted">No synonyms@(string.IsNullOrEmpty(q) ? "" : $" match “{q}”").</p>
+}
+
+@foreach (var g in Model.Groups)
+{
+    <div class="card shadow-sm mb-3 code-card" id="code-@SynonymsController.Anchor(g.Code)">
+        <div class="card-header d-flex flex-wrap align-items-center gap-2">
+            @if (g.Url != null)
+            {
+                <a href="@g.Url" target="_blank" rel="noopener" class="badge bg-primary text-decoration-none fs-6" title="Open in the ontology browser">@g.Code</a>
+            }
+            else
+            {
+                <span class="badge bg-secondary fs-6">@g.Code</span>
+            }
+            <span class="text-muted small">
+                @if (g.DatasetCount > 0) { <text>used in @g.DatasetCount dataset@(g.DatasetCount == 1 ? "" : "s")</text> }
+                else { <text>not used in any dataset</text> }
+                · @g.Synonyms.Count synonym@(g.Synonyms.Count == 1 ? "" : "s")
+            </span>
+            <form asp-action="DeleteCode" method="post" class="ms-auto"
+                  onsubmit="return confirm('Delete all @g.Synonyms.Count synonyms of @g.Code? The code itself stays in the datasets.');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="code" value="@g.Code" />
+                <input type="hidden" name="q" value="@q" />
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete all synonyms of this code">
+                    <i class="bi bi-trash"></i><span class="d-none d-sm-inline"> Delete all</span>
+                </button>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @foreach (var s in g.Synonyms)
+                {
+                    <!-- chip (view mode) -->
+                    <span class="syn-chip" id="chip-@s.Id">
+                        <span class="syn-text">@s.Text</span>
+                        <button type="button" class="btn-icon" title="Edit" onclick="synEdit(@s.Id)"><i class="bi bi-pencil"></i></button>
+                        <form asp-action="Delete" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete “' + this.dataset.text + '”?');" data-text="@s.Text">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@s.Id" />
+                            <input type="hidden" name="q" value="@q" />
+                            <button type="submit" class="btn-icon del" title="Delete"><i class="bi bi-x-lg"></i></button>
+                        </form>
+                    </span>
+                    <!-- edit mode -->
+                    <form asp-action="Update" method="post" class="syn-edit d-none" id="edit-@s.Id">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@s.Id" />
+                        <input type="hidden" name="q" value="@q" />
+                        <input name="synonym" value="@s.Text" class="form-control form-control-sm" required
+                               onkeydown="if (event.key === 'Escape') synCancel(@s.Id)" />
+                        <button type="submit" class="btn btn-sm btn-primary" title="Save"><i class="bi bi-check-lg"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Cancel" onclick="synCancel(@s.Id)"><i class="bi bi-x-lg"></i></button>
+                    </form>
+                }
+            </div>
+
+            <!-- quick add to this code -->
+            <form asp-action="Add" method="post" class="d-flex gap-2" style="max-width: 32rem;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="code" value="@g.Code" />
+                <input type="hidden" name="q" value="@q" />
+                <input name="synonyms" class="form-control form-control-sm" placeholder="Add synonym(s), separate with ;" required />
+                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap"><i class="bi bi-plus-lg"></i> Add</button>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Codes used in datasets without synonyms -->
+@if (Model.CodesWithoutSynonyms.Count > 0)
+{
+    <h5 class="mt-5 mb-2" id="without-synonyms">Codes used in datasets without synonyms</h5>
+    <p class="text-muted small">These codes can only be found by typing the code itself. Add synonyms so people can find them by name.</p>
+    <div class="list-group mb-4">
+        @foreach (var c in Model.CodesWithoutSynonyms)
+        {
+            <div class="list-group-item d-flex flex-wrap align-items-center gap-2">
+                @if (c.Url != null)
+                {
+                    <a href="@c.Url" target="_blank" rel="noopener" class="badge bg-light text-dark border text-decoration-none">@c.Code</a>
+                }
+                else
+                {
+                    <span class="badge bg-light text-dark border">@c.Code</span>
+                }
+                <span class="small text-muted">@c.Categories · @c.DatasetCount dataset@(c.DatasetCount == 1 ? "" : "s")</span>
+                <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="synPrefill('@c.Code')">
+                    <i class="bi bi-plus-lg"></i> Add synonyms
+                </button>
+            </div>
+        }
+    </div>
+}
+
+<script>
+    function synEdit(id) {
+        document.getElementById('chip-' + id).classList.add('d-none');
+        const form = document.getElementById('edit-' + id);
+        form.classList.remove('d-none');
+        const input = form.querySelector('input[name=synonym]');
+        input.focus(); input.select();
+    }
+    function synCancel(id) {
+        document.getElementById('edit-' + id).classList.add('d-none');
+        document.getElementById('chip-' + id).classList.remove('d-none');
+    }
+    function synPrefill(code) {
+        document.getElementById('add-code').value = code;
+        document.getElementById('add-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => document.getElementById('add-synonyms').focus(), 300);
+    }
+</script>
