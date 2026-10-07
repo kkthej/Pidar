@@ -138,12 +138,26 @@ namespace Pidar.Controllers
         }
 
         // ===============================================================
+        // SEARCH SUGGESTIONS (autocomplete) — GET /Datasets/Suggest?field=organ&q=mam
+        // ===============================================================
+        [HttpGet("Suggest")]
+        public async Task<IActionResult> Suggest(string? field, string? q)
+        {
+            if (string.IsNullOrWhiteSpace(q) || q.Length > 100)
+                return Json(Array.Empty<object>());
+
+            var items = await _ontologySearch.SuggestAsync(field, q);
+            return Json(items.Select(i => new { text = i.Text, hint = i.Hint }));
+        }
+
+        // ===============================================================
         // SEARCH RESULTS
         // ===============================================================
         [Route("SearchResults")]
         public async Task<IActionResult> ShowSearchResults(
             string? SearchPhrase,
             string? sortOrder,
+            string? SearchField,
             int pageNumber = 1)
         {
             const int pageSize = 10;
@@ -161,7 +175,10 @@ namespace Pidar.Controllers
                 .AsNoTracking();
 
             // Every word must match a text field or an ontology code (see OntologySearchService)
-            query = await _ontologySearch.ApplySearchAsync(query, SearchPhrase);
+            var field = OntologySearchService.GetField(SearchField);
+            query = await _ontologySearch.ApplySearchAsync(query, SearchPhrase, field.Key);
+            ViewData["SearchField"] = field.Key;
+            ViewData["CurrentSort"] = sortOrder;
 
             // Sorting
             query = sortOrder switch
