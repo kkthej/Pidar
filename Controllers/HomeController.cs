@@ -49,129 +49,23 @@ namespace Pidar.Controllers
         {
             ViewData["ActivePage"] = "Statistic";
 
-            // ------------------------------
-            // BASIC COUNTS
-            // ------------------------------
-            ViewData["DatasetCount"] = await _context.Datasets.CountAsync();
-
-            // Total sample size (InVivo)
-            var sampleSizes = await _context.InVivos
-                .Select(v => v.OverallSampleSize)
+            // One small row per dataset; all counting is done in Helpers/StatisticsBuilder.cs
+            var rows = await _context.Datasets.AsNoTracking()
+                .Select(d => new Pidar.Helpers.StatisticsBuilder.Row(
+                    d.StudyComponent != null ? d.StudyComponent.ImagingModality : null,
+                    d.InVivo != null ? d.InVivo.DiseaseCategory : null,
+                    d.InVivo != null ? d.InVivo.OrganOrTissue : null,
+                    d.InVivo != null ? d.InVivo.Species : null,
+                    d.InVivo != null ? d.InVivo.OverallSampleSize : null,
+                    d.InVivo != null ? d.InVivo.Sex : null,
+                    d.DatasetInfo != null ? d.DatasetInfo.CountryOfImagingFacility : null,
+                    d.DatasetInfo != null ? d.DatasetInfo.DatasetAccess : null,
+                    d.Analyzed != null ? d.Analyzed.Status : null,
+                    d.Analyzed != null ? d.Analyzed.UpdatedYear : null,
+                    d.Publication != null ? d.Publication.PaperLinked : null))
                 .ToListAsync();
 
-            int totalSampleSize = 0;
-            foreach (var s in sampleSizes)
-            {
-                if (!string.IsNullOrWhiteSpace(s) &&
-                    int.TryParse(s.Replace(",", ""), out int parsed))
-                    totalSampleSize += parsed;
-            }
-            ViewData["TotalSampleSize"] = totalSampleSize;
-
-            // Column count of Dataset table only (not sub-tables)
-            var datasetEntityType = _context.Model.FindEntityType(typeof(Dataset));
-            ViewData["TableColumnCount"] = datasetEntityType?.GetProperties().Count() ?? 0;
-
-            // ============================================================
-            // -------------------- CHART DATA -----------------------------
-            // ============================================================
-
-            // 1) IMAGING MODALITY
-            var modalityRaw = await _context.StudyComponents
-                .Where(sc => sc.ImagingModality != null && sc.ImagingModality.Trim() != "")
-                .Select(sc => sc.ImagingModality!)
-                .ToListAsync();
-
-            // Standard groups (CT, PET, PET/CT, SPECT, …, MPI); a dataset counts once in each group it contains
-            var modalityGroups = modalityRaw
-                .SelectMany(m => Pidar.Helpers.ImagingModalityGroups.Classify(m))
-                .GroupBy(g => g)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            var modalityCounts = Pidar.Helpers.ImagingModalityGroups.All
-                .Append(Pidar.Helpers.ImagingModalityGroups.Other)
-                .Where(g => modalityGroups.ContainsKey(g))
-                .Select(g => new { Label = g, Count = modalityGroups[g] })
-                .ToList();
-
-            ViewData["ModalityDistribution"] = JsonSerializer.Serialize(modalityCounts);
-
-            // 2) COUNTRY OF IMAGING FACILITY
-            var countryCounts = await _context.DatasetInfos
-                .Where(i => !string.IsNullOrWhiteSpace(i.CountryOfImagingFacility))
-                .GroupBy(i => i.CountryOfImagingFacility)
-                .Select(g => new
-                {
-                    Country = g.Key!.Trim(), // null/blank filtered out by the Where above
-                    Count = g.Count()
-                })
-                .OrderByDescending(x => x.Count)
-                .Take(10)
-                .AsNoTracking()
-                .ToListAsync();
-
-            ViewData["CountryDistribution"] = JsonSerializer.Serialize(countryCounts);
-
-            // 3a) MAIN DISEASE CATEGORY — all eight categories in the agreed order (zero included),
-            //     plus any older value that is not in the list
-            var categoryRaw = await _context.InVivos
-                .Where(v => v.DiseaseCategory != null && v.DiseaseCategory.Trim() != "")
-                .Select(v => v.DiseaseCategory!)
-                .ToListAsync();
-
-            var categoryByLabel = categoryRaw
-                .GroupBy(c => Pidar.Helpers.DiseaseCategories.Find(c)?.Label ?? c.Trim())
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            var categoryCounts = Pidar.Helpers.DiseaseCategories.All
-                .Select(o => new { Category = o.Label, Count = categoryByLabel.GetValueOrDefault(o.Label) })
-                .Concat(categoryByLabel
-                    .Where(kv => Pidar.Helpers.DiseaseCategories.Find(kv.Key) == null)
-                    .Select(kv => new { Category = kv.Key + " (not in list)", Count = kv.Value }))
-                .ToList();
-
-            ViewData["DiseaseCategoryDistribution"] = JsonSerializer.Serialize(categoryCounts);
-
-            // 3) DISEASE MODEL
-            var diseaseCounts = await _context.InVivos
-                .Where(v => v.DiseaseModel != null && v.DiseaseModel.Trim() != "")
-                .GroupBy(v => v.DiseaseModel!.Trim())
-                .Select(g => new { Disease = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
-                .Take(10)
-                .ToListAsync();
-
-            ViewData["DiseaseModelDistribution"] = JsonSerializer.Serialize(diseaseCounts);
-
-            // 4) ORGAN / TISSUE
-            var organsRaw = await _context.InVivos
-                .Where(v => v.OrganOrTissue != null && v.OrganOrTissue.Trim() != "")
-                .Select(v => v.OrganOrTissue!)
-                .ToListAsync();
-
-            var organCounts = organsRaw
-                .SelectMany(o => o.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                .Select(o => o.Trim())
-                .Where(o => o != "")
-                .GroupBy(o => o)
-                .Select(g => new { Organ = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
-                .Take(10)
-                .ToList();
-
-            ViewData["OrganDistribution"] = JsonSerializer.Serialize(organCounts);
-
-            // 5) YEARLY UPLOADS
-            var yearlyUploads = await _context.Analyzed
-                .Where(a => a.UpdatedYear != null)
-                .GroupBy(a => a.UpdatedYear)
-                .Select(g => new { Year = g.Key, Count = g.Count() })
-                .OrderBy(x => x.Year)
-                .ToListAsync();
-
-            ViewData["YearlyUploads"] = JsonSerializer.Serialize(yearlyUploads);
-
-            return View();
+            return View(Pidar.Helpers.StatisticsBuilder.Build(rows));
         }
 
         // -------------------------
