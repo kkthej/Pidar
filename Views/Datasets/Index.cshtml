@@ -84,6 +84,17 @@
 
 
 
+@{
+    // Keep the search (phrase + field) on the results page, in sort links and in pagination
+    var currentSearchPhrase = Context.Request.Query["SearchPhrase"].ToString();
+    var currentSearchField = (ViewData["SearchField"] as string) ?? Context.Request.Query["SearchField"].ToString();
+    if (string.IsNullOrEmpty(currentSearchField)) { currentSearchField = "all"; }
+    var isSearch = !string.IsNullOrWhiteSpace(currentSearchPhrase);
+    var listAction = isSearch ? "ShowSearchResults" : "Index";
+    string? routePhrase = isSearch ? currentSearchPhrase : null;
+    string? routeField = isSearch ? currentSearchField : null;
+}
+
 <!-- ---------------- SEARCH + CREATE ---------------- -->
 <div class="row justify-content-between align-items-center mb-2">
 
@@ -97,17 +108,26 @@
         </div>
     }
 
-    <!-- Right side (always visible, never stretched) -->
-    <div class="col-auto ms-auto">
-        <form method="get" class="form-inline" action="/Datasets/SearchResults">
+    <!-- Right side: search with field selector + suggestions -->
+    <div class="col-12 col-md-auto ms-auto mt-2 mt-md-0">
+        <form method="get" action="/Datasets/SearchResults" id="search-form" autocomplete="off" role="search">
             <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />
-            <div class="input-group">
-                <input name="SearchPhrase"
-                       id="SearchPhrase"
-                       class="form-control"
-                       placeholder="Enter search phrase"
-                       value="@Context.Request.Query["SearchPhrase"]" />
-                <button type="submit" class="btn btn-primary">Search</button>
+            <div class="input-group search-box">
+                <select name="SearchField" id="SearchField" class="form-select search-field" aria-label="Search in">
+                    @foreach (var f in Pidar.Services.OntologySearchService.Fields)
+                    {
+                        <option value="@f.Key" data-placeholder="@f.Placeholder"
+                                selected="@(f.Key == currentSearchField ? "selected" : null)">@f.Label</option>
+                    }
+                </select>
+                <div class="search-input-wrap">
+                    <input name="SearchPhrase" id="SearchPhrase" class="form-control"
+                           placeholder="@Pidar.Services.OntologySearchService.GetField(currentSearchField).Placeholder"
+                           value="@currentSearchPhrase"
+                           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions" />
+                    <ul id="search-suggestions" class="search-suggestions list-unstyled shadow" role="listbox" hidden></ul>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i><span class="d-none d-sm-inline"> Search</span></button>
             </div>
         </form>
     </div>
@@ -124,8 +144,10 @@
         <thead class="table-light">
             <tr>
                 <th>
-                    <a asp-action="Index"
-                       asp-route-sortOrder="@ViewData["DisplayIdSortParam"]">
+                    <a asp-action="@listAction"
+                       asp-route-sortOrder="@ViewData["DisplayIdSortParam"]"
+                       asp-route-SearchPhrase="@routePhrase"
+                       asp-route-SearchField="@routeField">
 
                         Dataset ID
 
@@ -248,7 +270,9 @@
             {
                 <li class="page-item">
                     <a class="page-link"
-                       asp-action="Index"
+                       asp-action="@listAction"
+                       asp-route-SearchPhrase="@routePhrase"
+                       asp-route-SearchField="@routeField"
                        asp-route-pageNumber="@(Model.PageIndex - 1)"
                        asp-route-sortOrder="@ViewBag.CurrentSort">&laquo;</a>
                 </li>
@@ -258,7 +282,9 @@
             {
                 <li class="page-item @(i == Model.PageIndex ? "active" : "")">
                     <a class="page-link"
-                       asp-action="Index"
+                       asp-action="@listAction"
+                       asp-route-SearchPhrase="@routePhrase"
+                       asp-route-SearchField="@routeField"
                        asp-route-pageNumber="@i"
                        asp-route-sortOrder="@ViewBag.CurrentSort">@i</a>
                 </li>
@@ -268,7 +294,9 @@
             {
                 <li class="page-item">
                     <a class="page-link"
-                       asp-action="Index"
+                       asp-action="@listAction"
+                       asp-route-SearchPhrase="@routePhrase"
+                       asp-route-SearchField="@routeField"
                        asp-route-pageNumber="@(Model.PageIndex + 1)"
                        asp-route-sortOrder="@ViewBag.CurrentSort">&raquo;</a>
                 </li>
@@ -277,3 +305,114 @@
         </ul>
     </nav>
 </div>
+
+<style>
+    .search-box { flex-wrap: nowrap; }
+    .search-box .search-field { flex: 0 0 auto; width: auto; max-width: 11rem; }
+    .search-input-wrap { position: relative; flex: 1 1 auto; min-width: 14rem; }
+    .search-input-wrap .form-control { border-radius: 0; height: 100%; }
+    .search-suggestions { position: absolute; top: calc(100% + 2px); left: 0; z-index: 1050; margin: 0;
+                          min-width: 100%; width: max-content; max-width: min(34rem, calc(100vw - 2rem));
+                          background: var(--bs-body-bg); border: 1px solid var(--bs-border-color);
+                          border-radius: .375rem; max-height: 22rem; overflow-y: auto; text-align: left; }
+    .search-suggestions li { padding: .45rem .75rem; cursor: pointer; display: flex; justify-content: space-between;
+                             gap: .75rem; align-items: baseline; }
+    .search-suggestions li.active, .search-suggestions li:hover { background: var(--bs-primary-bg-subtle); }
+    .search-suggestions .s-text { overflow-wrap: break-word; min-width: 0; }
+    .search-suggestions .s-text strong { color: var(--bs-primary-text-emphasis); }
+    .search-suggestions .s-hint { color: var(--bs-secondary-color); font-size: .8rem; white-space: nowrap; }
+    .search-suggestions li.empty { cursor: default; color: var(--bs-secondary-color); }
+    @@media (max-width: 575.98px) {
+        .search-box .search-field { max-width: 8.5rem; }
+        .search-input-wrap { min-width: 0; }
+        .search-suggestions { width: auto; right: 0; }
+        .search-suggestions li { flex-direction: column; gap: 0; }
+        .search-suggestions .s-hint { white-space: normal; }
+    }
+</style>
+
+<script>
+(function () {
+    const form = document.getElementById('search-form');
+    const input = document.getElementById('SearchPhrase');
+    const field = document.getElementById('SearchField');
+    const list = document.getElementById('search-suggestions');
+    if (!form || !input || !field || !list) return;
+
+    let items = [], active = -1, timer = null, lastKey = '';
+
+    // Bold the part that matches the typed text at the start of a word (built with text nodes: no HTML injection)
+    function render(text, q) {
+        const span = document.createElement('span');
+        span.className = 's-text';
+        const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp('(^|[^\\p{L}\\p{N}])(' + esc + ')', 'iu');
+        const m = re.exec(text);
+        if (!m) { span.textContent = text; return span; }
+        const start = m.index + m[1].length, end = start + m[2].length;
+        span.append(text.slice(0, start));
+        const b = document.createElement('strong'); b.textContent = text.slice(start, end); span.append(b);
+        span.append(text.slice(end));
+        return span;
+    }
+
+    function close() { list.hidden = true; input.setAttribute('aria-expanded', 'false'); active = -1; }
+
+    function show(data, q) {
+        items = data; active = -1; list.innerHTML = '';
+        if (!data.length) {
+            const li = document.createElement('li'); li.className = 'empty';
+            li.textContent = 'No suggestions — press Enter to search anyway';
+            list.append(li);
+        }
+        data.forEach((s, i) => {
+            const li = document.createElement('li');
+            li.id = 'sugg-' + i; li.setAttribute('role', 'option');
+            li.append(render(s.text, q));
+            const hint = document.createElement('span'); hint.className = 's-hint'; hint.textContent = s.hint;
+            li.append(hint);
+            li.addEventListener('mousedown', e => { e.preventDefault(); choose(i); });
+            list.append(li);
+        });
+        list.hidden = false; input.setAttribute('aria-expanded', 'true');
+    }
+
+    function highlight(i) {
+        [...list.children].forEach((li, j) => li.classList.toggle('active', j === i));
+        active = i;
+        if (i >= 0) { list.children[i].scrollIntoView({ block: 'nearest' }); input.setAttribute('aria-activedescendant', 'sugg-' + i); }
+        else input.removeAttribute('aria-activedescendant');
+    }
+
+    function choose(i) { input.value = items[i].text; close(); form.submit(); }
+
+    async function load() {
+        const q = input.value.trim();
+        const key = field.value + '|' + q;
+        if (q.length < 1) { close(); return; }
+        if (key === lastKey && !list.hidden) return;
+        lastKey = key;
+        try {
+            const r = await fetch('/Datasets/Suggest?field=' + encodeURIComponent(field.value) + '&q=' + encodeURIComponent(q));
+            if (!r.ok) return;
+            const data = await r.json();
+            if (input.value.trim() === q) show(data, q);   // ignore late answers
+        } catch (e) { /* suggestions are optional */ }
+    }
+
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(load, 150); });
+    input.addEventListener('focus', () => { if (input.value.trim()) load(); });
+    input.addEventListener('blur', () => setTimeout(close, 100));
+    input.addEventListener('keydown', e => {
+        if (list.hidden || !items.length) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); highlight((active + 1) % items.length); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active <= 0 ? items.length - 1 : active - 1); }
+        else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(active); }
+        else if (e.key === 'Escape') { close(); }
+    });
+    field.addEventListener('change', () => {
+        input.placeholder = field.selectedOptions[0].dataset.placeholder || '';
+        lastKey = ''; input.focus(); if (input.value.trim()) load();
+    });
+})();
+</script>
