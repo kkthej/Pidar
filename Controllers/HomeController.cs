@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Mapping;
@@ -100,7 +99,7 @@ namespace Pidar.Controllers
                 .GroupBy(i => i.CountryOfImagingFacility)
                 .Select(g => new
                 {
-                    Country = g.Key.Trim(),
+                    Country = g.Key!.Trim(), // null/blank filtered out by the Where above
                     Count = g.Count()
                 })
                 .OrderByDescending(x => x.Count)
