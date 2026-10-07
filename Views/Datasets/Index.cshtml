@@ -136,6 +136,31 @@
 
 
 
+@if (isSearch)
+{
+    var activeField = Pidar.Services.OntologySearchService.GetField(currentSearchField);
+    var shownCount = ViewData["DatasetCount"] as int? ?? 0;
+    var groupsInPhrase = currentSearchField == "modality"
+        ? Pidar.Helpers.ImagingModalityGroups.GroupsInPhrase(currentSearchPhrase)
+        : (IReadOnlyList<string>)Array.Empty<string>();
+    var alsoIncludes = groupsInPhrase.Count == 1
+        ? Pidar.Helpers.ImagingModalityGroups.Expand(groupsInPhrase[0]).Where(x => x != groupsInPhrase[0]).ToList()
+        : new List<string>();
+    <div class="filter-bar d-flex flex-wrap align-items-center gap-2 mb-3" role="status">
+        <span class="text-muted">Showing</span>
+        <strong>@shownCount @(shownCount == 1 ? "dataset" : "datasets")</strong>
+        <span class="text-muted">for</span>
+        <span class="filter-chip">
+            @(activeField.Key == "all" ? "" : activeField.Label + ":") <strong>@currentSearchPhrase</strong>
+            <a href="/Datasets/Index" class="filter-clear" title="Clear the filter and show all datasets" aria-label="Clear filter">&times;</a>
+        </span>
+        @if (alsoIncludes.Count > 0)
+        {
+            <span class="text-muted small">(also includes @string.Join(", ", alsoIncludes))</span>
+        }
+    </div>
+}
+
 <!-- ---------------- TABLE ---------------- -->
 
 
@@ -203,18 +228,28 @@
                     <td class="text-nowrap"
                         title="@(modalityText != null && modalityText != modalityStd ? "Written as: " + modalityText : null)">
                         @* one badge per group, in the standard order; text that fits no group shows in grey *@
+                        @* click a badge: list every dataset with that modality (CT also finds PET/CT and SPECT/CT) *@
                         @foreach (var g in (modalityStd ?? "").Split(", ", StringSplitOptions.RemoveEmptyEntries))
                         {
                             var known = Pidar.Helpers.ImagingModalityGroups.FullNames.TryGetValue(g, out var full);
-                            <span class="badge @(known ? "text-bg-primary" : "text-bg-secondary") me-1"
-                                  title="@(known ? full : "Not one of the 12 groups")">@g</span>
+                            var activeBadge = currentSearchField == "modality" && string.Equals(currentSearchPhrase.Trim(), g, StringComparison.OrdinalIgnoreCase);
+                            <a class="badge filter-badge @(known ? "text-bg-primary" : "text-bg-secondary") @(activeBadge ? "active" : "") me-1"
+                               asp-action="ShowSearchResults" asp-route-SearchField="modality" asp-route-SearchPhrase="@g"
+                               title="@(known ? full : "Not one of the 12 groups") · click to show only these datasets">@g</a>
                         }
                     </td>
                     <td>@GetNestedSafe(ds, "DatasetInfo.Institution")</td>
                     <td>@GetNestedSafe(ds, "DatasetInfo.ImagingFacility")</td>
                     <td>@GetNestedSafe(ds, "InVivo.Species")</td>
                     <td>@GetNestedSafe(ds, "InVivo.OverallSampleSize")</td>
-                    <td>@GetNestedSafe(ds, "InVivo.DiseaseCategory")</td>
+                    <td>
+                        @{ var categoryText = ds.InVivo?.DiseaseCategory?.Trim(); }
+                        @if (!string.IsNullOrEmpty(categoryText))
+                        {
+                            <a class="filter-link" asp-action="ShowSearchResults" asp-route-SearchField="category" asp-route-SearchPhrase="@categoryText"
+                               title="Click to show only datasets in this category">@categoryText</a>
+                        }
+                    </td>
                     <td>@GetNestedSafe(ds, "InVivo.DiseaseModel")</td>
                     <td>@GetNestedSafe(ds, "InVivo.OrganOrTissue")</td>
                     <td class="text-center">
@@ -324,6 +359,16 @@
 <style>
     .search-box { flex-wrap: nowrap; }
     .search-box .search-field { flex: 0 0 auto; width: auto; max-width: 11rem; }
+    .filter-badge { text-decoration: none; cursor: pointer; transition: filter .15s, box-shadow .15s; }
+    .filter-badge:hover, .filter-badge:focus { filter: brightness(.85); box-shadow: 0 0 0 2px rgba(13,110,253,.25); color: #fff; }
+    .filter-badge.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0d6efd; }
+    .filter-link { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
+    .filter-link:hover { color: #0d6efd; text-decoration: underline; }
+    .filter-chip { display: inline-flex; align-items: center; gap: .35rem; background: #e8f0fb; color: #1c5cab;
+                   border-radius: 999px; padding: .2rem .35rem .2rem .75rem; }
+    .filter-clear { display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem;
+                    border-radius: 50%; color: #1c5cab; text-decoration: none; font-size: 1.1rem; line-height: 1; }
+    .filter-clear:hover { background: #cfe0f7; color: #0b3d80; }
     .search-input-wrap { position: relative; flex: 1 1 auto; min-width: 14rem; }
     .search-input-wrap .form-control { border-radius: 0; height: 100%; }
     .search-suggestions { position: absolute; top: calc(100% + 2px); left: 0; z-index: 1050; margin: 0;

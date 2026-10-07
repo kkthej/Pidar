@@ -191,6 +191,17 @@ public sealed class OntologySearchService
         var textFields = field.Text ?? TextFields;
         var cats = field.Categories;
 
+        // Main Disease Category: a phrase that is one of the 8 categories ("Disease of metabolism",
+        // as sent by clicking the value in the dataset list) matches that category exactly, or its DOID.
+        if (field.Key == "category" && DiseaseCategories.Find(phrase) is { } category)
+        {
+            var label = category.Label.ToLower();
+            var doid = category.Doid;
+            return query.Where(ds =>
+                (ds.InVivo != null && ds.InVivo.DiseaseCategory != null && ds.InVivo.DiseaseCategory.Trim().ToLower() == label) ||
+                (doid != null && ds.Ontology != null && ds.Ontology.DoidDiseaseCategory == doid));
+        }
+
         var d = Expression.Parameter(typeof(Dataset), "d");
         var conditions = new List<Expression>();
 
