@@ -15,13 +15,14 @@
         var list = bars.ToList();
         var max = Math.Max(1, list.Count == 0 ? 1 : list.Max(b => b.Count));
         var sb = new System.Text.StringBuilder($"<div class=\"st-bars\" style=\"--lw:{labelWidth}px\">");
+        var index = 0;
         foreach (var b in list)
         {
             var label = System.Net.WebUtility.HtmlEncode(b.Label);
             var hint = System.Net.WebUtility.HtmlEncode(b.Hint ?? "");
             var width = b.Count == 0 ? 0 : Math.Max(2.0, b.Count * 100.0 / max);
             var tip = $"{label}: {b.Count} dataset{(b.Count == 1 ? "" : "s")}{(hint.Length > 0 && !hintInline ? " · " + hint : "")}";
-            sb.Append($"<div class=\"st-row{(b.Count == 0 ? " zero" : "")}\" title=\"{tip}\">");
+            sb.Append($"<div class=\"st-row{(b.Count == 0 ? " zero" : "")}\" style=\"--i:{index++}\" title=\"{tip}\">");
             sb.Append($"<div class=\"st-lab\">{label}{(hintInline && hint.Length > 0 ? $" <small>{hint}</small>" : "")}</div>");
             sb.Append($"<div class=\"st-track\"><div class=\"st-fill\" style=\"width:{width.ToString(System.Globalization.CultureInfo.InvariantCulture)}%\"></div></div>");
             sb.Append($"<div class=\"st-num\">{b.Count}</div></div>");
@@ -67,6 +68,29 @@
     .st-seg div:last-child { border-radius:0 4px 4px 0; }
     .st-legend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12.5px; color:var(--ink2); margin-top:6px; }
     .st-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+    /* ---- animation: bars grow in when their card scrolls into view; numbers count up ----
+       Only active when the script below has run (class st-anim), so without JavaScript
+       everything is simply shown. Turned off for "reduce motion" users. */
+    .st-anim .st-fill { transform-origin:left center; transform:scaleX(0); }
+    .st-anim .st-years .bar { transform-origin:center bottom; transform:scaleY(0); }
+    .st-anim .st-seg { transform-origin:left center; transform:scaleX(0); }
+    .st-anim .st-card.st-in .st-fill { animation:st-grow-x .9s cubic-bezier(.22,1,.36,1) forwards; animation-delay:calc(var(--i, 0) * 60ms); }
+    .st-anim .st-card.st-in .st-years .bar { animation:st-grow-y .9s cubic-bezier(.22,1,.36,1) forwards; animation-delay:calc(var(--i, 0) * 90ms); }
+    .st-anim .st-card.st-in .st-seg { animation:st-grow-x 1s cubic-bezier(.22,1,.36,1) forwards; animation-delay:calc(var(--i, 0) * 150ms); }
+    @@keyframes st-grow-x { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+    @@keyframes st-grow-y { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+    .st-card { transition:box-shadow .2s, transform .2s; }
+    .st-card:hover { box-shadow:0 6px 18px rgba(0,0,0,.07); }
+    .st-row, .st-years .c, .st-seg div { cursor:default; }
+    .st-fill, .st-years .bar { transition:filter .15s; }
+    .st-row:hover .st-fill, .st-years .c:hover .bar, .st-seg div:hover { filter:brightness(.85); }
+    .st-row:hover .st-lab { font-weight:600; }
+    .st-tip { position:fixed; z-index:1080; pointer-events:none; background:#1f1f1e; color:#fff; font-size:12.5px; line-height:1.35;
+              padding:6px 9px; border-radius:6px; box-shadow:0 4px 14px rgba(0,0,0,.18); max-width:280px; opacity:0; transition:opacity .12s; }
+    .st-tip.show { opacity:1; }
+    @@media (prefers-reduced-motion: reduce) {
+        .st-anim .st-fill, .st-anim .st-years .bar, .st-anim .st-seg { transform:none !important; animation:none !important; }
+    }
     @@media (max-width: 991.98px) { .st-kpis { grid-template-columns:repeat(3, 1fr); } }
     @@media (max-width: 767.98px) {
         .st-grid { grid-template-columns:1fr; }
@@ -84,12 +108,12 @@
 
     <!-- KEY NUMBERS -->
     <div class="st-kpis">
-        <div class="st-kpi"><div class="v">@Model.Datasets</div><div class="l">datasets</div><div class="h">in the repository</div></div>
-        <div class="st-kpi"><div class="v">@Model.Animals</div><div class="l">animals imaged</div><div class="h">sum of sample sizes</div></div>
-        <div class="st-kpi"><div class="v">@Model.Countries</div><div class="l">countries</div><div class="h">imaging facilities</div></div>
-        <div class="st-kpi"><div class="v">@Model.ModalitiesUsed<small>/@Model.ModalitiesTotal</small></div><div class="l">imaging modalities</div><div class="h">groups represented</div></div>
-        <div class="st-kpi"><div class="v">@Model.CategoriesUsed<small>/@Model.CategoriesTotal</small></div><div class="l">disease categories</div><div class="h">main categories covered</div></div>
-        <div class="st-kpi"><div class="v">@Model.WithPublication</div><div class="l">with a publication</div><div class="h">of @Model.Datasets datasets</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.Datasets">@Model.Datasets</span></div><div class="l">datasets</div><div class="h">in the repository</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.Animals">@Model.Animals</span></div><div class="l">animals imaged</div><div class="h">sum of sample sizes</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.Countries">@Model.Countries</span></div><div class="l">countries</div><div class="h">imaging facilities</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.ModalitiesUsed">@Model.ModalitiesUsed</span><small>/@Model.ModalitiesTotal</small></div><div class="l">imaging modalities</div><div class="h">groups represented</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.CategoriesUsed">@Model.CategoriesUsed</span><small>/@Model.CategoriesTotal</small></div><div class="l">disease categories</div><div class="h">main categories covered</div></div>
+        <div class="st-kpi"><div class="v"><span class="st-count" data-count="@Model.WithPublication">@Model.WithPublication</span></div><div class="l">with a publication</div><div class="h">of @Model.Datasets datasets</div></div>
     </div>
 
     <div class="st-grid">
@@ -132,10 +156,11 @@
         <div class="st-card">
             <h3>Study design &amp; sharing</h3>
             <div class="d">How datasets are described and shared</div>
+            @{ var si = 0; }
             @foreach (var (title, segs) in new[] { ("Sex of animals", Model.Sex), ("Data access", Model.Access), ("Study status", Model.Status) })
             {
                 var total = segs.Sum(s => s.Count);
-                <div class="st-seg-block">
+                <div class="st-seg-block" style="--i:@(si++)">
                     <div class="st-seg-head"><b>@title</b><span>@total datasets</span></div>
                     <div class="st-seg">
                         @for (var i = 0; i < segs.Count; i++)
@@ -165,9 +190,10 @@
             {
                 var maxYear = Math.Max(1, Model.Years.Max(y => y.Count));
                 <div class="st-years">
+                    @{ var yi = 0; }
                     @foreach (var y in Model.Years)
                     {
-                        <div class="c" title="@y.Label: @y.Count @(y.Count == 1 ? "dataset" : "datasets")">
+                        <div class="c" style="--i:@(yi++)" title="@y.Label: @y.Count @(y.Count == 1 ? "dataset" : "datasets")">
                             <div class="n">@y.Count</div>
                             <div class="bar" style="height:@((y.Count * 140 / maxYear).ToString())px"></div>
                         </div>
@@ -181,3 +207,62 @@
 
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            "use strict";
+            var page = document.querySelector(".st-page");
+            if (!page) return;
+            var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            // ---- bars grow in when each card becomes visible ----
+            var cards = page.querySelectorAll(".st-card");
+            if (!reduce && "IntersectionObserver" in window) {
+                page.classList.add("st-anim");
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) {
+                        if (e.isIntersecting) { e.target.classList.add("st-in"); io.unobserve(e.target); }
+                    });
+                }, { threshold: 0.15 });
+                cards.forEach(function (c) { io.observe(c); });
+            }
+
+            // ---- key numbers count up from 0 ----
+            if (!reduce) {
+                page.querySelectorAll(".st-count").forEach(function (el) {
+                    var target = parseInt(el.dataset.count, 10) || 0, start = null, dur = 1100;
+                    if (target <= 0) return;
+                    el.textContent = "0";
+                    function step(t) {
+                        if (start === null) start = t;
+                        var p = Math.min(1, (t - start) / dur), eased = 1 - Math.pow(1 - p, 3);
+                        el.textContent = Math.round(target * eased).toLocaleString();
+                        if (p < 1) requestAnimationFrame(step); else el.textContent = target.toLocaleString();
+                    }
+                    requestAnimationFrame(step);
+                });
+            }
+
+            // ---- tooltip (replaces the browser's slow native one) ----
+            var tip = document.createElement("div");
+            tip.className = "st-tip";
+            document.body.appendChild(tip);
+            page.querySelectorAll("[title]").forEach(function (el) {
+                el.dataset.tip = el.getAttribute("title");
+                el.removeAttribute("title");
+            });
+            page.addEventListener("mousemove", function (e) {
+                var el = e.target.closest("[data-tip]");
+                if (!el || !page.contains(el)) { tip.classList.remove("show"); return; }
+                tip.textContent = el.dataset.tip;
+                var x = e.clientX + 14, y = e.clientY + 16, w = tip.offsetWidth, h = tip.offsetHeight;
+                if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+                if (y + h > window.innerHeight - 8) y = e.clientY - h - 12;
+                tip.style.left = x + "px"; tip.style.top = y + "px";
+                tip.classList.add("show");
+            });
+            page.addEventListener("mouseleave", function () { tip.classList.remove("show"); });
+        })();
+    </script>
+}
