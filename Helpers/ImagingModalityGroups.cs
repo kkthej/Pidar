@@ -1,16 +1,21 @@
+using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Html;
 
 namespace Pidar.Helpers
 {
     /// <summary>
-    /// Classifies the free-text Imaging Modality of a dataset into the 12 standard groups agreed by the
-    /// PIDAR team (Dario Longo, 7 Oct 2026). Used by the Statistics page.
+    /// The 12 standard Imaging Modality groups agreed by the PIDAR team (Dario Longo, 7 Oct 2026),
+    /// used by the Create/Edit pick-list, the search ("Imaging Modality" field), the dataset list
+    /// and the Statistics page.
     ///
-    /// Rules:
-    ///   - the value is split into items on "," ";" " and " "+" (e.g. "PET/CT, MRI" → "PET/CT" and "MRI")
+    /// The value is still stored as text in StudyComponent.ImagingModality, e.g. "PET/CT, MRI".
+    /// Rules for reading a value:
+    ///   - split into items on "," ";" "+" " and "
     ///   - each item is normalised: full names → abbreviations ("Magnetic Resonance Imaging" → MRI,
     ///     "Optical Imaging" → OI, "photoacoustic" → OA, …), "PET-CT"/"PETCT" → PET/CT
-    ///   - a dataset counts once in every group it contains; items that fit no group count as "Other"
+    ///   - items that fit no group are kept as they are ("not in list")
+    /// wwwroot/js/imaging-modality.js holds the same rules for the browser: keep them in sync.
     /// </summary>
     public static class ImagingModalityGroups
     {
@@ -19,7 +24,24 @@ namespace Pidar.Helpers
             "CT", "PET", "PET/CT", "SPECT", "SPECT/CT", "MRI", "PET/MRI", "US", "OI", "OA", "EPRI", "MPI"
         };
 
+        public static readonly IReadOnlyDictionary<string, string> FullNames = new Dictionary<string, string>
+        {
+            ["CT"] = "Computed Tomography",
+            ["PET"] = "Positron Emission Tomography",
+            ["PET/CT"] = "PET combined with CT",
+            ["SPECT"] = "Single Photon Emission Computed Tomography",
+            ["SPECT/CT"] = "SPECT combined with CT",
+            ["MRI"] = "Magnetic Resonance Imaging",
+            ["PET/MRI"] = "PET combined with MRI",
+            ["US"] = "Ultrasound",
+            ["OI"] = "Optical Imaging",
+            ["OA"] = "Optoacoustic / Photoacoustic Imaging",
+            ["EPRI"] = "Electron Paramagnetic Resonance Imaging",
+            ["MPI"] = "Magnetic Particle Imaging",
+        };
+
         public const string Other = "Other";
+        public const string FieldName = "StudyComponent.ImagingModality";
 
         // Full names and variants → standard abbreviation (applied before grouping, case-insensitive)
         private static readonly (Regex Pattern, string Abbrev)[] Synonyms =
@@ -35,37 +57,127 @@ namespace Pidar.Helpers
             (new Regex(@"\bmagnetic\s+particle\s+imaging\b|\bmpi\b", RegexOptions.IgnoreCase), "MPI"),
         };
 
-        /// <summary>The groups one dataset belongs to, in the standard order (Other last).</summary>
-        public static IReadOnlyList<string> Classify(string? modality)
-        {
-            if (string.IsNullOrWhiteSpace(modality)) return Array.Empty<string>();
+        /// <summary>One item of a modality value: its group, or Group = null when it fits none.</summary>
+        public sealed record Item(string Text, string? Group);
 
-            var groups = new HashSet<string>();
+        /// <summary>"PET/CT, Magnetic Resonance Imaging, X-ray" → (PET/CT), (MRI), ("X-ray", not in list)</summary>
+        public static IReadOnlyList<Item> Parse(string? modality)
+        {
+            var result = new List<Item>();
+            if (string.IsNullOrWhiteSpace(modality)) return result;
+
             var items = Regex.Split(modality, @"\s*(?:,|;|\+|\band\b)\s*", RegexOptions.IgnoreCase)
-                             .Where(i => !string.IsNullOrWhiteSpace(i));
+                             .Select(i => Regex.Replace(i, @"\s+", " ").Trim().TrimEnd('.'))
+                             .Where(i => i.Length > 0);
 
             foreach (var item in items)
             {
                 // hybrids are written "PET/CT", "PET-CT", "PETCT", "PET CT"
                 var abbrevs = Normalise(item);
 
-                string? group = null;
-                if (abbrevs.Count == 2 && abbrevs.Contains("PET") && abbrevs.Contains("CT")) group = "PET/CT";
-                else if (abbrevs.Count == 2 && abbrevs.Contains("SPECT") && abbrevs.Contains("CT")) group = "SPECT/CT";
-                else if (abbrevs.Count == 2 && abbrevs.Contains("PET") && abbrevs.Contains("MRI")) group = "PET/MRI";
-                else if (abbrevs.Count == 1) group = abbrevs.First();
-                else if (abbrevs.Count > 1)
-                {
-                    foreach (var a in abbrevs) groups.Add(a);   // e.g. "MRI/OI" written as one item
-                    continue;
-                }
-
-                groups.Add(group ?? Other);
+                if (abbrevs.Count == 2 && abbrevs.Contains("PET") && abbrevs.Contains("CT")) result.Add(new(item, "PET/CT"));
+                else if (abbrevs.Count == 2 && abbrevs.Contains("SPECT") && abbrevs.Contains("CT")) result.Add(new(item, "SPECT/CT"));
+                else if (abbrevs.Count == 2 && abbrevs.Contains("PET") && abbrevs.Contains("MRI")) result.Add(new(item, "PET/MRI"));
+                else if (abbrevs.Count == 0) result.Add(new(item, null));
+                else foreach (var a in abbrevs) result.Add(new(item, a));   // one, or e.g. "MRI/OI" written as one item
             }
+            return result;
+        }
 
-            return All.Where(groups.Contains)
-                      .Concat(groups.Contains(Other) ? new[] { Other } : Array.Empty<string>())
-                      .ToList();
+        /// <summary>The groups one dataset belongs to, in the standard order ("Other" last if something fits no group).</summary>
+        public static IReadOnlyList<string> Classify(string? modality)
+        {
+            var items = Parse(modality);
+            var groups = items.Where(i => i.Group != null).Select(i => i.Group!).ToHashSet();
+            var list = All.Where(groups.Contains).ToList();
+            if (items.Any(i => i.Group == null)) list.Add(Other);
+            return list;
+        }
+
+        /// <summary>Items that fit no group, as written (shown as "not in list").</summary>
+        public static IReadOnlyList<string> Unmatched(string? modality) =>
+            Parse(modality).Where(i => i.Group == null).Select(i => i.Text)
+                           .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        /// <summary>
+        /// The value as it is saved: groups in the standard order, then the items that fit no group.
+        /// "Magnetic Resonance Imaging, pet-ct" → "PET/CT, MRI". Empty → null.
+        /// </summary>
+        public static string? ToStoredValue(string? modality)
+        {
+            var items = Parse(modality);
+            if (items.Count == 0) return null;
+            var groups = items.Where(i => i.Group != null).Select(i => i.Group!).ToHashSet();
+            var parts = All.Where(groups.Contains).Concat(Unmatched(modality));
+            var value = string.Join(", ", parts);
+            return value.Length == 0 ? null : value;
+        }
+
+        /// <summary>
+        /// The groups that satisfy a searched group: "PET" also matches PET/CT and PET/MRI;
+        /// a hybrid ("PET/CT") matches only itself.
+        /// </summary>
+        public static IReadOnlyList<string> Expand(string group) =>
+            group.Contains('/')
+                ? new[] { group }
+                : All.Where(g => g.Split('/').Contains(group)).ToList();
+
+        /// <summary>
+        /// The groups a search phrase stands for, when every part of it is a modality
+        /// ("MRI", "magnetic resonance imaging", "PET/CT, MRI"); otherwise empty.
+        /// </summary>
+        public static IReadOnlyList<string> GroupsInPhrase(string? phrase)
+        {
+            var items = Parse(phrase);
+            if (items.Count == 0 || items.Any(i => i.Group == null)) return Array.Empty<string>();
+            return items.Select(i => i.Group!).Distinct().ToList();
+        }
+
+        /// <summary>True when a dataset's modality value satisfies every searched group.</summary>
+        public static bool Matches(string? modality, IReadOnlyList<string> searchedGroups)
+        {
+            if (searchedGroups.Count == 0) return false;
+            var groups = Classify(modality);
+            return searchedGroups.All(s => Expand(s).Any(groups.Contains));
+        }
+
+        /// <summary>
+        /// The pick-list for Create/Edit: one toggle per group (several can be on), plus the items
+        /// of the current value that fit no group, kept as "not in list".
+        /// A hidden input carries the joined value; wwwroot/js/imaging-modality.js keeps it in sync.
+        /// </summary>
+        public static IHtmlContent RenderPicker(string? value)
+        {
+            static string E(string? x) => System.Net.WebUtility.HtmlEncode(x ?? "");
+            var selected = Classify(value).ToHashSet();
+            var unmatched = Unmatched(value);
+            var stored = ToStoredValue(value) ?? "";
+
+            var sb = new StringBuilder();
+            sb.Append("<div class=\"modality-picker\" id=\"imaging-modality-picker\">");
+            sb.Append($"<input type=\"hidden\" name=\"{FieldName}\" id=\"imaging-modality\" value=\"{E(stored)}\" />");
+            sb.Append("<div class=\"d-flex flex-wrap gap-2\" role=\"group\" aria-label=\"Imaging modality groups\">");
+            var n = 0;
+            foreach (var g in All)
+            {
+                var id = $"modality-opt-{n++}";
+                var on = selected.Contains(g) ? " checked" : "";
+                sb.Append($"<input type=\"checkbox\" class=\"btn-check modality-opt\" id=\"{id}\" value=\"{E(g)}\" autocomplete=\"off\"{on}>");
+                sb.Append($"<label class=\"btn btn-sm btn-outline-primary\" for=\"{id}\" title=\"{E(FullNames[g])}\">{E(g)}</label>");
+            }
+            foreach (var u in unmatched)
+            {
+                var id = $"modality-opt-{n++}";
+                sb.Append($"<input type=\"checkbox\" class=\"btn-check modality-opt modality-extra\" id=\"{id}\" value=\"{E(u)}\" autocomplete=\"off\" checked>");
+                sb.Append($"<label class=\"btn btn-sm btn-outline-secondary\" for=\"{id}\" title=\"Not one of the 12 groups: untick to remove\">{E(u)} (not in list)</label>");
+            }
+            sb.Append("</div>");
+            sb.Append("<div class=\"form-text\">Tick every modality used. Hover a button for the full name. ");
+            sb.Append("Use PET/CT, SPECT/CT or PET/MRI for combined (hybrid) scanners. Details go in Imaging Sub Modality.</div>");
+            if (!string.IsNullOrWhiteSpace(value) && !string.Equals(value.Trim(), stored, StringComparison.Ordinal))
+                sb.Append($"<div class=\"form-text text-muted\">Previously written as: <em>{E(value.Trim())}</em></div>");
+            sb.Append("</div>");
+            return new HtmlString(sb.ToString());
         }
 
         // Abbreviations found in one item, e.g. "PET/CT" → {PET, CT}; "Magnetic Resonance Imaging" → {MRI}

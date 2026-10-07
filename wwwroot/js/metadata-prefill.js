@@ -502,7 +502,12 @@
     // event lets dependent fields (the DOID code) update.
     // ------------------------------------------------------------------
     function setFieldValue(el, val) {
-        if (el.tagName !== "SELECT") { el.value = val; return; }
+        if (el.tagName !== "SELECT") {
+            el.value = val;
+            // hidden inputs behind a widget (Imaging Modality pick-list) update the widget on "change"
+            if (el.type === "hidden") el.dispatchEvent(new Event("change", { bubbles: true }));
+            return;
+        }
         var wanted = norm(val);
         var numbered = wanted.match(/^(\d+)\s*[.)]?\s*(.*)$/);      // "5" or "5. disease of metabolism"
         if (numbered && numbered[2]) wanted = numbered[2];

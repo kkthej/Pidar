@@ -78,6 +78,10 @@
                             {
                                 @DiseaseCategories.RenderSelect(value)
                             }
+                            else if (field == ImagingModalityGroups.FieldName)
+                            {
+                                @ImagingModalityGroups.RenderPicker(value)
+                            }
                             else if (IsLong(property))
                             {
                                 <textarea class="form-control"
@@ -109,4 +113,5 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/disease-category.js" asp-append-version="true"></script>
+    <script src="~/js/imaging-modality.js" asp-append-version="true"></script>
 }

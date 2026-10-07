@@ -119,6 +119,10 @@
                             {
                                 @DiseaseCategories.RenderSelect(value)
                             }
+                            else if (field == ImagingModalityGroups.FieldName)
+                            {
+                                @ImagingModalityGroups.RenderPicker(value)
+                            }
                             else if (IsLong(label))
                             {
                                 <textarea class="form-control"
@@ -154,4 +158,5 @@
     <!-- Prefill logic: reads data-field-map, detects column layout, fills form -->
     <script src="~/js/metadata-prefill.js" asp-append-version="true"></script>
     <script src="~/js/disease-category.js" asp-append-version="true"></script>
+    <script src="~/js/imaging-modality.js" asp-append-version="true"></script>
 }

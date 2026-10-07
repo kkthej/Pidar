@@ -1,3 +1,4 @@
+using Pidar.Helpers;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -190,29 +191,52 @@ public sealed class OntologySearchService
         var textFields = field.Text ?? TextFields;
         var cats = field.Categories;
 
+        var d = Expression.Parameter(typeof(Dataset), "d");
+        var conditions = new List<Expression>();
+
         foreach (var term in Tokenize(phrase))
         {
             var textMatch = TextFieldsMatch(WordPattern(term), textFields);
+            var textBody = new ReplaceParameter(textMatch.Parameters[0], d).Visit(textMatch.Body)!;
             var codes = await ResolveCodesForTermAsync(term);
 
             if (codes.Count == 0)
             {
-                query = query.Where(textMatch);   // (for "synonyms" this is "false": no result)
+                conditions.Add(textBody);   // (for "synonyms" this is "false": no result)
                 continue;
             }
 
-            var d = textMatch.Parameters[0];
             Expression<Func<Dataset, bool>> ontoMatch = cats == null
                 ? ds => _db.DatasetOntologyTerms.Any(t => t.DatasetId == ds.DatasetId && codes.Contains(t.Code.ToUpper()))
                 : ds => _db.DatasetOntologyTerms.Any(t => t.DatasetId == ds.DatasetId && codes.Contains(t.Code.ToUpper())
                                                           && cats.Contains(t.Category));
             var ontoBody = new ReplaceParameter(ontoMatch.Parameters[0], d).Visit(ontoMatch.Body)!;
 
-            var body = textFields.Length == 0 ? ontoBody : Expression.OrElse(textMatch.Body, ontoBody);
-            query = query.Where(Expression.Lambda<Func<Dataset, bool>>(body, d));
+            conditions.Add(textFields.Length == 0 ? ontoBody : Expression.OrElse(textBody, ontoBody));
         }
 
-        return query;
+        if (conditions.Count == 0) return query;
+        var body = conditions.Aggregate((a, b) => Expression.AndAlso(a, b));
+
+        // Imaging Modality: a phrase that names modalities ("MRI", "magnetic resonance imaging", "PET/CT")
+        // also finds every dataset in those groups, however its modality is written.
+        // "PET" includes PET/CT and PET/MRI; "PET/CT" is only PET/CT.
+        if (field.Key == "modality")
+        {
+            var groups = ImagingModalityGroups.GroupsInPhrase(phrase);
+            if (groups.Count > 0)
+            {
+                var rows = await _db.StudyComponents.AsNoTracking()
+                    .Select(sc => new { sc.DatasetId, sc.ImagingModality })
+                    .ToListAsync();
+                var ids = rows.Where(r => ImagingModalityGroups.Matches(r.ImagingModality, groups))
+                              .Select(r => r.DatasetId).Distinct().ToList();
+                Expression<Func<Dataset, bool>> inGroup = ds => ids.Contains(ds.DatasetId);
+                body = Expression.OrElse(new ReplaceParameter(inGroup.Parameters[0], d).Visit(inGroup.Body)!, body);
+            }
+        }
+
+        return query.Where(Expression.Lambda<Func<Dataset, bool>>(body, d));
     }
 
     // ------------------------------------------------------------------
@@ -264,6 +288,23 @@ public sealed class OntologySearchService
                         e.Ds.Add(row.DatasetId);
                     }
                 }
+        }
+
+        // 1b) Imaging Modality: the 12 standard groups, matched on the abbreviation or the full name.
+        //     The count is the number of datasets the search for that group will return.
+        if (field.Key == "modality")
+        {
+            var rows = await _db.StudyComponents.AsNoTracking()
+                .Select(sc => new { sc.DatasetId, sc.ImagingModality })
+                .ToListAsync();
+            foreach (var g in ImagingModalityGroups.All)
+            {
+                var full = ImagingModalityGroups.FullNames[g];
+                if (!re.IsMatch(g) && !re.IsMatch(full)) continue;
+                var ds = rows.Where(r => ImagingModalityGroups.Matches(r.ImagingModality, new[] { g }))
+                             .Select(r => r.DatasetId).ToHashSet();
+                found[g] = (g, full, ds, 0);
+            }
         }
 
         // 2) Ontology synonyms (codes restricted to the field's categories, except for "all"/"synonyms")

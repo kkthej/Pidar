@@ -26,6 +26,7 @@
       - Matomo__TokenAuth=${MATOMO_TOKEN_AUTH}
     volumes:
       - .:/app
+      - /app/.git   # hide .git from dotnet watch (git checkout/pull crashed its file poller)
       - ~/.nuget/packages:/root/.nuget/packages
       - ./keys:/root/.aspnet/DataProtection-Keys
     depends_on:
