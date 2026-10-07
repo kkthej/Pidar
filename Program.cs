@@ -80,6 +80,15 @@ builder.Services.AddDefaultIdentity<PidarUser>(options => options.SignIn.Require
 // Role / lockout changes made on the Users page take effect within a minute
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
+// Inactivity sign-out. The browser signs the user out after 15 idle minutes (wwwroot/js/idle-logout.js,
+// with a countdown); this server limit is the backstop when the page is closed or JavaScript is off.
+// 30 minutes sliding, so a session can never end on the server before the browser's 15-minute countdown.
+builder.Services.ConfigureApplicationCookie(o =>
+{
+    o.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    o.SlidingExpiration = true;
+});
+
 // Real email sender (Gmail SMTP via Smtp__* environment variables)
 builder.Services.Configure<Pidar.Services.Email.SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, Pidar.Services.Email.SmtpEmailSender>();

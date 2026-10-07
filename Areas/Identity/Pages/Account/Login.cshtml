@@ -16,6 +16,13 @@
         <form id="account" method="post">
             <h2 class="login-title">Use an admin account to log in</h2>
 
+            @if (Request.Query.ContainsKey("timedOut"))
+            {
+                <div class="alert alert-info py-2 small" role="status">
+                    You were signed out after 15 minutes of inactivity. Please log in again.
+                </div>
+            }
+
             <div asp-validation-summary="ModelOnly" class="text-danger login-validation"></div>
 
             <div class="form-floating mb-3">
