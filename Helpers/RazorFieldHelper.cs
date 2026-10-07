@@ -27,6 +27,8 @@ namespace Pidar.Helpers
 
         public static IHtmlContent FormatLabel(string name)
         {
+            if (FieldLabels.TryGet(name, out var customLabel))
+                return new HtmlString(System.Net.WebUtility.HtmlEncode(customLabel));
             if (string.IsNullOrWhiteSpace(name))
                 return HtmlString.Empty;
 

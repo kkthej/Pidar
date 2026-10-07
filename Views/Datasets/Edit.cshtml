@@ -22,6 +22,7 @@
 
     string PrettyLabel(string raw)
     {
+        if (Pidar.Helpers.FieldLabels.TryGet(raw, out var customLabel)) return customLabel;
         raw = raw.Replace("/", " ");
 
         string formatted = System.Text.RegularExpressions.Regex
@@ -73,7 +74,11 @@
                         </div>
                         <div class="col-sm-8">
 
-                            @if (IsLong(property))
+                            @if (field == DiseaseCategories.FieldName)
+                            {
+                                @DiseaseCategories.RenderSelect(value)
+                            }
+                            else if (IsLong(property))
                             {
                                 <textarea class="form-control"
                                           name="@field"
@@ -103,4 +108,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/disease-category.js" asp-append-version="true"></script>
 }

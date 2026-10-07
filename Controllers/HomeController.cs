@@ -82,13 +82,16 @@ namespace Pidar.Controllers
                 .Select(sc => sc.ImagingModality!)
                 .ToListAsync();
 
-            var modalityCounts = modalityRaw
-                .SelectMany(m => m.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                .Select(m => m.Trim().ToUpperInvariant())
-                .Where(m => m != "")
-                .GroupBy(m => m)
-                .Select(g => new { Label = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
+            // Standard groups (CT, PET, PET/CT, SPECT, …, MPI); a dataset counts once in each group it contains
+            var modalityGroups = modalityRaw
+                .SelectMany(m => Pidar.Helpers.ImagingModalityGroups.Classify(m))
+                .GroupBy(g => g)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var modalityCounts = Pidar.Helpers.ImagingModalityGroups.All
+                .Append(Pidar.Helpers.ImagingModalityGroups.Other)
+                .Where(g => modalityGroups.ContainsKey(g))
+                .Select(g => new { Label = g, Count = modalityGroups[g] })
                 .ToList();
 
             ViewData["ModalityDistribution"] = JsonSerializer.Serialize(modalityCounts);
@@ -108,6 +111,26 @@ namespace Pidar.Controllers
                 .ToListAsync();
 
             ViewData["CountryDistribution"] = JsonSerializer.Serialize(countryCounts);
+
+            // 3a) MAIN DISEASE CATEGORY — all eight categories in the agreed order (zero included),
+            //     plus any older value that is not in the list
+            var categoryRaw = await _context.InVivos
+                .Where(v => v.DiseaseCategory != null && v.DiseaseCategory.Trim() != "")
+                .Select(v => v.DiseaseCategory!)
+                .ToListAsync();
+
+            var categoryByLabel = categoryRaw
+                .GroupBy(c => Pidar.Helpers.DiseaseCategories.Find(c)?.Label ?? c.Trim())
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var categoryCounts = Pidar.Helpers.DiseaseCategories.All
+                .Select(o => new { Category = o.Label, Count = categoryByLabel.GetValueOrDefault(o.Label) })
+                .Concat(categoryByLabel
+                    .Where(kv => Pidar.Helpers.DiseaseCategories.Find(kv.Key) == null)
+                    .Select(kv => new { Category = kv.Key + " (not in list)", Count = kv.Value }))
+                .ToList();
+
+            ViewData["DiseaseCategoryDistribution"] = JsonSerializer.Serialize(categoryCounts);
 
             // 3) DISEASE MODEL
             var diseaseCounts = await _context.InVivos

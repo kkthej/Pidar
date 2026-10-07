@@ -53,6 +53,7 @@ public static class XnatMetadataSummaryMapper
             DisplayId = GetInt("Dataset: Dataset ID") ?? 0,
             Species = GetString("In Vivo: Species"),
             OrganOrTissue = GetString("In Vivo: Organ/Tissue"),
+            DiseaseCategory = GetString("In Vivo: Disease category"),
             DiseaseModel = GetString("In Vivo: Disease model"),
             SampleSize = GetString("In Vivo: Sample size"),
             ImagingModality = GetString("Study Component: Imaging modality")

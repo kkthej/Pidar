@@ -17,6 +17,7 @@ namespace Pidar.Models
         public string? TypesOfGroups { get; set; }
         public string? OverallSampleSize { get; set; }
         public string? AnimalCondition { get; set; }
+        public string? DiseaseCategory { get; set; }   // broad class (dropdown), e.g. "Cancer"
         public string? DiseaseModel { get; set; }
         public string? OrganOrTissue { get; set; }
         public string? SampleSizeForEachGroup { get; set; }

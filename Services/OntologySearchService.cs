@@ -135,8 +135,8 @@ public sealed class OntologySearchService
         Func<FieldRow, string?>[] Values);
 
     /// <summary>The few columns used for suggestions, loaded in one small query.</summary>
-    public sealed record FieldRow(int DatasetId, string? Species, string? DiseaseModel, string? OrganOrTissue,
-                                  string? ImagingModality, string? ImagingSubModality);
+    public sealed record FieldRow(int DatasetId, string? Species, string? DiseaseCategory, string? DiseaseModel,
+                                  string? OrganOrTissue, string? ImagingModality, string? ImagingSubModality);
 
     private static (PropertyInfo, PropertyInfo) Col(string section, string field)
     {
@@ -146,6 +146,7 @@ public sealed class OntologySearchService
 
     // Column accessors shared by the fields below (same instances, so a suggestion can find its field label)
     private static readonly Func<FieldRow, string?> GetSpecies = r => r.Species;
+    private static readonly Func<FieldRow, string?> GetCategory = r => r.DiseaseCategory;
     private static readonly Func<FieldRow, string?> GetDisease = r => r.DiseaseModel;
     private static readonly Func<FieldRow, string?> GetOrgan = r => r.OrganOrTissue;
     private static readonly Func<FieldRow, string?> GetModality = r => r.ImagingModality;
@@ -154,7 +155,7 @@ public sealed class OntologySearchService
     public static readonly SearchField[] Fields =
     {
         new("all", "All fields", "Search all metadata, e.g. breast cancer mice", null, null,
-            new[] { GetSpecies, GetDisease, GetOrgan, GetModality, GetSubModality }),
+            new[] { GetSpecies, GetCategory, GetDisease, GetOrgan, GetModality, GetSubModality }),
         new("synonyms", "Synonyms", "Ontology synonym, e.g. NP313 or isoflurane", Array.Empty<(PropertyInfo, PropertyInfo)>(), null,
             Array.Empty<Func<FieldRow, string?>>()),
         new("modality", "Imaging Modality", "e.g. PET, MRI, CT",
@@ -164,7 +165,10 @@ public sealed class OntologySearchService
         new("species", "Species", "e.g. mice, rats",
             new[] { Col("InVivo", "Species") }, new[] { "NcitSpecies" },
             new[] { GetSpecies }),
-        new("disease", "Disease Model", "e.g. breast cancer",
+        new("category", "Main Disease Category", "e.g. Disease of metabolism",
+            new[] { Col("InVivo", "DiseaseCategory") }, new[] { "DoidDiseaseCategory" },
+            new[] { GetCategory }),
+        new("disease", "Specific Disease Model", "e.g. breast cancer",
             new[] { Col("InVivo", "DiseaseModel") }, new[] { "DoidDiseaseModel" },
             new[] { GetDisease }),
         new("organ", "Organ / Tissue", "e.g. mammary gland, brain",
@@ -236,6 +240,7 @@ public sealed class OntologySearchService
             var rows = await _db.Datasets.AsNoTracking()
                 .Select(d => new FieldRow(d.DatasetId,
                     d.InVivo != null ? d.InVivo.Species : null,
+                    d.InVivo != null ? d.InVivo.DiseaseCategory : null,
                     d.InVivo != null ? d.InVivo.DiseaseModel : null,
                     d.InVivo != null ? d.InVivo.OrganOrTissue : null,
                     d.StudyComponent != null ? d.StudyComponent.ImagingModality : null,

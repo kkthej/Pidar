@@ -23,6 +23,7 @@
         ["StudyComponent.ImagingCoverage"] = "Ontology.UberonImagingCoverage",
 
 
+        ["InVivo.DiseaseCategory"] = "Ontology.DoidDiseaseCategory",
         ["InVivo.DiseaseModel"] = "Ontology.DoidDiseaseModel",
         ["InVivo.OrganOrTissue"] = "Ontology.UberonOrganOrTissue",
         ["InVivo.StatisticalMethods"] = "Ontology.SwoStatisticalMethods",
@@ -75,6 +76,8 @@
        ========================================================== */
     public IHtmlContent FormatLabel(string raw)
     {
+        if (Pidar.Helpers.FieldLabels.TryGet(raw, out var customLabel))
+            return new HtmlString(System.Net.WebUtility.HtmlEncode(customLabel));
         if (String.IsNullOrWhiteSpace(raw))
             return HtmlString.Empty;
 

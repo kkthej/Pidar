@@ -55,7 +55,9 @@ namespace Pidar.Helpers
                 ["In Vivo Experimental Parameters"] = new()
                 {
                     "InVivo.NumberOfGroups","InVivo.TypesOfGroups","InVivo.OverallSampleSize",
-                    "InVivo.AnimalCondition","InVivo.DiseaseModel","Ontology.DoidDiseaseModel",
+                    "InVivo.AnimalCondition",
+                    "InVivo.DiseaseCategory","Ontology.DoidDiseaseCategory",
+                    "InVivo.DiseaseModel","Ontology.DoidDiseaseModel",
                     "InVivo.OrganOrTissue","Ontology.UberonOrganOrTissue",
                     "InVivo.SampleSizeForEachGroup","InVivo.PowerCalculation",
                     "InVivo.InclusionCriteria","InVivo.ExclusionCriteria","InVivo.Randomization",

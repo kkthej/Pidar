@@ -47,6 +47,7 @@ namespace Pidar.Controllers
             { "DisplayId", "Dataset ID" },
             { "OverallSampleSize", "Sample size" },
             { "OrganOrTissue", "Organ/Tissue" },
+            { "DiseaseCategory", "Disease category" },
             { "DiseaseModel", "Disease model" },
             { "ImagingModality", "Imaging modality" },
             { "Species", "Species" },
@@ -359,6 +360,7 @@ namespace Pidar.Controllers
                     .Add($"Dataset ID: {ds.DisplayId}\n")
                     .Add($"Species: {GetValue(ds.InVivo, "Species")}\n")
                     .Add($"Organ/Tissue: {GetValue(ds.InVivo, "OrganOrTissue")}\n")
+                    .Add($"Disease Category: {GetValue(ds.InVivo, "DiseaseCategory")}\n")
                     .Add($"Disease Model: {GetValue(ds.InVivo, "DiseaseModel")}\n")
                     .Add($"Imaging Modality: {GetValue(ds.StudyComponent, "ImagingModality")}\n")
                     .Add($"Sample Size: {GetValue(ds.InVivo, "OverallSampleSize")}\n")
@@ -639,6 +641,7 @@ namespace Pidar.Controllers
                     .Add($"Dataset ID: {ds.DisplayId}\n")
                     .Add($"Species: {GetValue(ds.InVivo, "Species")}\n")
                     .Add($"Organ/Tissue: {GetValue(ds.InVivo, "OrganOrTissue")}\n")
+                    .Add($"Disease Category: {GetValue(ds.InVivo, "DiseaseCategory")}\n")
                     .Add($"Disease Model: {GetValue(ds.InVivo, "DiseaseModel")}\n")
                     .Add($"Imaging Modality: {GetValue(ds.StudyComponent, "ImagingModality")}\n")
                     .Add($"Sample Size: {GetValue(ds.InVivo, "OverallSampleSize")}\n")

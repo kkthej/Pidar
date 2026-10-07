@@ -168,7 +168,8 @@
                 <th>Facility</th>
                 <th>Species</th>
                 <th>Sample Size</th>
-                <th>Disease Model</th>
+                <th>Main Disease Category</th>
+                <th>Specific Disease Model</th>
                 <th>Organ / Tissue</th>
                 <th>License</th>
                 <th class="text-center text-nowrap">Status</th>
@@ -200,6 +201,7 @@
                     <td>@GetNestedSafe(ds, "DatasetInfo.ImagingFacility")</td>
                     <td>@GetNestedSafe(ds, "InVivo.Species")</td>
                     <td>@GetNestedSafe(ds, "InVivo.OverallSampleSize")</td>
+                    <td>@GetNestedSafe(ds, "InVivo.DiseaseCategory")</td>
                     <td>@GetNestedSafe(ds, "InVivo.DiseaseModel")</td>
                     <td>@GetNestedSafe(ds, "InVivo.OrganOrTissue")</td>
                     <td class="text-center">
