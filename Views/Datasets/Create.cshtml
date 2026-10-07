@@ -18,6 +18,7 @@
 
     string PrettyLabel(string raw)
     {
+        if (Pidar.Helpers.FieldLabels.TryGet(raw, out var customLabel)) return customLabel;
         raw = raw.Replace("/", " ");
 
         string formatted = System.Text.RegularExpressions.Regex.Replace(

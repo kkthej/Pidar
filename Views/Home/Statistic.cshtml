@@ -45,12 +45,12 @@
         <div class="col-md-6">
             <div class="card shadow h-100">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Disease Categories</h4>
+                    <h4 class="mb-0">Main Disease Categories</h4>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height:400px;">
                         <canvas id="diseaseCategoryChart"></canvas>
-                        <p id="diseaseCategoryEmpty" class="text-muted text-center mt-5" hidden>No disease categories entered yet.</p>
+                        <p id="diseaseCategoryEmpty" class="text-muted text-center mt-5" hidden>No main disease category entered yet.</p>
                     </div>
                 </div>
             </div>
@@ -60,7 +60,7 @@
         <div class="col-md-6">
             <div class="card shadow h-100">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Disease Models</h4>
+                    <h4 class="mb-0">Specific Disease Models</h4>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height:400px;">
@@ -276,22 +276,22 @@
                 options: barOptions("Countries where imaging was performed")
             });
 
-            if (diseaseCategories.length === 0) {
+            // Main disease categories: all eight, in the agreed order, as horizontal bars
+            if (diseaseCategories.every(x => x.Count === 0)) {
                 document.getElementById('diseaseCategoryChart').hidden = true;
                 document.getElementById('diseaseCategoryEmpty').hidden = false;
             } else {
                 new Chart(document.getElementById('diseaseCategoryChart'), {
-                    type: 'doughnut',
+                    type: 'bar',
                     data: {
                         labels: diseaseCategories.map(x => x.Category),
                         datasets: [{
                             data: diseaseCategories.map(x => x.Count),
                             backgroundColor: colors,
-                            borderColor: borderColors,
-                            borderWidth: 1
+                            borderColor: borderColors
                         }]
                     },
-                    options: legendWithCounts("Datasets per disease category", true)
+                    options: barOptions("Datasets per main disease category", true)
                 });
             }
 
@@ -305,7 +305,7 @@
                         borderColor: borderColors
                     }]
                 },
-                options: barOptions("Most studied disease models", true)
+                options: barOptions("Most studied specific disease models", true)
             });
 
             new Chart(document.getElementById('organChart'), {
