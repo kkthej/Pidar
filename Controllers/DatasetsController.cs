@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pidar.Data;
 using Pidar.Helpers;
+using Pidar.Infrastructure;
 using Pidar.Models;
 using Pidar.Models.Ontology;
 using Pidar.Models.ViewModels;
@@ -339,7 +340,7 @@ namespace Pidar.Controllers
         // ===============================================================
         // CREATE (GET)
         // ===============================================================
-        [Authorize]
+        [Authorize(Roles = AppRoles.Editors)]
         [Route("Create")]
         public async Task<IActionResult> Create()
         {
@@ -369,7 +370,7 @@ namespace Pidar.Controllers
         // CREATE (POST)
         // ===============================================================
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = AppRoles.Editors)]
         [ValidateAntiForgeryToken]
         [Route("Create")]
         public async Task<IActionResult> Create(DatasetCreateViewModel vm)
@@ -420,7 +421,7 @@ namespace Pidar.Controllers
         // ===============================================================
         // EDIT (GET)
         // ===============================================================
-        [Authorize]
+        [Authorize(Roles = AppRoles.Editors)]
         [Route("Edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
@@ -451,7 +452,7 @@ namespace Pidar.Controllers
         // EDIT (POST)
         // ===============================================================
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = AppRoles.Editors)]
         [ValidateAntiForgeryToken]
         [Route("Edit/{id}")]
         public async Task<IActionResult> Edit(int id, DatasetCreateViewModel vm)
@@ -528,7 +529,7 @@ namespace Pidar.Controllers
         // ===============================================================
         // DELETE
         // ===============================================================
-        [Authorize]
+        [Authorize(Roles = AppRoles.Admin)]
         [Route("Delete/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -540,7 +541,7 @@ namespace Pidar.Controllers
         }
 
         [HttpPost, ActionName("Delete")]
-        [Authorize]
+        [Authorize(Roles = AppRoles.Admin)]
         [ValidateAntiForgeryToken]
         [Route("Delete/{id}")]
         public async Task<IActionResult> DeleteConfirmed(int id)

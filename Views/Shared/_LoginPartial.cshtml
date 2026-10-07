@@ -27,12 +27,20 @@
                     </a>
                 </li>
 
-                <li>
-                    <a class="dropdown-item"
-                       href="/matomo/">
-                        Analytics
-                    </a>
-                </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li>
+                        <a class="dropdown-item" asp-area="" asp-controller="Users" asp-action="Index">
+                            Users
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                           href="/matomo/">
+                            Analytics
+                        </a>
+                    </li>
+                }
 
                 <li><hr class="dropdown-divider" /></li>
 
@@ -59,7 +67,7 @@
             <a class="nav-link btn btn-outline-primary rounded-pill px-3"
                asp-area="Identity"
                asp-page="/Account/Login">
-                Admin Login
+                Login
             </a>
         </li>
     }

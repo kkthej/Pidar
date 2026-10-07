@@ -94,7 +94,10 @@ namespace Pidar.Areas.Identity.Pages.Account
         }
 
 
-        public async Task OnGetAsync(string returnUrl = null)
+        // Self-registration is disabled: accounts are created by an Admin on the Users page.
+        public IActionResult OnGet(string returnUrl = null) => NotFound();
+
+        private async Task OnGetAsyncDisabled(string returnUrl = null)
         {
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
@@ -102,6 +105,9 @@ namespace Pidar.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
+            // Self-registration is disabled
+            return NotFound();
+#pragma warning disable CS0162 // original scaffold code kept below for reference
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)

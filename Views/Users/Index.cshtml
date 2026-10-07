@@ -1,0 +1,131 @@
+@model List<Pidar.Controllers.UsersController.UserRow>
+@using Pidar.Infrastructure
+@{
+    ViewData["Title"] = "Users";
+    var roles = new[] { "None", AppRoles.Curator, AppRoles.Admin };
+}
+
+<h2 class="text-center mb-2">Users</h2>
+<p class="text-center text-muted small mb-4">
+    <strong>Admin</strong>: everything, including delete and this page &middot;
+    <strong>Curator</strong>: create and edit datasets &middot;
+    <strong>None</strong>: can log in, read-only
+</p>
+
+@if (TempData["Message"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-warning">@err</div>
+}
+@if (TempData["Link"] is string link)
+{
+    <div class="alert alert-info small">
+        Password link for <strong>@TempData["LinkFor"]</strong> (valid for about one day, single use):<br />
+        <input class="form-control form-control-sm mt-1" readonly value="@link" onclick="this.select()" />
+    </div>
+}
+
+<!-- Add user -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header fw-bold">Add user</div>
+    <div class="card-body">
+        <form asp-action="Create" method="post" class="row g-2 align-items-center">
+            @Html.AntiForgeryToken()
+            <div class="col-sm-6">
+                <input name="email" type="email" class="form-control" placeholder="name@institution.org" required />
+            </div>
+            <div class="col-sm-3">
+                <select name="role" class="form-select">
+                    <option value="@AppRoles.Curator" selected>Curator</option>
+                    <option value="@AppRoles.Admin">Admin</option>
+                    <option value="None">None (read-only)</option>
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <button type="submit" class="btn btn-primary w-100">Create and send link</button>
+            </div>
+        </form>
+        <p class="text-muted small mt-2 mb-0">
+            The user receives an email with a link to set their own password.
+        </p>
+    </div>
+</div>
+
+<!-- User list -->
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td>
+                        @u.Email
+                        @if (u.IsSelf) { <span class="badge bg-secondary ms-1">you</span> }
+                        @if (!u.EmailConfirmed) { <span class="badge bg-warning text-dark ms-1" title="Email never confirmed">unconfirmed</span> }
+                    </td>
+                    <td style="min-width:170px">
+                        <form asp-action="SetRole" method="post" class="d-flex gap-1">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <select name="role" class="form-select form-select-sm" disabled="@(u.IsSelf ? "disabled" : null)">
+                                @foreach (var r in roles)
+                                {
+                                    <option value="@r" selected="@(r == u.Role ? "selected" : null)">@r</option>
+                                }
+                            </select>
+                            @if (!u.IsSelf)
+                            {
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                            }
+                        </form>
+                    </td>
+                    <td>
+                        @if (u.IsActive)
+                        {
+                            <span class="badge bg-success">active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">deactivated</span>
+                        }
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <form asp-action="SendReset" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Send password link</button>
+                        </form>
+                        @if (!u.IsSelf)
+                        {
+                            <form asp-action="SetActive" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <input type="hidden" name="active" value="@(u.IsActive ? "false" : "true")" />
+                                <button type="submit" class="btn btn-sm @(u.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                                    @(u.IsActive ? "Deactivate" : "Activate")
+                                </button>
+                            </form>
+                            <form asp-action="Delete" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete @u.Email permanently?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
