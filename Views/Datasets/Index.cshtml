@@ -164,7 +164,6 @@
                 </th>
 
                 <th>Imaging Modality</th>
-                <th class="text-nowrap">Modality Group</th>
                 <th>Institution</th>
                 <th>Facility</th>
                 <th>Species</th>
@@ -197,13 +196,18 @@
                     </td>
 
                     <!-- NESTED FROM CHILD TABLES -->
-                    <td>@GetNestedSafe(ds, "StudyComponent.ImagingModality")</td>
-                    <td class="text-nowrap">
-                        @foreach (var g in Pidar.Helpers.ImagingModalityGroups.Classify(ds.StudyComponent?.ImagingModality))
+                    @{
+                        var modalityText = ds.StudyComponent?.ImagingModality?.Trim();
+                        var modalityStd = Pidar.Helpers.ImagingModalityGroups.ToStoredValue(modalityText);
+                    }
+                    <td class="text-nowrap"
+                        title="@(modalityText != null && modalityText != modalityStd ? "Written as: " + modalityText : null)">
+                        @* one badge per group, in the standard order; text that fits no group shows in grey *@
+                        @foreach (var g in (modalityStd ?? "").Split(", ", StringSplitOptions.RemoveEmptyEntries))
                         {
-                            var known = g != Pidar.Helpers.ImagingModalityGroups.Other;
+                            var known = Pidar.Helpers.ImagingModalityGroups.FullNames.TryGetValue(g, out var full);
                             <span class="badge @(known ? "text-bg-primary" : "text-bg-secondary") me-1"
-                                  title="@(known ? Pidar.Helpers.ImagingModalityGroups.FullNames[g] : "Not one of the 12 groups")">@g</span>
+                                  title="@(known ? full : "Not one of the 12 groups")">@g</span>
                         }
                     </td>
                     <td>@GetNestedSafe(ds, "DatasetInfo.Institution")</td>
