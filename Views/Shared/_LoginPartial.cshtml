@@ -14,6 +14,7 @@
                data-bs-toggle="dropdown"
                aria-expanded="false">
                 Hello @User.Identity?.Name!
+                <span id="session-timer" class="session-timer" title="You will be signed out after 15 minutes without activity" hidden></span>
             </a>
 
             <ul class="dropdown-menu dropdown-menu-end shadow"
@@ -54,7 +55,8 @@
                 <li><hr class="dropdown-divider" /></li>
 
                 <li>
-                    <form asp-area="Identity"
+                    <form id="logout-form"
+                          asp-area="Identity"
                           asp-page="/Account/Logout"
                           asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
                           method="post"
@@ -69,6 +71,16 @@
 
             </ul>
         </li>
+
+        @* Inactivity sign-out: countdown in the menu, warning 2 minutes before, sign-out after 15 idle minutes *@
+        <li hidden>
+            <form id="idle-logout-form" asp-area="Identity" asp-page="/Account/Logout"
+                  asp-route-returnUrl="@Url.Page("/Account/Login", new { area = "Identity", timedOut = 1 })" method="post"></form>
+        </li>
+        <script src="~/js/idle-logout.js" asp-append-version="true" defer
+                data-idle-minutes="15" data-warn-seconds="120"
+                data-keepalive-url="@Url.Action("KeepAlive", "Session", new { area = "" })"
+                data-login-url="@Url.Page("/Account/Login", new { area = "Identity", timedOut = 1 })"></script>
     }
     else
     {
