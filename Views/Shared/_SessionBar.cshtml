@@ -22,11 +22,7 @@
         </div>
 
         <div class="session-bar-item">
-            <span class="session-bar-user">
-                Logged in as:
-                <a asp-area="Identity" asp-page="/Account/Manage/Index">@User.Identity?.Name</a>
-                <span class="session-bar-sep">|</span>
-            </span>
+            @* The user name is already shown in the "Hello …" dropdown, so it isn't repeated here *@
             <i class="bi bi-question-circle-fill" title="You are signed out after 15 minutes without activity. Any click or key press, or &quot;renew&quot;, restarts the countdown."></i>
             Auto-logout in:
             <span id="session-bar-timer" class="session-bar-timer">0:15:00</span>
