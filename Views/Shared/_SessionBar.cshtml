@@ -32,12 +32,7 @@
             <span id="session-bar-timer" class="session-bar-timer">0:15:00</span>
             -
             <a href="#" data-idle-renew>renew</a>
-            <span class="session-bar-sep">|</span>
-            <form asp-area="Identity" asp-page="/Account/Logout"
-                  asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
-                  method="post" class="d-inline">
-                <button type="submit" class="session-bar-link">Logout</button>
-            </form>
+            @* Logout lives only in the "Hello …" dropdown *@
         </div>
     </div>
 }

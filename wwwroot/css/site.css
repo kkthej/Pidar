@@ -605,8 +605,7 @@ body.login-page {
     overflow: hidden;
 }
 
-    .session-bar a,
-    .session-bar .session-bar-link {
+    .session-bar a {
         color: #a8d8ff;
         text-decoration: underline;
         background: none;
@@ -616,8 +615,7 @@ body.login-page {
         cursor: pointer;
     }
 
-        .session-bar a:hover,
-        .session-bar .session-bar-link:hover {
+        .session-bar a:hover {
             color: #fff;
         }
 
@@ -654,7 +652,7 @@ body.login-page.has-session-bar {
     padding-top: calc(56px + var(--session-bar-height)) !important;
 }
 
-/* narrow screens: keep one line: countdown, renew and logout only */
+/* narrow screens: keep one line: countdown and renew only */
 @media (max-width: 767.98px) {
     .session-bar-last,
     .session-bar-user {
