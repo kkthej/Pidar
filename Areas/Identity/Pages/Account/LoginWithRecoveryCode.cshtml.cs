@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Pidar.Areas.Identity.Data;
+using Pidar.Services;
 using System.ComponentModel.DataAnnotations;
 namespace Pidar.Areas.Identity.Pages.Account
 {
@@ -91,6 +92,7 @@ namespace Pidar.Areas.Identity.Pages.Account
             if (result.Succeeded)
             {
                 _logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", user.Id);
+                await LastLoginStore.RecordAsync(_userManager, user, _logger);
                 return LocalRedirect(returnUrl ?? Url.Content("~/"));
             }
             if (result.IsLockedOut)

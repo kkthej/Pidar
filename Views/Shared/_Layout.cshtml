@@ -35,9 +35,11 @@
     <partial name="_Favicons" />
 </head>
 
-<body class="d-flex flex-column min-vh-100 @ViewData["BodyClass"]">
+<body class="d-flex flex-column min-vh-100 @ViewData["BodyClass"] @(SignInManager.IsSignedIn(User) ? "has-session-bar" : "")">
 
     <header>
+
+        <partial name="_SessionBar" />
 
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-3 fixed-top">
 

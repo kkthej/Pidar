@@ -1,0 +1,43 @@
+@using Microsoft.AspNetCore.Identity
+@using Pidar.Areas.Identity.Data
+@using Pidar.Services
+@inject SignInManager<PidarUser> SignInManager
+@inject UserManager<PidarUser> UserManager
+
+@*
+    XNAT-style session bar above the navbar (only when signed in).
+    The countdown and "renew" are driven by wwwroot/js/idle-logout.js, the same clock that signs the
+    user out after 15 idle minutes, so the bar always shows the real time left.
+*@
+@if (SignInManager.IsSignedIn(User))
+{
+    var sessionUser = await UserManager.GetUserAsync(User);
+    var lastLoginUtc = sessionUser is null ? null : await LastLoginStore.GetLastLoginUtcAsync(UserManager, sessionUser);
+
+    <div class="session-bar" role="region" aria-label="Session">
+        <div class="session-bar-item session-bar-last">
+            Last login:
+            @* Rendered in the viewer's local time by idle-logout.js; UTC is the fallback without JavaScript *@
+            <time id="session-bar-last-login" datetime="@(lastLoginUtc?.ToString("o"))">@(lastLoginUtc?.ToString("yyyy-MM-dd HH:mm:ss 'UTC'") ?? "—")</time>
+        </div>
+
+        <div class="session-bar-item">
+            <span class="session-bar-user">
+                Logged in as:
+                <a asp-area="Identity" asp-page="/Account/Manage/Index">@User.Identity?.Name</a>
+                <span class="session-bar-sep">|</span>
+            </span>
+            <i class="bi bi-question-circle-fill" title="You are signed out after 15 minutes without activity. Any click or key press, or &quot;renew&quot;, restarts the countdown."></i>
+            Auto-logout in:
+            <span id="session-bar-timer" class="session-bar-timer">0:15:00</span>
+            -
+            <a href="#" data-idle-renew>renew</a>
+            <span class="session-bar-sep">|</span>
+            <form asp-area="Identity" asp-page="/Account/Logout"
+                  asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
+                  method="post" class="d-inline">
+                <button type="submit" class="session-bar-link">Logout</button>
+            </form>
+        </div>
+    </div>
+}

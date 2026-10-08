@@ -577,3 +577,91 @@ body.login-page {
         padding: 0 0.75rem;
     }
 }
+
+/* =========================================================
+   SESSION BAR (signed-in users) - XNAT-style strip above the fixed navbar.
+   Views/Shared/_SessionBar.cshtml; countdown filled in by wwwroot/js/idle-logout.js
+   ========================================================= */
+:root {
+    --session-bar-height: 30px;
+}
+
+.session-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--session-bar-height);
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 16px;
+    background: #08386b;
+    color: #fff;
+    font: 600 13px/1 Arial, Helvetica, sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+    .session-bar a,
+    .session-bar .session-bar-link {
+        color: #a8d8ff;
+        text-decoration: underline;
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+    }
+
+        .session-bar a:hover,
+        .session-bar .session-bar-link:hover {
+            color: #fff;
+        }
+
+.session-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.session-bar-sep {
+    margin: 0 0.35rem;
+    opacity: 0.6;
+}
+
+.session-bar-timer {
+    font-family: ui-monospace, Consolas, "Courier New", monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+    .session-bar-timer.warn {
+        color: #ffcc66;
+    }
+
+/* push the fixed navbar and the page down by the bar's height */
+body.has-session-bar {
+    padding-top: calc(56px + var(--session-bar-height));
+}
+
+    body.has-session-bar .navbar.fixed-top {
+        top: var(--session-bar-height);
+    }
+
+body.login-page.has-session-bar {
+    padding-top: calc(56px + var(--session-bar-height)) !important;
+}
+
+/* narrow screens: keep one line: countdown, renew and logout only */
+@media (max-width: 767.98px) {
+    .session-bar-last,
+    .session-bar-user {
+        display: none !important;
+    }
+
+    .session-bar {
+        justify-content: flex-end;
+    }
+}

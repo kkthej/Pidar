@@ -3,8 +3,9 @@
  *
  * - Activity = mouse, keyboard, scroll, touch. Shared across tabs (localStorage), so working in one
  *   tab keeps the others signed in, and signing out in one signs out all.
- * - A countdown (mm:ss) is shown next to "Hello …" in the menu; 2 minutes before the end a warning
- *   appears with "Stay signed in" / "Sign out now".
+ * - A countdown (h:mm:ss) is shown in the session bar above the navbar (Views/Shared/_SessionBar.cshtml),
+ *   whose "renew" link restarts it; 2 minutes before the end a warning appears with
+ *   "Stay signed in" / "Sign out now".
  * - While the user is active, the server is pinged every few minutes so the sign-in cookie stays valid
  *   even if they only read or scroll. The server also ends idle sessions on its own (Program.cs).
  * - Coming back to a tab after the time is up (e.g. laptop asleep) signs out immediately.
@@ -43,8 +44,20 @@
 
     var lastPing = 0, activitySincePing = false, warningShown = false, signingOut = false;
 
-    // ---- UI: countdown badge + warning panel ----
+    // ---- UI: countdown (session bar, and the older menu badge if a page still has it) + warning panel ----
     var badge = document.getElementById("session-timer");
+    var barTimer = document.getElementById("session-bar-timer");
+
+    // "Last login" in the session bar: show it in the viewer's local time (the server renders UTC)
+    var lastLoginEl = document.getElementById("session-bar-last-login");
+    if (lastLoginEl && lastLoginEl.getAttribute("datetime")) {
+        var d = new Date(lastLoginEl.getAttribute("datetime"));
+        if (!isNaN(d)) {
+            var p2 = function (n) { return String(n).padStart(2, "0"); };
+            lastLoginEl.textContent = d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) + " " +
+                p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds());
+        }
+    }
     var panel = document.createElement("div");
     panel.className = "idle-warning";
     panel.setAttribute("role", "alertdialog");
@@ -75,6 +88,11 @@
     function fmt(ms) {
         var s = Math.max(0, Math.ceil(ms / 1000));
         return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }
+    // XNAT style, e.g. 0:14:58
+    function fmtLong(ms) {
+        var s = Math.max(0, Math.ceil(ms / 1000));
+        return Math.floor(s / 3600) + ":" + String(Math.floor(s % 3600 / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
     }
 
     // ---- activity ----
@@ -111,7 +129,16 @@
         writeLast(Date.now());
         hideWarning();
         ping();
+        tick();
     }
+
+    // "renew" in the session bar: restart the countdown and refresh the server cookie straight away
+    document.addEventListener("click", function (e) {
+        var link = e.target.closest && e.target.closest("[data-idle-renew]");
+        if (!link) return;
+        e.preventDefault();
+        stay();
+    });
 
     function showWarning() {
         if (warningShown) return;
@@ -163,6 +190,10 @@
             badge.textContent = fmt(left);
             badge.classList.toggle("warn", left <= WARN_MS);
             badge.setAttribute("aria-label", "Signed out in " + fmt(left) + " without activity");
+        }
+        if (barTimer) {
+            barTimer.textContent = fmtLong(left);
+            barTimer.classList.toggle("warn", left <= WARN_MS);
         }
         if (left <= WARN_MS) { showWarning(); panelTime.textContent = fmt(left); }
         else if (warningShown) hideWarning();     // activity in another tab

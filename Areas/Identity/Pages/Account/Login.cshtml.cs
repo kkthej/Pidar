@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Pidar.Areas.Identity.Data;
+using Pidar.Services;
 using System.ComponentModel.DataAnnotations;
 
 namespace Pidar.Areas.Identity.Pages.Account
@@ -110,6 +111,9 @@ namespace Pidar.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+                    // PasswordSignInAsync looked the user up by user name, so do the same here
+                    await LastLoginStore.RecordAsync(_signInManager.UserManager,
+                        await _signInManager.UserManager.FindByNameAsync(Input.Email), _logger);
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
