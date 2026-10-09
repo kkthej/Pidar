@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Pidar.Areas.Identity.Data;
+using Pidar.Infrastructure;
 using Pidar.Services;
 using System.ComponentModel.DataAnnotations;
 
@@ -110,10 +111,18 @@ namespace Pidar.Areas.Identity.Pages.Account
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, isPersistent: false, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
+                    // Only the PIDAR team (Admin / Curator) has accounts; anyone else browses without logging in
+                    var signedInUser = await _signInManager.UserManager.FindByNameAsync(Input.Email);
+                    if (signedInUser == null || !(await _signInManager.UserManager.GetRolesAsync(signedInUser)).Any(AppRoles.IsValid))
+                    {
+                        await _signInManager.SignOutAsync();
+                        _logger.LogWarning("Sign-in refused for {Email}: account has no role", Input.Email);
+                        ModelState.AddModelError(string.Empty, "This account has no access to PIDAR. Contact a PIDAR administrator.");
+                        return Page();
+                    }
+
                     _logger.LogInformation("User logged in.");
-                    // PasswordSignInAsync looked the user up by user name, so do the same here
-                    await LastLoginStore.RecordAsync(_signInManager.UserManager,
-                        await _signInManager.UserManager.FindByNameAsync(Input.Email), _logger);
+                    await LastLoginStore.RecordAsync(_signInManager.UserManager, signedInUser, _logger);
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

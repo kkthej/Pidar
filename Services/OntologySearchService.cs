@@ -196,7 +196,7 @@ public sealed class OntologySearchService
         if (field.Key == "category" && DiseaseCategories.Find(phrase) is { } category)
         {
             var label = category.Label.ToLower();
-            var doid = category.Doid;
+            var doid = category.Code;
             return query.Where(ds =>
                 (ds.InVivo != null && ds.InVivo.DiseaseCategory != null && ds.InVivo.DiseaseCategory.Trim().ToLower() == label) ||
                 (doid != null && ds.Ontology != null && ds.Ontology.DoidDiseaseCategory == doid));
