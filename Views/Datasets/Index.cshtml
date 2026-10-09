@@ -233,7 +233,7 @@
                         {
                             var known = Pidar.Helpers.ImagingModalityGroups.FullNames.TryGetValue(g, out var full);
                             var activeBadge = currentSearchField == "modality" && string.Equals(currentSearchPhrase.Trim(), g, StringComparison.OrdinalIgnoreCase);
-                            <a class="badge filter-badge @(known ? "text-bg-primary" : "text-bg-secondary") @(activeBadge ? "active" : "") me-1"
+                            <a class="badge filter-badge @(known ? "mod-badge " + Pidar.Helpers.ImagingModalityGroups.CssClass(g) : "text-bg-secondary") @(activeBadge ? "active" : "") me-1"
                                asp-action="ShowSearchResults" asp-route-SearchField="modality" asp-route-SearchPhrase="@g"
                                title="@(known ? full : "Not one of the 12 groups") · click to show only these datasets">@g</a>
                         }
@@ -360,7 +360,7 @@
     .search-box { flex-wrap: nowrap; }
     .search-box .search-field { flex: 0 0 auto; width: auto; max-width: 11rem; }
     .filter-badge { text-decoration: none; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-    .filter-badge:hover, .filter-badge:focus { filter: brightness(.85); box-shadow: 0 0 0 2px rgba(13,110,253,.25); color: #fff; }
+    .filter-badge:hover, .filter-badge:focus { filter: brightness(.85); box-shadow: 0 0 0 2px rgba(13,110,253,.25); color: var(--mod-fg, #fff); }
     .filter-badge.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0d6efd; }
     .filter-link { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
     .filter-link:hover { color: #0d6efd; text-decoration: underline; }
