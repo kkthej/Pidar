@@ -697,3 +697,58 @@ body.login-page.has-session-bar {
 .st-fill[class*="mod-"] {
     background: linear-gradient(180deg, var(--mod-a) 50%, var(--mod-b) 50%);
 }
+
+
+/* =========================================================
+   COUNTRY FLAG BARS - Statistics, "Country of imaging facility".
+   Class from CountryFlags.CssClass(): "Italy" -> .flag-it (unlisted countries stay blue).
+   Flags with vertical stripes run along the bar; horizontal stripes stack across it.
+   ========================================================= */
+.st-fill[class*="flag-"] {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); /* keeps white stripes visible on the white card */
+}
+
+.st-fill.flag-it { background: linear-gradient(90deg, #009246 33.33%, #fff 33.33% 66.67%, #ce2b37 66.67%); }
+.st-fill.flag-fr { background: linear-gradient(90deg, #002395 33.33%, #fff 33.33% 66.67%, #ed2939 66.67%); }
+.st-fill.flag-be { background: linear-gradient(90deg, #000 33.33%, #fdda24 33.33% 66.67%, #ef3340 66.67%); }
+.st-fill.flag-ie { background: linear-gradient(90deg, #169b62 33.33%, #fff 33.33% 66.67%, #ff883e 66.67%); }
+.st-fill.flag-pt { background: linear-gradient(90deg, #046a38 40%, #da291c 40%); }
+
+.st-fill.flag-hu { background: linear-gradient(180deg, #ce2939 33.33%, #fff 33.33% 66.67%, #477050 66.67%); }
+.st-fill.flag-de { background: linear-gradient(180deg, #000 33.33%, #dd0000 33.33% 66.67%, #ffce00 66.67%); }
+.st-fill.flag-nl { background: linear-gradient(180deg, #ae1c28 33.33%, #fff 33.33% 66.67%, #21468b 66.67%); }
+.st-fill.flag-at { background: linear-gradient(180deg, #c8102e 33.33%, #fff 33.33% 66.67%, #c8102e 66.67%); }
+.st-fill.flag-es { background: linear-gradient(180deg, #aa151b 25%, #f1bf00 25% 75%, #aa151b 75%); }
+.st-fill.flag-pl { background: linear-gradient(180deg, #fff 50%, #dc143c 50%); }
+
+/* Czech Republic: white over red, blue triangle at the hoist */
+.st-fill.flag-cz {
+    background:
+        linear-gradient(to top right, #11457e 50%, transparent 50%) left top / 12px 50% no-repeat,
+        linear-gradient(to bottom right, #11457e 50%, transparent 50%) left bottom / 12px 50% no-repeat,
+        linear-gradient(180deg, #fff 50%, #d7141a 50%);
+}
+
+/* Nordic crosses: the upright sits near the hoist, the crossbar runs the whole bar */
+.st-fill.flag-no {
+    background:
+        linear-gradient(#00205b, #00205b) 7px 0 / 2px 100% no-repeat,
+        linear-gradient(180deg, transparent 43.75%, #00205b 43.75% 56.25%, transparent 56.25%),
+        linear-gradient(#fff, #fff) 5px 0 / 6px 100% no-repeat,
+        linear-gradient(180deg, #ba0c2f 31.25%, #fff 31.25% 68.75%, #ba0c2f 68.75%);
+}
+.st-fill.flag-se {
+    background:
+        linear-gradient(#fecc02, #fecc02) 6px 0 / 4px 100% no-repeat,
+        linear-gradient(180deg, #006aa7 37.5%, #fecc02 37.5% 62.5%, #006aa7 62.5%);
+}
+.st-fill.flag-fi {
+    background:
+        linear-gradient(#002f6c, #002f6c) 6px 0 / 4px 100% no-repeat,
+        linear-gradient(180deg, #fff 37.5%, #002f6c 37.5% 62.5%, #fff 62.5%);
+}
+.st-fill.flag-dk {
+    background:
+        linear-gradient(#fff, #fff) 6px 0 / 3px 100% no-repeat,
+        linear-gradient(180deg, #c8102e 40%, #fff 40% 60%, #c8102e 60%);
+}
