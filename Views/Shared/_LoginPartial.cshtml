@@ -14,7 +14,6 @@
                data-bs-toggle="dropdown"
                aria-expanded="false">
                 Hello @User.Identity?.Name!
-                <span id="session-timer" class="session-timer" title="You will be signed out after 15 minutes without activity" hidden></span>
             </a>
 
             <ul class="dropdown-menu dropdown-menu-end shadow"
@@ -72,7 +71,7 @@
             </ul>
         </li>
 
-        @* Inactivity sign-out: countdown in the menu, warning 2 minutes before, sign-out after 15 idle minutes *@
+        @* Inactivity sign-out: countdown in the session bar (_SessionBar.cshtml), warning 2 minutes before, sign-out after 15 idle minutes *@
         <li hidden>
             <form id="idle-logout-form" asp-area="Identity" asp-page="/Account/Logout"
                   asp-route-returnUrl="@Url.Page("/Account/Login", new { area = "Identity", timedOut = 1 })" method="post"></form>

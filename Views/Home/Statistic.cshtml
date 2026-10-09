@@ -10,7 +10,9 @@
 
 @functions {
     // Horizontal bar list: label · bar · count. Zero rows are grey with an empty track.
-    public Microsoft.AspNetCore.Html.IHtmlContent Bars(IEnumerable<StatisticsBuilder.Bar> bars, int labelWidth, bool hintInline = false)
+    // fillClass: optional CSS class per bar (imaging modality colours)
+    public Microsoft.AspNetCore.Html.IHtmlContent Bars(IEnumerable<StatisticsBuilder.Bar> bars, int labelWidth, bool hintInline = false,
+                                                       Func<string, string?>? fillClass = null)
     {
         var list = bars.ToList();
         var max = Math.Max(1, list.Count == 0 ? 1 : list.Max(b => b.Count));
@@ -24,7 +26,8 @@
             var tip = $"{label}: {b.Count} dataset{(b.Count == 1 ? "" : "s")}{(hint.Length > 0 && !hintInline ? " · " + hint : "")}";
             sb.Append($"<div class=\"st-row{(b.Count == 0 ? " zero" : "")}\" style=\"--i:{index++}\" title=\"{tip}\">");
             sb.Append($"<div class=\"st-lab\">{label}{(hintInline && hint.Length > 0 ? $" <small>{hint}</small>" : "")}</div>");
-            sb.Append($"<div class=\"st-track\"><div class=\"st-fill\" style=\"width:{width.ToString(System.Globalization.CultureInfo.InvariantCulture)}%\"></div></div>");
+            var extra = fillClass?.Invoke(b.Label);
+            sb.Append($"<div class=\"st-track\"><div class=\"st-fill{(extra != null ? " " + extra : "")}\" style=\"width:{width.ToString(System.Globalization.CultureInfo.InvariantCulture)}%\"></div></div>");
             sb.Append($"<div class=\"st-num\">{b.Count}</div></div>");
         }
         return new Microsoft.AspNetCore.Html.HtmlString(sb.Append("</div>").ToString());
@@ -121,7 +124,7 @@
         <div class="st-card">
             <h3>Imaging modality</h3>
             <div class="d">Datasets per modality group · a dataset with several modalities counts in each</div>
-            @Bars(Model.Modalities, 80)
+            @Bars(Model.Modalities, 80, fillClass: ImagingModalityGroups.CssClass)
             <div class="st-note">Grey = no dataset yet. Hover a row for the full name.</div>
         </div>
 
@@ -131,7 +134,7 @@
             @Bars(Model.Categories, 225)
             @if (Model.WithoutCategory > 0)
             {
-                <div class="st-note">@Model.WithoutCategory @(Model.WithoutCategory == 1 ? "dataset" : "datasets") without a category (e.g. healthy animals).</div>
+                <div class="st-note">@Model.WithoutCategory @(Model.WithoutCategory == 1 ? "dataset" : "datasets") without a category yet.</div>
             }
         </div>
 
@@ -144,7 +147,7 @@
         <div class="st-card">
             <h3>Country of imaging facility</h3>
             <div class="d">Where the images were acquired</div>
-            @Bars(Model.CountryBars, 130)
+            @Bars(Model.CountryBars, 130, fillClass: CountryFlags.CssClass)
         </div>
 
         <div class="st-card">

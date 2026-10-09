@@ -2,14 +2,14 @@
 @using Pidar.Infrastructure
 @{
     ViewData["Title"] = "Users";
-    var roles = new[] { "None", AppRoles.Curator, AppRoles.Admin };
+    var roles = new[] { AppRoles.Curator, AppRoles.Admin };
 }
 
 <h2 class="text-center mb-2">Users</h2>
 <p class="text-center text-muted small mb-4">
     <strong>Admin</strong>: everything, including delete and this page &middot;
-    <strong>Curator</strong>: create and edit datasets &middot;
-    <strong>None</strong>: can log in, read-only
+    <strong>Curator</strong>: create and edit datasets.
+    Everyone else uses PIDAR without an account.
 </p>
 
 @if (TempData["Message"] is string msg)
@@ -41,7 +41,6 @@
                 <select name="role" class="form-select">
                     <option value="@AppRoles.Curator" selected>Curator</option>
                     <option value="@AppRoles.Admin">Admin</option>
-                    <option value="None">None (read-only)</option>
                 </select>
             </div>
             <div class="col-sm-3">
@@ -80,6 +79,7 @@
                 <span class="user-email">@u.Email</span>
                 @if (u.IsSelf) { <span class="badge bg-secondary ms-1">you</span> }
                 @if (!u.EmailConfirmed) { <span class="badge bg-warning text-dark ms-1" title="Email never confirmed">unconfirmed</span> }
+                @if (u.Role == "") { <span class="badge bg-danger ms-1" title="Accounts without a role cannot sign in. Give a role or delete the account.">no role: can't sign in</span> }
             </div>
 
             <!-- Role -->
@@ -89,6 +89,10 @@
                     <input type="hidden" name="id" value="@u.Id" />
                     <select name="role" class="form-select form-select-sm" aria-label="Role for @u.Email"
                             disabled="@(u.IsSelf ? "disabled" : null)">
+                        @if (u.Role == "")
+                        {
+                            <option value="" selected disabled>choose…</option>
+                        }
                         @foreach (var r in roles)
                         {
                             <option value="@r" selected="@(r == u.Role ? "selected" : null)">@r</option>

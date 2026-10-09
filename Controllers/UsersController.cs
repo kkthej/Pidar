@@ -13,7 +13,7 @@ namespace Pidar.Controllers;
 
 /// <summary>
 /// Admin-only user management: list users, create accounts, set role
-/// (None / Curator / Admin), deactivate / activate, send a password-reset link, delete.
+/// (Curator / Admin), deactivate / activate, send a password-reset link, delete.
 /// Self-registration is disabled, so this is the only way to add users.
 /// </summary>
 [Authorize(Roles = AppRoles.Admin)]
@@ -46,7 +46,7 @@ public sealed class UsersController : Controller
             var roles = await _users.GetRolesAsync(u);
             var role = roles.Contains(AppRoles.Admin) ? AppRoles.Admin
                      : roles.Contains(AppRoles.Curator) ? AppRoles.Curator
-                     : "None";
+                     : "";   // older account without a role: cannot sign in until one is given
             var active = u.LockoutEnd == null || u.LockoutEnd <= DateTimeOffset.UtcNow;
             rows.Add(new UserRow(u.Id, u.Email ?? u.UserName ?? "", u.EmailConfirmed, active, role, u.Id == me));
         }
@@ -60,6 +60,11 @@ public sealed class UsersController : Controller
     public async Task<IActionResult> Create(string email, string role)
     {
         email = (email ?? "").Trim();
+        if (!AppRoles.IsValid(role))
+        {
+            TempData["Error"] = "Choose a role: Curator or Admin.";
+            return RedirectToAction(nameof(Index));
+        }
         if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
         {
             TempData["Error"] = "Please enter a valid email address.";
@@ -80,8 +85,7 @@ public sealed class UsersController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        if (role == AppRoles.Admin || role == AppRoles.Curator)
-            await _users.AddToRoleAsync(user, role);
+        await _users.AddToRoleAsync(user, role);
 
         _logger.LogInformation("{Admin} created user {Email} with role {Role}", User.Identity?.Name, email, role);
         await SendSetPasswordLink(user, isNewAccount: true);
@@ -96,6 +100,12 @@ public sealed class UsersController : Controller
         var user = await _users.FindByIdAsync(id);
         if (user == null) return NotFound();
 
+        if (!AppRoles.IsValid(role))
+        {
+            TempData["Error"] = "Choose a role: Curator or Admin. To remove someone's access, deactivate or delete the account.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (user.Id == _users.GetUserId(User) && role != AppRoles.Admin)
         {
             TempData["Error"] = "You can't remove your own Admin role.";
@@ -105,14 +115,13 @@ public sealed class UsersController : Controller
         var current = await _users.GetRolesAsync(user);
         var toRemove = current.Where(r => AppRoles.All.Contains(r)).ToList();
         if (toRemove.Any()) await _users.RemoveFromRolesAsync(user, toRemove);
-        if (role == AppRoles.Admin || role == AppRoles.Curator)
-            await _users.AddToRoleAsync(user, role);
+        await _users.AddToRoleAsync(user, role);
 
         // Forces the user's existing login to refresh (picks up the new role / gets signed out)
         await _users.UpdateSecurityStampAsync(user);
 
         _logger.LogInformation("{Admin} set role of {Email} to {Role}", User.Identity?.Name, user.Email, role);
-        TempData["Message"] = $"{user.Email} is now: {(role is AppRoles.Admin or AppRoles.Curator ? role : "no role (read-only)")}.";
+        TempData["Message"] = $"{user.Email} is now: {role}.";
         return RedirectToAction(nameof(Index));
     }
 

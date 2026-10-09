@@ -37,11 +37,11 @@ namespace Pidar.Helpers
             if (modCounts.TryGetValue(ImagingModalityGroups.Other, out var otherMods))
                 modalities.Add(new Bar("Other", otherMods, "Not one of the 12 groups"));
 
-            // ---- main disease category: all 8, zero included, plus older values not in the list ----
+            // ---- main disease category: all 9 (8 + Healthy), zero included, plus older values not in the list ----
             var catCounts = Count(rows.Where(r => !string.IsNullOrWhiteSpace(r.DiseaseCategory))
                                       .Select(r => DiseaseCategories.Find(r.DiseaseCategory)?.Label ?? r.DiseaseCategory!.Trim()));
             var categories = DiseaseCategories.All
-                .Select(o => new Bar(o.Label, catCounts.GetValueOrDefault(o.Label), o.Doid))
+                .Select(o => new Bar(o.Label, catCounts.GetValueOrDefault(o.Label), o.Code))
                 .Concat(catCounts.Where(kv => DiseaseCategories.Find(kv.Key) == null)
                                  .Select(kv => new Bar(kv.Key, kv.Value, "Not in the list")))
                 .ToList();

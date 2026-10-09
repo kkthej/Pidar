@@ -1,5 +1,6 @@
 ﻿using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -87,6 +88,20 @@ builder.Services.ConfigureApplicationCookie(o =>
 {
     o.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     o.SlidingExpiration = true;
+
+    // Only Admin / Curator accounts may be signed in. The login page already refuses accounts without
+    // a role; this also ends sessions that were open before, or that came in through 2FA / recovery codes.
+    // It runs after Identity's own check, which refreshes the roles in the cookie every minute
+    // (SecurityStampValidatorOptions above), so taking away a role signs the user out within a minute.
+    o.Events.OnValidatePrincipal = async ctx =>
+    {
+        await SecurityStampValidator.ValidatePrincipalAsync(ctx);
+        if (ctx.Principal?.Identity?.IsAuthenticated == true && !AppRoles.HasAppRole(ctx.Principal))
+        {
+            ctx.RejectPrincipal();
+            await ctx.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        }
+    };
 });
 
 // Real email sender (Gmail SMTP via Smtp__* environment variables)

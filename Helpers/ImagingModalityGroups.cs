@@ -40,6 +40,14 @@ namespace Pidar.Helpers
             ["MPI"] = "Magnetic Particle Imaging",
         };
 
+        /// <summary>
+        /// CSS class giving a group its colour (wwwroot/css/site.css, "IMAGING MODALITY COLOURS"):
+        /// "PET/CT" → "mod-pet-ct". Combined modalities are drawn half in each colour.
+        /// Null for text that fits no group, which stays grey.
+        /// </summary>
+        public static string? CssClass(string? group) =>
+            group != null && FullNames.ContainsKey(group) ? "mod-" + group.ToLowerInvariant().Replace('/', '-') : null;
+
         public const string Other = "Other";
         public const string FieldName = "StudyComponent.ImagingModality";
 
@@ -163,7 +171,7 @@ namespace Pidar.Helpers
                 var id = $"modality-opt-{n++}";
                 var on = selected.Contains(g) ? " checked" : "";
                 sb.Append($"<input type=\"checkbox\" class=\"btn-check modality-opt\" id=\"{id}\" value=\"{E(g)}\" autocomplete=\"off\"{on}>");
-                sb.Append($"<label class=\"btn btn-sm btn-outline-primary\" for=\"{id}\" title=\"{E(FullNames[g])}\">{E(g)}</label>");
+                sb.Append($"<label class=\"btn btn-sm btn-outline-primary {CssClass(g)}\" for=\"{id}\" title=\"{E(FullNames[g])}\">{E(g)}</label>");
             }
             foreach (var u in unmatched)
             {

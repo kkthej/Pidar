@@ -2,7 +2,7 @@
  * disease-category.js
  * Create/Edit dataset: when a Disease Category is chosen in the dropdown, put its DOID code
  * (data-doid on the option) into the "Doid Disease Category" field.
- * - Categories without a code (Healthy / Other) clear the field only if it still holds
+ * - Categories without a code clear the field only if it still holds
  *   one of the list's own codes, so a code typed by hand is never wiped.
  * - Also used by metadata-prefill.js, which fires a "change" event after setting the value.
  */
