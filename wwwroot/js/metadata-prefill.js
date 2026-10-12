@@ -777,6 +777,10 @@
 
         zone.style.borderColor = filled > 0 ? BORDER_SUCCESS : BORDER_WARN;
         renderFeedback(status, filled, format, notFound);
+
+        // Lets other scripts react to the new values (the contribution form re-draws its
+        // buttons from the filled fields and saves the draft)
+        document.dispatchEvent(new CustomEvent("pidar:prefilled", { detail: { filled: filled } }));
     }
 
     // ------------------------------------------------------------------

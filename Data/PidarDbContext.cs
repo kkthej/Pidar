@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pidar.Models;
 using Pidar.Models.Ontology;
+using Pidar.Models.Submissions;
 using System.Linq;
 
 
@@ -30,6 +31,10 @@ namespace Pidar.Data
         public DbSet<Ontology> Ontologies { get; set; } = null!;
         public DbSet<DatasetOntologyTerm> DatasetOntologyTerms { get; set; } = null!;
         public DbSet<OntologySynonym> OntologySynonyms { get; set; } = null!;
+
+        // Contributions from data providers (Contribute page). Separate from the dataset tables:
+        // a dataset is only created from one when an Admin/Curator approves it.
+        public DbSet<DatasetSubmission> DatasetSubmissions { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -113,6 +118,29 @@ namespace Pidar.Data
 
                 entity.HasIndex(e => e.Code)
                     .HasDatabaseName("ix_ontology_synonym_code");
+            });
+
+            // --------------------
+            // CONTRIBUTIONS (data provider submissions)
+            // --------------------
+            modelBuilder.Entity<DatasetSubmission>(entity =>
+            {
+                entity.ToTable("dataset_submission");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.OwnerUserId).HasColumnType("text").IsRequired();
+                entity.Property(e => e.OwnerEmail).HasColumnType("text").IsRequired();
+                entity.Property(e => e.Status).HasColumnType("text").IsRequired();
+                entity.Property(e => e.PayloadJson).HasColumnType("jsonb").IsRequired();
+                entity.Property(e => e.ReviewerComment).HasColumnType("text");
+                entity.Property(e => e.ReviewedBy).HasColumnType("text");
+
+                entity.HasIndex(e => e.OwnerUserId)
+                    .HasDatabaseName("ix_dataset_submission_owner_user_id");
+
+                entity.HasIndex(e => e.Status)
+                    .HasDatabaseName("ix_dataset_submission_status");
             });
 
         }

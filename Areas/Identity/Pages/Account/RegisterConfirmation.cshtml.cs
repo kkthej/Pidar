@@ -19,10 +19,13 @@ namespace Pidar.Areas.Identity.Pages.Account
         private readonly UserManager<PidarUser> _userManager;
         private readonly IEmailSender _sender;
 
-        public RegisterConfirmationModel(UserManager<PidarUser> userManager, IEmailSender sender)
+        private readonly IWebHostEnvironment _env;
+
+        public RegisterConfirmationModel(UserManager<PidarUser> userManager, IEmailSender sender, IWebHostEnvironment env)
         {
             _userManager = userManager;
             _sender = sender;
+            _env = env;
         }
 
         /// <summary>
@@ -51,15 +54,19 @@ namespace Pidar.Areas.Identity.Pages.Account
             }
             returnUrl = returnUrl ?? Url.Content("~/");
 
+            Email = email;
+
+            // Same page whether or not the account exists, so it can't be used to find registered emails
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
             {
-                return NotFound($"Unable to load user with email '{email}'.");
+                return Page();
             }
 
-            Email = email;
-            // Never show a confirm link on the page: it let anyone confirm any account.
-            DisplayConfirmAccountLink = false;
+            // Never show the confirm link on a real server: it would let anyone confirm any account.
+            // Only for local testing: Development environment AND no SMTP configured (nothing was emailed).
+            DisplayConfirmAccountLink = _env.IsDevelopment()
+                && _sender is Pidar.Services.Email.SmtpEmailSender smtp && !smtp.IsConfigured;
             if (DisplayConfirmAccountLink)
             {
                 var userId = await _userManager.GetUserIdAsync(user);

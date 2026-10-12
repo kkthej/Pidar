@@ -1,0 +1,215 @@
+@model Pidar.Controllers.SubmissionEditViewModel
+@using Pidar.Models.Submissions
+@using Pidar.Controllers
+@{
+    ViewData["Title"] = "Describe your dataset";
+    var steps = ContributionForm.Steps;
+    var reviewIndex = steps.Count;
+    var s = Model.Submission;
+    var prefillMapJson = Pidar.Helpers.PrefillFieldMap.BuildJson(CategoryProvider.GetCategories());
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/contribution.css" asp-append-version="true" />
+}
+
+<div class="wz-page">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div>
+            <a asp-action="Index" class="small text-decoration-none"><i class="bi bi-arrow-left"></i> My contributions</a>
+            <h2 class="h4 mb-0 mt-1">Make your data FAIR</h2>
+        </div>
+        <div class="wz-save-status small text-muted" id="wz-save-status" aria-live="polite">
+            Last saved @s.UpdatedAt.ToString("yyyy-MM-dd HH:mm") UTC
+        </div>
+    </div>
+
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert-success">@msg</div>
+    }
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-warning">@err</div>
+    }
+    @if (s.Status == SubmissionStatus.NeedsRevision && !string.IsNullOrWhiteSpace(s.ReviewerComment))
+    {
+        <div class="alert alert-warning">
+            <div class="fw-bold mb-1"><i class="bi bi-chat-left-text"></i> The PIDAR team asks for these changes:</div>
+            <div class="wz-pre">@s.ReviewerComment</div>
+            <div class="small text-muted mt-1">Update the answers below, then submit again from the last step.</div>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- ── Step list ─────────────────────────────────────────── -->
+        <nav class="col-lg-3" aria-label="Form sections">
+            <div class="wz-steps-nav">
+                <div class="wz-overall mb-2">
+                    <div class="d-flex justify-content-between small">
+                        <span>Required answers</span><span id="wz-overall-text"></span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="Required answers completed">
+                        <div class="progress-bar bg-success" id="wz-overall-bar" style="width:0%"></div>
+                    </div>
+                </div>
+                <ol class="list-unstyled mb-0">
+                    @for (var i = 0; i < steps.Count; i++)
+                    {
+                        var p = Model.Progress[i];
+                        <li>
+                            <button type="button" class="wz-nav-item @(i == Model.ActiveStep ? "active" : "")" data-goto="@i">
+                                <i class="bi @steps[i].Icon"></i>
+                                <span class="wz-nav-title">@steps[i].Title</span>
+                                <span class="wz-nav-badge" data-badge="@i">@(p.Complete ? "✓" : $"{p.Filled}/{p.Required}")</span>
+                            </button>
+                        </li>
+                    }
+                    <li>
+                        <button type="button" class="wz-nav-item @(reviewIndex == Model.ActiveStep ? "active" : "")" data-goto="@reviewIndex">
+                            <i class="bi bi-send-check"></i>
+                            <span class="wz-nav-title">Review &amp; submit</span>
+                        </button>
+                    </li>
+                </ol>
+            </div>
+        </nav>
+
+        <!-- ── Form ──────────────────────────────────────────────── -->
+        <div class="col-lg-9">
+            <details class="card mb-3 wz-import">
+                <summary class="card-body py-2">
+                    <i class="bi bi-file-earmark-excel text-success"></i>
+                    Already filled in the Excel metadata template? <strong>Import it</strong> to fill this form.
+                </summary>
+                <div class="card-body pt-0">
+                    <div id="prefill-zone" class="wz-dropzone" data-field-map="@prefillMapJson">
+                        <p class="mb-1 fw-bold">Drag &amp; drop your filled template (.xlsx) here, or click to choose it</p>
+                        <p class="text-muted small mb-0">Answers already in the form are replaced by the ones in the file. Check every section afterwards.</p>
+                        <input id="prefill-file-input" type="file" accept=".xlsx" class="d-none" />
+                        <div id="prefill-status" class="mt-2 small"></div>
+                    </div>
+                </div>
+            </details>
+
+            <form id="wz-form" method="post" asp-action="Save" asp-route-id="@s.Id"
+                  data-start-step="@Model.ActiveStep" data-step-count="@steps.Count"
+                  data-submit-url="@Url.Action("Submit", new { id = s.Id })" novalidate>
+                <input type="hidden" name="step" id="wz-step-input" value="@Model.ActiveStep" />
+
+                @for (var i = 0; i < steps.Count; i++)
+                {
+                    var step = steps[i];
+                    <section class="wz-step" data-step="@i" hidden="@(i != Model.ActiveStep ? "hidden" : null)" aria-labelledby="wz-step-title-@i">
+                        <div class="wz-step-head">
+                            <div class="wz-step-count">Step @(i + 1) of @steps.Count</div>
+                            <h3 class="h5 mb-1" id="wz-step-title-@i"><i class="bi @step.Icon"></i> @step.Title</h3>
+                            @if (!string.IsNullOrEmpty(step.Intro))
+                            {
+                                <p class="text-muted mb-0">@step.Intro</p>
+                            }
+                        </div>
+
+                        @foreach (var g in step.Groups)
+                        {
+                            <fieldset class="wz-group card" data-show-if="@(g.ShowIf?.ToAttribute())">
+                                <legend class="wz-group-title">@g.Title</legend>
+                                @if (!string.IsNullOrEmpty(g.Intro))
+                                {
+                                    <p class="text-muted small">@g.Intro</p>
+                                }
+                                @foreach (var f in g.Fields)
+                                {
+                                    <partial name="_Field" model="new SubmissionFieldViewModel(f, Model.Value(f.Path))" />
+                                }
+                            </fieldset>
+                        }
+
+                        <div class="wz-step-buttons">
+                            @if (i > 0)
+                            {
+                                <button type="button" class="btn btn-outline-secondary" data-goto="@(i - 1)"><i class="bi bi-arrow-left"></i> Back</button>
+                            }
+                            <span class="flex-grow-1"></span>
+                            <button type="submit" class="btn btn-link" name="exit" value="true" formnovalidate>Save and finish later</button>
+                            <button type="button" class="btn btn-primary" data-goto="@(i + 1)">Next <i class="bi bi-arrow-right"></i></button>
+                        </div>
+                    </section>
+                }
+
+                <!-- ── Review & submit ───────────────────────────── -->
+                <section class="wz-step" data-step="@reviewIndex" hidden="@(reviewIndex != Model.ActiveStep ? "hidden" : null)" aria-labelledby="wz-step-title-review">
+                    <div class="wz-step-head">
+                        <div class="wz-step-count">Last step</div>
+                        <h3 class="h5 mb-1" id="wz-step-title-review"><i class="bi bi-send-check"></i> Review &amp; submit</h3>
+                        <p class="text-muted mb-0">Check that every section is complete, then send your dataset description to the PIDAR team.</p>
+                    </div>
+
+                    @if (Model.Issues is { Count: > 0 })
+                    {
+                        <div class="alert alert-warning">
+                            <div class="fw-bold mb-1">Please fix these answers before submitting:</div>
+                            <ul class="mb-0">
+                                @foreach (var issue in Model.Issues)
+                                {
+                                    <li>
+                                        <a href="#" data-goto="@issue.StepIndex" data-focus="@issue.Path">@issue.StepTitle → @issue.Label</a>:
+                                        @issue.Message
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="wz-group card">
+                        <div class="wz-group-title">Sections</div>
+                        <ul class="list-unstyled mb-0" id="wz-review-list">
+                            @for (var i = 0; i < steps.Count; i++)
+                            {
+                                <li class="wz-review-item" data-review="@i">
+                                    <span class="wz-review-state" data-review-state="@i"></span>
+                                    <a href="#" data-goto="@i">@steps[i].Title</a>
+                                    <ul class="wz-review-missing small" data-review-missing="@i"></ul>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="wz-group card">
+                        <label class="wz-group-title" for="f-comment">Anything else we should know? <span class="wz-opt">optional</span></label>
+                        <p class="text-muted small">
+                            For example metadata you think is missing from this form, or files you will send us (such as a licence agreement).
+                        </p>
+                        <textarea class="form-control" id="f-comment" name="@ContributionForm.CommentKey" rows="3"
+                                  maxlength="@ContributionForm.MaxValueLength">@Model.Value(ContributionForm.CommentKey)</textarea>
+                    </div>
+
+                    <div class="wz-group card wz-submit-box">
+                        <p class="mb-2">
+                            When you submit, the PIDAR team checks your description and either publishes it or asks you for changes.
+                            You cannot edit it while it is being reviewed.
+                        </p>
+                        <div id="wz-submit-blocked" class="text-danger small mb-2" hidden></div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary" data-goto="@(reviewIndex - 1)"><i class="bi bi-arrow-left"></i> Back</button>
+                            <span class="flex-grow-1"></span>
+                            <button type="submit" class="btn btn-link" name="exit" value="true" formnovalidate>Save and finish later</button>
+                            <button type="submit" class="btn btn-success" id="wz-submit"
+                                    formaction="@Url.Action("Submit", new { id = s.Id })" formnovalidate>
+                                <i class="bi bi-send"></i> Submit to PIDAR
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- SheetJS: client-side xlsx parsing, no server round-trip (same as the Create page) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="~/js/metadata-prefill.js" asp-append-version="true"></script>
+    <script src="~/js/imaging-modality.js" asp-append-version="true"></script>
+    <script src="~/js/contribution-wizard.js" asp-append-version="true"></script>
+}

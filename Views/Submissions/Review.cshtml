@@ -1,0 +1,89 @@
+@model List<Pidar.Models.Submissions.DatasetSubmission>
+@using Pidar.Models.Submissions
+@using Pidar.Services.Submissions
+@{
+    ViewData["Title"] = "Contributions to review";
+    var status = ViewData["Status"] as string ?? SubmissionStatus.Submitted;
+    var counts = ViewData["Counts"] as Dictionary<string, int> ?? new();
+    var tabs = new[] { SubmissionStatus.Submitted, SubmissionStatus.NeedsRevision, SubmissionStatus.Approved, SubmissionStatus.Rejected };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/contribution.css" asp-append-version="true" />
+}
+
+<div class="wz-page">
+    <h2 class="h4 mb-1">Contributions to review</h2>
+    <p class="text-muted">
+        Dataset descriptions sent by data providers. Approving one creates the public dataset; asking for changes sends it back
+        to the provider with your message. Drafts are not listed: they stay private until the provider submits them.
+    </p>
+
+    @if (TempData["Message"] is string msg)
+    {
+        <div class="alert alert-success">@msg</div>
+    }
+    @if (TempData["Error"] is string err)
+    {
+        <div class="alert alert-warning">@err</div>
+    }
+
+    <ul class="nav nav-tabs mb-3">
+        @foreach (var t in tabs)
+        {
+            counts.TryGetValue(t, out var n);
+            <li class="nav-item">
+                <a class="nav-link @(t == status ? "active" : "")" asp-action="Review" asp-route-status="@t">
+                    @SubmissionStatus.Label(t).Split('–')[0].Trim()
+                    <span class="badge rounded-pill text-bg-@(t == SubmissionStatus.Submitted && n > 0 ? "primary" : "light")">@n</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (Model.Count == 0)
+    {
+        <p class="text-muted">Nothing here.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Dataset</th>
+                        <th>Data provider</th>
+                        <th>Submitted</th>
+                        <th>Required answers</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model)
+                    {
+                        var answers = SubmissionService.ReadAnswers(s);
+                        var issues = SubmissionService.Validate(answers).Count;
+                        <tr>
+                            <td>@SubmissionService.Title(s)</td>
+                            <td class="small">@s.OwnerEmail</td>
+                            <td class="small text-nowrap">@(s.SubmittedAt?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td class="small">
+                                @if (issues == 0)
+                                {
+                                    <span class="text-success"><i class="bi bi-check-circle"></i> complete</span>
+                                }
+                                else
+                                {
+                                    <span class="text-warning-emphasis"><i class="bi bi-exclamation-circle"></i> @issues to check</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-primary" asp-action="Details" asp-route-id="@s.Id">Open</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

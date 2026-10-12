@@ -1,0 +1,87 @@
+/* Contribute page and the "Make your data FAIR" form (Views/Submissions, Views/Home/Contribute) */
+
+/* ── Contribute landing ───────────────────────────────────────── */
+.contribute-hero { padding: 2rem 1rem 1rem; }
+.contribute-cta { box-shadow: 0 .5rem 1.25rem rgba(13, 110, 253, .25); }
+.contribute-step-num {
+    width: 2rem; height: 2rem; border-radius: 50%;
+    background: var(--bs-primary); color: #fff; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; margin-bottom: .5rem;
+}
+
+/* ── Page ─────────────────────────────────────────────────────── */
+.wz-page { max-width: 1200px; margin: 0 auto; }
+.wz-pre { white-space: pre-wrap; }
+.wz-save-status { min-height: 1.25rem; }
+
+/* ── Step list (left) ─────────────────────────────────────────── */
+.wz-steps-nav { position: sticky; top: 6rem; }
+.wz-nav-item {
+    display: flex; align-items: center; gap: .5rem; width: 100%;
+    padding: .5rem .75rem; margin-bottom: .25rem;
+    border: 1px solid transparent; border-radius: .5rem;
+    background: transparent; text-align: left; color: var(--bs-body-color);
+}
+.wz-nav-item:hover { background: var(--bs-tertiary-bg); }
+.wz-nav-item.active { background: var(--bs-primary-bg-subtle); border-color: var(--bs-primary-border-subtle); font-weight: 600; }
+.wz-nav-title { flex: 1; }
+.wz-nav-badge { font-size: .75rem; color: var(--bs-secondary-color); white-space: nowrap; }
+.wz-nav-badge.done { color: var(--bs-success); font-weight: 700; }
+
+@media (max-width: 991.98px) {
+    /* on phones the step list becomes a horizontal strip */
+    .wz-steps-nav { position: static; }
+    .wz-steps-nav ol { display: flex; overflow-x: auto; gap: .25rem; padding-bottom: .25rem; }
+    .wz-steps-nav li { flex: 0 0 auto; }
+    .wz-nav-item { width: auto; white-space: nowrap; }
+}
+
+/* ── Steps and groups ─────────────────────────────────────────── */
+.wz-step-head { margin-bottom: 1rem; }
+.wz-step-count { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--bs-secondary-color); }
+.wz-group { padding: 1rem 1.25rem; margin-bottom: 1rem; border-radius: .75rem; }
+.wz-group-title, .wz-group legend { font-size: 1rem; font-weight: 600; margin-bottom: .75rem; float: none; width: auto; }
+.wz-step-buttons { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1rem 0 2rem; }
+
+/* ── Questions ────────────────────────────────────────────────── */
+.wz-field { margin-bottom: 1.1rem; }
+.wz-field:last-child { margin-bottom: 0; }
+.wz-label { font-weight: 500; margin-bottom: .35rem; }
+.wz-req { color: var(--bs-danger); margin-left: .15rem; }
+.wz-opt { font-size: .75rem; font-weight: 400; color: var(--bs-secondary-color); margin-left: .35rem; }
+.wz-short { max-width: 16rem; }
+.wz-help-row { display: flex; align-items: flex-start; gap: .5rem; }
+.wz-help-row .form-text { flex: 1; margin-top: .25rem; }
+.wz-na { padding: 0 .25rem; font-size: .75rem; margin-top: .2rem; text-decoration: none; }
+.wz-flash { animation: wz-flash 1.6s ease-out; border-radius: .5rem; }
+@keyframes wz-flash { 0% { background: var(--bs-warning-bg-subtle); } 100% { background: transparent; } }
+
+.wz-choice { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.wz-choice .wz-opt-btn { min-width: 4.5rem; border-radius: 2rem; }
+.wz-choice .wz-other-text { max-width: 18rem; }
+
+.wz-multi .wz-check { padding: .35rem .5rem .35rem 2rem; margin-bottom: .2rem; border-radius: .4rem; }
+.wz-multi .wz-check:hover { background: var(--bs-tertiary-bg); }
+.wz-code { font-family: var(--bs-font-monospace); font-size: .75rem; color: var(--bs-secondary-color); margin-left: .35rem; }
+.wz-desc { display: block; font-size: .8rem; color: var(--bs-secondary-color); }
+
+/* Excel import */
+.wz-import summary { cursor: pointer; list-style: none; }
+.wz-import summary::-webkit-details-marker { display: none; }
+.wz-dropzone { border: 2px dashed #0dcaf0; border-radius: .75rem; padding: 1.25rem; text-align: center; cursor: pointer; }
+
+/* Review step */
+.wz-review-item { padding: .4rem 0; border-bottom: 1px solid var(--bs-border-color-translucent); }
+.wz-review-item:last-child { border-bottom: 0; }
+.wz-review-state { display: inline-block; width: 1.25rem; }
+.wz-review-missing { margin: .25rem 0 0 1.75rem; padding-left: 1rem; color: var(--bs-secondary-color); }
+.wz-submit-box { background: var(--bs-success-bg-subtle); border-color: var(--bs-success-border-subtle); }
+
+/* ── Lists and read-only view ─────────────────────────────────── */
+.wz-sub-card { border-radius: .75rem; }
+.wz-empty { border-style: dashed; }
+.wz-view-group { margin-bottom: 1rem; }
+.wz-view-group:last-child { margin-bottom: 0; }
+.wz-view-group-title { font-weight: 600; font-size: .9rem; margin-bottom: .5rem; border-bottom: 1px solid var(--bs-border-color-translucent); padding-bottom: .25rem; }
+.wz-missing { background: var(--bs-warning-bg-subtle); border-radius: .25rem; }
+.wz-review-panel { border-color: var(--bs-primary-border-subtle); background: var(--bs-primary-bg-subtle); }

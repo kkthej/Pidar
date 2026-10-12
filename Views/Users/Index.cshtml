@@ -2,13 +2,14 @@
 @using Pidar.Infrastructure
 @{
     ViewData["Title"] = "Users";
-    var roles = new[] { AppRoles.Curator, AppRoles.Admin };
+    var roles = new[] { AppRoles.DataProvider, AppRoles.Curator, AppRoles.Admin };
 }
 
 <h2 class="text-center mb-2">Users</h2>
 <p class="text-center text-muted small mb-4">
     <strong>Admin</strong>: everything, including delete and this page &middot;
-    <strong>Curator</strong>: create and edit datasets.
+    <strong>Curator</strong>: create and edit datasets, review contributions &middot;
+    <strong>Data provider</strong>: fill in and submit their own contributions (researchers register themselves on the Contribute page).
     Everyone else uses PIDAR without an account.
 </p>
 
@@ -41,6 +42,7 @@
                 <select name="role" class="form-select">
                     <option value="@AppRoles.Curator" selected>Curator</option>
                     <option value="@AppRoles.Admin">Admin</option>
+                    <option value="@AppRoles.DataProvider">Data provider</option>
                 </select>
             </div>
             <div class="col-sm-3">
@@ -95,7 +97,7 @@
                         }
                         @foreach (var r in roles)
                         {
-                            <option value="@r" selected="@(r == u.Role ? "selected" : null)">@r</option>
+                            <option value="@r" selected="@(r == u.Role ? "selected" : null)">@AppRoles.DisplayName(r)</option>
                         }
                     </select>
                     @if (!u.IsSelf)

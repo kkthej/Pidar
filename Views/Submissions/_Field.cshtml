@@ -1,0 +1,159 @@
+@model Pidar.Controllers.SubmissionFieldViewModel
+@using Pidar.Models.Submissions
+@*
+    One question of the contribution form. Every question posts exactly ONE form value named after
+    its "Section.Property" path, so the Excel prefill (metadata-prefill.js) and FormData both find it:
+      - text-like kinds: the input/textarea itself
+      - Select / DiseaseCategory: the <select>
+      - YesNo / Choice / Multi / ImagingModality: a hidden input; the buttons/tick boxes around it have
+        no name and are kept in sync by contribution-wizard.js (or imaging-modality.js)
+*@
+@{
+    var f = Model.Field;
+    var value = Model.Value ?? "";
+    var id = f.DomId;
+    var helpId = id + "-help";
+    var listId = f.Suggestions.Count > 0 ? id + "-list" : null;
+    string? showIf = f.ShowIf?.ToAttribute();
+}
+
+<div class="wz-field" id="wrap-@id" data-path="@f.Path" data-kind="@f.Kind"
+     data-required="@(f.Required ? "1" : null)" data-show-if="@showIf">
+
+    <label class="form-label wz-label" for="@id">
+        @f.Label
+        @if (f.Required)
+        {
+            <span class="wz-req" title="Required">*</span>
+        }
+        else
+        {
+            <span class="wz-opt">optional</span>
+        }
+    </label>
+
+    @switch (f.Kind)
+    {
+        case FieldKind.TextArea:
+            <textarea class="form-control" id="@id" name="@f.Path" rows="3" maxlength="@ContributionForm.MaxValueLength"
+                      aria-describedby="@helpId" placeholder="@f.Placeholder">@value</textarea>
+            break;
+
+        case FieldKind.Number:
+        case FieldKind.Year:
+            <input class="form-control wz-short" id="@id" name="@f.Path" value="@value" type="text" inputmode="numeric"
+                   maxlength="@(f.Kind == FieldKind.Year ? 4 : 12)" aria-describedby="@helpId" placeholder="@f.Placeholder" />
+            break;
+
+        case FieldKind.Email:
+            <input class="form-control" id="@id" name="@f.Path" value="@value" type="email" autocomplete="email"
+                   aria-describedby="@helpId" placeholder="@f.Placeholder" />
+            break;
+
+        case FieldKind.Url:
+            <input class="form-control" id="@id" name="@f.Path" value="@value" type="url" inputmode="url"
+                   aria-describedby="@helpId" placeholder="@f.Placeholder" />
+            break;
+
+        case FieldKind.Orcid:
+            <input class="form-control wz-short" id="@id" name="@f.Path" value="@value" type="text" maxlength="60"
+                   aria-describedby="@helpId" placeholder="@f.Placeholder" />
+            break;
+
+        case FieldKind.YesNo:
+        case FieldKind.Choice:
+            <input type="hidden" id="@id" name="@f.Path" value="@value" />
+            <div class="wz-choice" data-for="@id" role="radiogroup" aria-describedby="@helpId">
+                @foreach (var o in f.Options)
+                {
+                    <button type="button" class="btn btn-outline-primary btn-sm wz-opt-btn" data-value="@o.Value" role="radio" aria-checked="false">@o.Label</button>
+                }
+                @if (f.AllowOther)
+                {
+                    <button type="button" class="btn btn-outline-secondary btn-sm wz-opt-btn wz-other-btn" data-other="1" role="radio" aria-checked="false">Other…</button>
+                    <input type="text" class="form-control form-control-sm wz-other-text" placeholder="Please specify" aria-label="@f.Label: other" hidden />
+                }
+            </div>
+            break;
+
+        case FieldKind.Multi:
+            var n = 0;
+            <input type="hidden" id="@id" name="@f.Path" value="@value" />
+            <div class="wz-multi" data-for="@id" aria-describedby="@helpId">
+                @foreach (var o in f.Options)
+                {
+                    var boxId = $"{id}-o{n++}";
+                    <div class="form-check wz-check">
+                        <input class="form-check-input" type="checkbox" id="@boxId" value="@o.Value" />
+                        <label class="form-check-label" for="@boxId">
+                            @o.Label
+                            @if (o.Value != o.Label && o.Value.Contains(':'))
+                            {
+                                <span class="wz-code">@o.Value</span>
+                            }
+                            @if (!string.IsNullOrEmpty(o.Description))
+                            {
+                                <span class="wz-desc">@o.Description</span>
+                            }
+                        </label>
+                    </div>
+                }
+                @if (f.AllowOther)
+                {
+                    <input type="text" class="form-control form-control-sm wz-other-text mt-1" placeholder="Other (separate several with commas)"
+                           aria-label="@f.Label: other" />
+                }
+            </div>
+            break;
+
+        case FieldKind.Select:
+            var inList = f.Options.Any(o => string.Equals(o.Value, value, StringComparison.OrdinalIgnoreCase));
+            <select class="form-select" id="@id" name="@f.Path" aria-describedby="@helpId">
+                <option value="">— choose —</option>
+                @foreach (var o in f.Options)
+                {
+                    <option value="@o.Value" selected="@(string.Equals(o.Value, value, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@o.Label</option>
+                }
+                @if (!inList && value.Length > 0)
+                {
+                    <option value="@value" selected>@value (not in list)</option>
+                }
+            </select>
+            break;
+
+        case FieldKind.ImagingModality:
+            @Pidar.Helpers.ImagingModalityGroups.RenderPicker(value)
+            break;
+
+        case FieldKind.DiseaseCategory:
+            @Pidar.Helpers.DiseaseCategories.RenderSelect(value)
+            break;
+
+        default:
+            <input class="form-control" id="@id" name="@f.Path" value="@value" type="text" maxlength="@ContributionForm.MaxValueLength"
+                   list="@listId" aria-describedby="@helpId" placeholder="@f.Placeholder" autocomplete="off" />
+            break;
+    }
+
+    @if (listId != null)
+    {
+        <datalist id="@listId">
+            @foreach (var s in f.Suggestions)
+            {
+                <option value="@s"></option>
+            }
+        </datalist>
+    }
+
+    <div class="wz-help-row">
+        @if (!string.IsNullOrEmpty(f.Help))
+        {
+            <div id="@helpId" class="form-text">@f.Help</div>
+        }
+        @if (f.Required && f.Kind is FieldKind.Text or FieldKind.TextArea)
+        {
+            <button type="button" class="btn btn-link btn-sm wz-na" data-na-for="@id" title="Use N/A when this does not apply to your dataset">N/A</button>
+        }
+    </div>
+    <div class="wz-error text-danger small" aria-live="polite"></div>
+</div>
