@@ -89,8 +89,9 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     o.SlidingExpiration = true;
 
-    // Only Admin / Curator accounts may be signed in. The login page already refuses accounts without
-    // a role; this also ends sessions that were open before, or that came in through 2FA / recovery codes.
+    // Only accounts with a PIDAR role (Admin / Curator / DataProvider) may be signed in. The login page
+    // already refuses accounts without a role; this also ends sessions that were open before, or that
+    // came in through 2FA / recovery codes.
     // It runs after Identity's own check, which refreshes the roles in the cookie every minute
     // (SecurityStampValidatorOptions above), so taking away a role signs the user out within a minute.
     o.Events.OnValidatePrincipal = async ctx =>
@@ -115,6 +116,9 @@ builder.Services.AddScoped<OntologyIndexService>();
 builder.Services.AddScoped<OntologySearchService>();
 // Register DatasetXnatSyncJob
 builder.Services.AddScoped<DatasetXnatSyncJob>();
+// Contributions from data providers (Contribute page → Submissions)
+builder.Services.AddScoped<Pidar.Services.Submissions.SubmissionService>();
+builder.Services.AddScoped<Pidar.Services.Submissions.SubmissionNotifier>();
 
 
 

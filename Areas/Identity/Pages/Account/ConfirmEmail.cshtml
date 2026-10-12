@@ -4,5 +4,11 @@
     ViewData["Title"] = "Confirm email";
 }
 
-<h1>@ViewData["Title"]</h1>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
+<div class="col-md-8 col-lg-6 mx-auto text-center mt-4">
+    <h2>@ViewData["Title"]</h2>
+    <partial name="_StatusMessage" model="Model.StatusMessage" />
+    <a class="btn btn-primary mt-2" asp-page="./Login"
+       asp-route-returnUrl="@Url.Action("Index", "Submissions", new { area = "" })">
+        Log in and describe your dataset
+    </a>
+</div>

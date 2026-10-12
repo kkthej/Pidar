@@ -34,40 +34,9 @@
     var categories = CategoryProvider.GetCategories();
 
     // ------------ PREFILL MAP ------------
-    // Base map: derived automatically from CategoryProvider + PrettyLabel.
-    // Adding a field to CategoryProvider keeps prefill in sync with no extra work.
-    var prefillMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    foreach (var cat in categories)
-    {
-        foreach (var field in cat.Value)
-        {
-            string propName = field.Split('.')[1];
-            string label = PrettyLabel(propName).ToLowerInvariant();
-            prefillMap[label] = field;
-        }
-    }
-
-    // Aliases: the only 6 xlsx export labels that differ from PrettyLabel(propertyName).
-    // Verified by comparing every CategoryProvider field against the actual xlsx dump.
-    // Do NOT add entries here unless PrettyLabel of the C# property genuinely differs
-    // from the xlsx column A label — the auto-generated map above handles everything else.
-    var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-        // Publication — export uses short display names (strips "Paper" prefix)
-        ["authors"] = "Publication.PaperAuthors",
-        ["journal"] = "Publication.PaperJournal",
-        ["year"] = "Publication.PaperYear",
-        ["doi"] = "Publication.PaperDoi",
-
-        // InVivo — export uses short display names from DownloadController.PrettyLabelMap
-        ["sample size"] = "InVivo.OverallSampleSize",
-        ["organ/tissue"] = "InVivo.OrganOrTissue",
-    };
-
-    foreach (var alias in aliases)
-        prefillMap[alias.Key] = alias.Value;
-
-    string prefillMapJson = JsonSerializer.Serialize(prefillMap);
+    // label → field map for metadata-prefill.js, derived from CategoryProvider (see Helpers/PrefillFieldMap.cs,
+    // shared with the contribution form).
+    string prefillMapJson = PrefillFieldMap.BuildJson(categories);
 }
 
 <h2 class="text-center mb-4">Create New Dataset</h2>

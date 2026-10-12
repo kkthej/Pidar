@@ -13,8 +13,8 @@ namespace Pidar.Controllers;
 
 /// <summary>
 /// Admin-only user management: list users, create accounts, set role
-/// (Curator / Admin), deactivate / activate, send a password-reset link, delete.
-/// Self-registration is disabled, so this is the only way to add users.
+/// (Data provider / Curator / Admin), deactivate / activate, send a password-reset link, delete.
+/// Researchers can also register themselves (Contribute page): they get the Data provider role.
 /// </summary>
 [Authorize(Roles = AppRoles.Admin)]
 [Route("Users")]
@@ -46,6 +46,7 @@ public sealed class UsersController : Controller
             var roles = await _users.GetRolesAsync(u);
             var role = roles.Contains(AppRoles.Admin) ? AppRoles.Admin
                      : roles.Contains(AppRoles.Curator) ? AppRoles.Curator
+                     : roles.Contains(AppRoles.DataProvider) ? AppRoles.DataProvider
                      : "";   // older account without a role: cannot sign in until one is given
             var active = u.LockoutEnd == null || u.LockoutEnd <= DateTimeOffset.UtcNow;
             rows.Add(new UserRow(u.Id, u.Email ?? u.UserName ?? "", u.EmailConfirmed, active, role, u.Id == me));
@@ -62,7 +63,7 @@ public sealed class UsersController : Controller
         email = (email ?? "").Trim();
         if (!AppRoles.IsValid(role))
         {
-            TempData["Error"] = "Choose a role: Curator or Admin.";
+            TempData["Error"] = "Choose a role: Data provider, Curator or Admin.";
             return RedirectToAction(nameof(Index));
         }
         if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
@@ -102,7 +103,7 @@ public sealed class UsersController : Controller
 
         if (!AppRoles.IsValid(role))
         {
-            TempData["Error"] = "Choose a role: Curator or Admin. To remove someone's access, deactivate or delete the account.";
+            TempData["Error"] = "Choose a role: Data provider, Curator or Admin. To remove someone's access, deactivate or delete the account.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -121,7 +122,7 @@ public sealed class UsersController : Controller
         await _users.UpdateSecurityStampAsync(user);
 
         _logger.LogInformation("{Admin} set role of {Email} to {Role}", User.Identity?.Name, user.Email, role);
-        TempData["Message"] = $"{user.Email} is now: {role}.";
+        TempData["Message"] = $"{user.Email} is now: {AppRoles.DisplayName(role)}.";
         return RedirectToAction(nameof(Index));
     }
 

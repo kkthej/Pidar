@@ -27,8 +27,19 @@
                     </a>
                 </li>
 
+                <li>
+                    <a class="dropdown-item" asp-area="" asp-controller="Submissions" asp-action="Index">
+                        My contributions
+                    </a>
+                </li>
+
                 @if (User.IsInRole("Admin") || User.IsInRole("Curator"))
                 {
+                    <li>
+                        <a class="dropdown-item" asp-area="" asp-controller="Submissions" asp-action="Review">
+                            Review contributions
+                        </a>
+                    </li>
                     <li>
                         <a class="dropdown-item" asp-area="" asp-controller="Synonyms" asp-action="Index">
                             Synonyms

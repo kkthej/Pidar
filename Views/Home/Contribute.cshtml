@@ -1,16 +1,79 @@
-﻿@{
+@{
     ViewData["Title"] = "Contribute";
+    var signedIn = User.Identity?.IsAuthenticated == true;
 }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<div class="col-md-6 text-center container mt-4">
-    <h3>Submission of Datasets to PIDAR</h3>
-    <p>To submit new datasets, please download the template, fill in all the requested metadata and then send the file by reaching out to us. If there are no further requests for clarifications or correction, the dataset will be added to the repository. A detailed description for filling in the template is provided in the “Submission guidelines” document.</p>
+@section Styles {
+    <link rel="stylesheet" href="~/css/contribution.css" asp-append-version="true" />
+}
 
-    <p>Since we aim to have the PIDAR repository that adheres to the FAIR principles, we strongly recommend that submitters make their datasets available under a license that is as open as possible (e.g. CC-BY). Further information about type of licenses are available in the “Submission Guidelines” document.</p>
+<div class="contribute-hero text-center">
+    <h2 class="mb-2">Submission of datasets to PIDAR</h2>
+    <p class="lead mb-4 mx-auto" style="max-width: 46rem;">
+        Describe your preclinical imaging dataset in a guided online form. Save it at any time, come back later,
+        and submit it to the PIDAR team when it is ready.
+    </p>
 
-    <div class="mt-3">
-        <a href="/contribution_files/metadata_template.xlsx" id="download-template" class="btn btn-primary">Download Template</a>
-        <a href="/contribution_files/guidelines.docx" id="download-guidelines" class="btn btn-secondary">Download Guidelines</a>
+    <a class="btn btn-primary btn-lg px-4 contribute-cta" asp-controller="Submissions" asp-action="Index">
+        <i class="bi bi-stars"></i> Make your data FAIR — contribute to PIDAR
+    </a>
+
+    @if (!signedIn)
+    {
+        <p class="small text-muted mt-3 mb-0">
+            First time here?
+            <a asp-area="Identity" asp-page="/Account/Register"
+               asp-route-returnUrl="@Url.Action("Index", "Submissions")">Create a data provider account</a>
+            with your email address. Already registered?
+            <a asp-area="Identity" asp-page="/Account/Login"
+               asp-route-returnUrl="@Url.Action("Index", "Submissions")">Log in</a>.
+        </p>
+    }
+</div>
+
+<div class="row g-3 my-4 contribute-steps">
+    <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <div class="contribute-step-num">1</div>
+            <h3 class="h6">Create an account</h3>
+            <p class="small text-muted mb-0">Register with your email and a password, then confirm your address from the email we send you.</p>
+        </div></div>
     </div>
+    <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <div class="contribute-step-num">2</div>
+            <h3 class="h6">Describe your dataset</h3>
+            <p class="small text-muted mb-0">
+                The form follows the PIDAR metadata template section by section, with yes/no buttons and lists where possible.
+                It saves automatically. Already filled the Excel template? Import it into the form.
+            </p>
+        </div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+            <div class="contribute-step-num">3</div>
+            <h3 class="h6">Submit for review</h3>
+            <p class="small text-muted mb-0">The PIDAR team checks your description and publishes it, or emails you if something needs to be completed.</p>
+        </div></div>
+    </div>
+</div>
+
+<div class="col-lg-8 mx-auto text-center">
+    <p>
+        Since we aim to have the PIDAR repository adhere to the FAIR principles, we strongly recommend that submitters make
+        their datasets available under a license that is as open as possible (e.g. CC-BY). Further information about types of
+        licenses is available in the “Submission Guidelines” document.
+    </p>
+
+    <details class="mt-3">
+        <summary class="text-muted">Prefer to work offline with the Excel template?</summary>
+        <p class="small mt-2">
+            Download the template and the guidelines, fill them in, and either import the file into the online form
+            or send it to us.
+        </p>
+        <div class="mt-2">
+            <a href="/contribution_files/metadata_template.xlsx" id="download-template" class="btn btn-outline-primary btn-sm">Download template</a>
+            <a href="/contribution_files/guidelines.docx" id="download-guidelines" class="btn btn-outline-secondary btn-sm">Download guidelines</a>
+        </div>
+    </details>
 </div>

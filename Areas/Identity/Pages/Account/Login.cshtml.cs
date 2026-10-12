@@ -43,6 +43,9 @@ namespace Pidar.Areas.Identity.Pages.Account
         /// </summary>
         public string ReturnUrl { get; set; }
 
+        /// <summary>Shows the "Resend email confirmation" link after a login refused for an unconfirmed email.</summary>
+        public bool ShowResendConfirmation { get; set; }
+
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -111,7 +114,7 @@ namespace Pidar.Areas.Identity.Pages.Account
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, isPersistent: false, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    // Only the PIDAR team (Admin / Curator) has accounts; anyone else browses without logging in
+                    // Only accounts with a PIDAR role (Admin / Curator / DataProvider) may sign in
                     var signedInUser = await _signInManager.UserManager.FindByNameAsync(Input.Email);
                     if (signedInUser == null || !(await _signInManager.UserManager.GetRolesAsync(signedInUser)).Any(AppRoles.IsValid))
                     {
@@ -128,6 +131,15 @@ namespace Pidar.Areas.Identity.Pages.Account
                 if (result.RequiresTwoFactor)
                 {
                     return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = false });
+                }
+                if (result.IsNotAllowed)
+                {
+                    // Correct password, but the email address was never confirmed (self-registered data providers)
+                    ModelState.AddModelError(string.Empty,
+                        "Please confirm your email address first: open the link we emailed you when you registered. " +
+                        "No email? Use \"Resend email confirmation\" below.");
+                    ShowResendConfirmation = true;
+                    return Page();
                 }
                 if (result.IsLockedOut)
                 {

@@ -14,7 +14,7 @@
         </div>
 
         <form id="account" method="post">
-            <h2 class="login-title">Use an admin account to log in</h2>
+            <h2 class="login-title">Log in to PIDAR</h2>
 
             @if (Request.Query.ContainsKey("timedOut"))
             {
@@ -44,6 +44,15 @@
 
             <div class="text-center mt-2">
                 <a asp-page="./ForgotPassword" class="login-forgot">Forgot your password?</a>
+                @if (Model.ShowResendConfirmation)
+                {
+                    <span class="mx-1">·</span>
+                    <a asp-page="./ResendEmailConfirmation" class="login-forgot">Resend email confirmation</a>
+                }
+            </div>
+            <div class="text-center mt-3 small">
+                Want to contribute a dataset?
+                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create a data provider account</a>
             </div>
         </form>
 
