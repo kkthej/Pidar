@@ -26,7 +26,7 @@ public sealed class XnatMultiService : IXnatMultiService
 
     public async Task<IReadOnlyList<XnatPublicProject>> GetAllPublicProjectsAsync(CancellationToken ct = default)
     {
-        return await _cache.GetOrCreateAsync("xnat_all_public_projects_v4", async entry =>
+        return await _cache.GetOrCreateAsync("xnat_all_public_projects_v5", async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
@@ -45,6 +45,17 @@ public sealed class XnatMultiService : IXnatMultiService
                 .ToList();
 
         }) ?? Array.Empty<XnatPublicProject>();
+    }
+
+    public async Task<bool> IsListedPublicProjectAsync(string instanceKey, string projectId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(instanceKey) || string.IsNullOrWhiteSpace(projectId))
+            return false;
+
+        var projects = await GetAllPublicProjectsAsync(ct);
+        return projects.Any(p =>
+            string.Equals(p.InstanceKey, instanceKey, StringComparison.Ordinal) &&
+            string.Equals(p.Id, projectId, StringComparison.Ordinal));
     }
 
     // ---- Fetch all projects from a single XNAT instance ----
@@ -73,9 +84,17 @@ public sealed class XnatMultiService : IXnatMultiService
 
             var rows = parsed?.ResultSet?.Result ?? new();
 
+            // With credentials, /data/projects returns every project that account can see
+            // (private and protected included), so each one must be confirmed as public.
+            // Without credentials the guest listing already contains only public projects.
+            HashSet<string>? publicIds = null;
+            if (authToken != null)
+                publicIds = await GetPublicProjectIdsAsync(inst, baseUrl, rows, authToken, ct);
+
             foreach (var p in rows)
             {
                 if (string.IsNullOrWhiteSpace(p.ID)) continue;
+                if (publicIds != null && !publicIds.Contains(p.ID)) continue;
 
                 var uri = p.URI ?? $"/data/projects/{p.ID}";
 
@@ -102,6 +121,91 @@ public sealed class XnatMultiService : IXnatMultiService
         }
 
         return results;
+    }
+
+    // ---- Keep only projects whose accessibility is exactly "public" ----
+    private async Task<HashSet<string>> GetPublicProjectIdsAsync(
+        XnatInstanceOptions inst,
+        string baseUrl,
+        List<XnatProjectsApiResponse.ProjectRow> rows,
+        string authToken,
+        CancellationToken ct)
+    {
+        using var throttle = new SemaphoreSlim(4); // be gentle with partner servers
+
+        var checks = rows
+            .Where(r => !string.IsNullOrWhiteSpace(r.ID))
+            .Select(async r =>
+            {
+                await throttle.WaitAsync(ct);
+                try
+                {
+                    var isPublic = await IsProjectPublicAsync(inst, baseUrl, r.ID, authToken, ct);
+                    return (r.ID, isPublic);
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            });
+
+        var results = await Task.WhenAll(checks);
+
+        var hidden = results.Count(x => !x.isPublic);
+        if (hidden > 0)
+            _logger.LogInformation(
+                "XNAT {Key} ({Name}): {Hidden} of {Total} visible projects are not public and were excluded.",
+                inst.Key, inst.Name, hidden, results.Length);
+
+        return results.Where(x => x.isPublic).Select(x => x.ID).ToHashSet(StringComparer.Ordinal);
+    }
+
+    // Fail closed: any error means "not public". Results are cached for an hour so the
+    // 9-minute warmup does not re-check every project on every cycle.
+    private async Task<bool> IsProjectPublicAsync(
+        XnatInstanceOptions inst,
+        string baseUrl,
+        string projectId,
+        string authToken,
+        CancellationToken ct)
+    {
+        var cacheKey = $"xnat_accessibility_v1::{inst.Key}::{projectId}";
+        if (_cache.TryGetValue(cacheKey, out bool cached))
+            return cached;
+
+        var url = $"{baseUrl}/data/projects/{Uri.EscapeDataString(projectId)}/accessibility";
+        bool isPublic;
+        TimeSpan ttl;
+
+        try
+        {
+            using var resp = await SendXnatGetAsync(url, baseUrl, ct, authToken);
+            if (resp.IsSuccessStatusCode)
+            {
+                var body = (await resp.Content.ReadAsStringAsync(ct)).Trim();
+                isPublic = body.Equals("public", StringComparison.OrdinalIgnoreCase);
+                ttl = TimeSpan.FromHours(1);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "XNAT {Key} ({Name}) accessibility check failed for {Project}. Status={Status}. Treating as not public.",
+                    inst.Key, inst.Name, projectId, (int)resp.StatusCode);
+                isPublic = false;
+                ttl = TimeSpan.FromMinutes(5); // retry errors sooner
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex,
+                "XNAT {Key} ({Name}) accessibility check crashed for {Project}. Treating as not public.",
+                inst.Key, inst.Name, projectId);
+            isPublic = false;
+            ttl = TimeSpan.FromMinutes(5);
+        }
+
+        _cache.Set(cacheKey, isPublic, ttl);
+        return isPublic;
     }
 
     // ---- Core logic: GET JSON with robust 202 handling ----
