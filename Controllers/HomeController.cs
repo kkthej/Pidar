@@ -118,6 +118,11 @@ namespace Pidar.Controllers
             var inst = instances.FirstOrDefault(x => x.Key == instanceKey);
             if (inst == null) return NotFound();
 
+            // Only serve metadata for projects shown on the public XNAT page; otherwise this
+            // endpoint would let anyone read private projects through PIDAR's credentials.
+            if (!await _xnatMulti.IsListedPublicProjectAsync(instanceKey, projectId, ct))
+                return NotFound();
+
             var baseUrl = inst.BaseUrl.TrimEnd('/');
             var url =
                 $"{baseUrl}/data/projects/{Uri.EscapeDataString(projectId)}/resources/metadata/files/{Uri.EscapeDataString(projectId)}.json";
