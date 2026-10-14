@@ -113,6 +113,7 @@ namespace Pidar.Controllers
                 ActiveStep = check ? reviewStep : Math.Clamp(step ?? s.CurrentStep, 0, reviewStep),
                 UnconfirmedSources = await _history.UnconfirmedSourcesAsync(s.Id),
                 AssistantMode = _assistant.Mode,
+                AssistantOptions = _assistant.Options,
             });
         }
 
@@ -371,6 +372,9 @@ namespace Pidar.Controllers
 
         /// <summary>Whether (and how) the contribution assistant is offered on this page.</summary>
         public AssistantMode AssistantMode { get; init; } = AssistantMode.Off;
+
+        /// <summary>Limits shown to the assistant panel (files per message, file size).</summary>
+        public AssistantOptions? AssistantOptions { get; init; }
 
         public string? Value(string path) => Answers.TryGetValue(path, out var v) ? v : null;
     }

@@ -10,6 +10,7 @@
     var sourcesJson = System.Text.Json.JsonSerializer.Serialize(Model.UnconfirmedSources);
     var assistantOn = Model.AssistantMode != Pidar.Services.Assistant.AssistantMode.Off;
     var assistantTest = Model.AssistantMode == Pidar.Services.Assistant.AssistantMode.Mock;
+    var assistantOptions = Model.AssistantOptions;
 }
 
 @section Styles {
@@ -222,7 +223,8 @@
     <aside class="offcanvas offcanvas-end wz-ai" tabindex="-1" id="wz-ai" aria-labelledby="wz-ai-title"
            data-bs-scroll="true" data-bs-backdrop="false"
            data-ask-url="@Url.Action("Ask", "Assistant", new { id = s.Id })"
-           data-history-url="@Url.Action("History", "Assistant", new { id = s.Id })">
+           data-history-url="@Url.Action("History", "Assistant", new { id = s.Id })"
+           data-max-files="@assistantOptions?.MaxFilesPerMessage" data-max-file-bytes="@assistantOptions?.MaxFileBytes">
         <div class="offcanvas-header">
             <div>
                 <h2 class="h6 mb-0" id="wz-ai-title"><i class="bi bi-stars"></i> Contribution assistant</h2>
@@ -237,19 +239,27 @@
             <div class="wz-ai-log" id="wz-ai-log" aria-live="polite">
                 <div class="wz-ai-msg wz-ai-bot wz-ai-intro">
                     Hi! I can help you describe your dataset. Tell me about your study in your own words,
-                    or <strong>paste your methods section</strong>, and I will suggest answers for the form.
+                    <strong>paste your methods section</strong>, or <strong>attach a PDF</strong> (paper, protocol) or a
+                    <strong>photo of your lab notes</strong>, and I will suggest answers for the form.
                     Nothing goes into the form until you click <strong>Accept</strong>, and you can change everything afterwards.
                     <div class="small text-muted mt-2">
-                        Your messages and the current answers of this form (without emails or ORCID iDs) are sent to an AI service
-                        to produce suggestions. The conversation is kept with this draft so you can continue later
-                        and so the PIDAR team can see where suggested answers came from.
+                        Your messages, attached files and the current answers of this form (without emails or ORCID iDs) are sent
+                        to an AI service to produce suggestions. Attached files are not stored, only their names. The conversation
+                        is kept with this draft so you can continue later and so the PIDAR team can see where suggested answers came from.
                     </div>
                 </div>
             </div>
             <form class="wz-ai-form" id="wz-ai-form" autocomplete="off">
+                <div class="wz-ai-files" id="wz-ai-files" hidden></div>
                 <textarea class="form-control" id="wz-ai-input" rows="3" maxlength="20000"
                           placeholder="e.g. We imaged 24 female C57BL/6 mice with a 7T MRI…" aria-label="Message to the assistant"></textarea>
+                <input type="file" id="wz-ai-file" class="d-none" multiple
+                       accept="@Pidar.Services.Assistant.AssistantAttachments.AcceptAttribute" />
                 <div class="d-flex align-items-center gap-2 mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="wz-ai-attach"
+                            title="Attach a PDF or a picture (you can also drop or paste it here)">
+                        <i class="bi bi-paperclip"></i><span class="visually-hidden">Attach a file</span>
+                    </button>
                     <span class="small text-muted flex-grow-1">Enter to send · Shift+Enter for a new line</span>
                     <button type="submit" class="btn btn-primary btn-sm" id="wz-ai-send"><i class="bi bi-send"></i> Send</button>
                 </div>

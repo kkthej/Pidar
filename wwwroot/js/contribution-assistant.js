@@ -13,6 +13,8 @@
  *    Chat with the server (POST .../Assistant), which answers with text and suggested answers.
  *    A suggestion is applied to the form only when the person clicks Accept; the wizard's autosave then
  *    stores it. The assistant itself never saves or submits anything.
+ *    Files (PDFs, pictures such as photos of handwritten notes) can be attached, dropped or pasted;
+ *    pictures are shrunk to JPEG here before upload. They are sent with that one message only.
  */
 (function () {
     "use strict";
@@ -373,28 +375,182 @@
             .catch(function () { /* the panel still works without the old messages */ });
     }
 
+    // ---------- attachments (PDFs, pictures such as photos of handwritten notes)
+
+    var attachInput = document.getElementById("wz-ai-file");
+    var attachBtn = document.getElementById("wz-ai-attach");
+    var chipsEl = document.getElementById("wz-ai-files");
+    var MAX_FILES = parseInt(panel.dataset.maxFiles, 10) || 3;
+    var MAX_FILE_BYTES = parseInt(panel.dataset.maxFileBytes, 10) || 8 * 1024 * 1024;
+    var IMAGE_LONG_EDGE = 1600;      // plenty to read handwriting, small enough to upload quickly
+    var PDF_TYPES = ["application/pdf"];
+    var IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    var attached = [];               // { file: File|Blob, name, kind: "pdf"|"image" }
+    var preparing = 0;               // pictures still being shrunk
+
+    function looksLikePdf(f) { return PDF_TYPES.indexOf(f.type) !== -1 || /\.pdf$/i.test(f.name || ""); }
+    function looksLikeImage(f) { return /^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.name || ""); }
+    function mb(bytes) { return (bytes / 1024 / 1024).toFixed(1) + " MB"; }
+
+    function notice(text) { addMessage("assistant", text, "wz-ai-error"); }
+
+    function renderChips() {
+        if (!chipsEl) return;
+        chipsEl.innerHTML = "";
+        chipsEl.hidden = attached.length === 0 && preparing === 0;
+        attached.forEach(function (a, i) {
+            var chip = document.createElement("span");
+            chip.className = "wz-ai-chip";
+            chip.innerHTML = '<i class="bi ' + (a.kind === "pdf" ? "bi-file-earmark-pdf" : "bi-image") + '"></i> ';
+            chip.appendChild(document.createTextNode(a.name));
+            var x = document.createElement("button");
+            x.type = "button";
+            x.className = "btn-close btn-close-sm";
+            x.setAttribute("aria-label", "Remove " + a.name);
+            x.addEventListener("click", function () { attached.splice(i, 1); renderChips(); });
+            chip.appendChild(x);
+            chipsEl.appendChild(chip);
+        });
+        if (preparing > 0) {
+            var p = document.createElement("span");
+            p.className = "wz-ai-chip text-muted";
+            p.textContent = "Preparing picture…";
+            chipsEl.appendChild(p);
+        }
+    }
+
+    /** Re-encodes a picture as JPEG, at most IMAGE_LONG_EDGE px: smaller uploads, and iPhone HEIC becomes JPEG where the browser can open it. */
+    function shrinkImage(file) {
+        return createImageBitmap(file).then(function (bmp) {
+            var scale = Math.min(1, IMAGE_LONG_EDGE / Math.max(bmp.width, bmp.height));
+            var w = Math.max(1, Math.round(bmp.width * scale)), h = Math.max(1, Math.round(bmp.height * scale));
+            var canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fff";                 // transparent PNGs: white paper, not black
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(bmp, 0, 0, w, h);
+            if (bmp.close) bmp.close();
+            return new Promise(function (resolve, reject) {
+                canvas.toBlob(function (blob) { blob ? resolve(blob) : reject(new Error("encode")); }, "image/jpeg", 0.85);
+            });
+        });
+    }
+
+    function addFiles(list) {
+        Array.prototype.forEach.call(list, function (f) {
+            if (attached.length + preparing >= MAX_FILES) {
+                notice("You can attach at most " + MAX_FILES + " files to one message.");
+                return;
+            }
+            if (looksLikePdf(f)) {
+                if (f.size > MAX_FILE_BYTES) { notice(f.name + " is too large (" + mb(f.size) + "); the limit is " + mb(MAX_FILE_BYTES) + ". Attach only the pages you need."); return; }
+                attached.push({ file: f, name: f.name, kind: "pdf" });
+                return;
+            }
+            if (looksLikeImage(f)) {
+                preparing++;
+                renderChips();
+                var base = (f.name || "picture").replace(/\.[^.]+$/, "");
+                shrinkImage(f).then(function (blob) {
+                    attached.push({ file: blob, name: base + ".jpg", kind: "image" });
+                }).catch(function () {
+                    // e.g. HEIC in a browser that cannot open it: send as it is only if the server can read it
+                    if (IMAGE_TYPES.indexOf(f.type) !== -1 && f.size <= MAX_FILE_BYTES) attached.push({ file: f, name: f.name, kind: "image" });
+                    else notice(f.name + " could not be opened in this browser. Please export it as JPEG or PNG and attach it again.");
+                }).then(function () {
+                    preparing--;
+                    renderChips();
+                });
+                return;
+            }
+            notice(f.name + ": only PDF files and pictures (JPEG, PNG, WebP) can be read.");
+        });
+        renderChips();
+    }
+
+    if (attachBtn && attachInput) {
+        attachBtn.addEventListener("click", function () { attachInput.click(); });
+        attachInput.addEventListener("change", function () {
+            addFiles(attachInput.files);
+            attachInput.value = "";      // choosing the same file again fires "change" again
+        });
+    }
+
+    // Drop files anywhere on the panel
+    panel.addEventListener("dragover", function (e) {
+        if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, "Files") !== -1) {
+            e.preventDefault();
+            panel.classList.add("wz-ai-drop");
+        }
+    });
+    panel.addEventListener("dragleave", function (e) {
+        if (!panel.contains(e.relatedTarget)) panel.classList.remove("wz-ai-drop");
+    });
+    panel.addEventListener("drop", function (e) {
+        if (!e.dataTransfer || e.dataTransfer.files.length === 0) return;
+        e.preventDefault();
+        panel.classList.remove("wz-ai-drop");
+        addFiles(e.dataTransfer.files);
+    });
+
+    // Paste a screenshot or a copied picture into the message box
+    input.addEventListener("paste", function (e) {
+        var files = e.clipboardData && e.clipboardData.files;
+        if (files && files.length > 0) {
+            e.preventDefault();
+            addFiles(files);
+        }
+    });
+
+    // ---------- talking to the server
+
     function send(text) {
         if (busy) return;
+        if (preparing > 0) { setTimeout(function () { send(text); }, 200); return; }
         busy = true;
         sendBtn.disabled = true;
-        addMessage("user", text);
+
+        var files = attached.slice();
+        attached = [];
+        renderChips();
+
+        var bubble = addMessage("user", text);
+        if (files.length > 0) {
+            var list = document.createElement("div");
+            list.className = "wz-ai-msg-files";
+            files.forEach(function (a) {
+                var line = document.createElement("div");
+                line.textContent = "📎 " + a.name;
+                list.appendChild(line);
+            });
+            bubble.appendChild(list);
+        }
         var typing = addTyping();
+
+        var body = new FormData();
+        body.append("message", text);
+        body.append("step", String(currentStep()));
+        body.append("answers", JSON.stringify(allValues()));
+        files.forEach(function (a) { body.append("files", a.file, a.name); });
 
         fetch(askUrl, {
             method: "POST",
             credentials: "same-origin",
             headers: {
-                "Content-Type": "application/json",
                 "Accept": "application/json",
                 "RequestVerificationToken": token()
             },
-            body: JSON.stringify({ message: text, step: currentStep(), answers: allValues() })
+            body: body
         }).then(function (r) {
             var isJson = (r.headers.get("content-type") || "").indexOf("application/json") !== -1;
             if (!isJson) {
                 throw new Error(r.status === 200 || r.status === 400
                     ? "Your session may have ended. Save your work, log in again in a new tab, then reload this page."
-                    : "The assistant is not available right now (" + r.status + ").");
+                    : r.status === 413
+                        ? "The attached files are too large. Try fewer pages or smaller files."
+                        : "The assistant is not available right now (" + r.status + ").");
             }
             return r.json().then(function (data) {
                 if (!r.ok) throw new Error(data.error || "The assistant is not available right now.");
@@ -410,8 +566,9 @@
         }).catch(function (err) {
             typing.remove();
             addMessage("assistant", err.message || "Something went wrong.", "wz-ai-error");
-            // keep what they wrote so they can try again
+            // keep what they wrote and attached so they can try again
             if (!input.value) input.value = text;
+            if (attached.length === 0) { attached = files; renderChips(); }
         }).then(function () {
             busy = false;
             sendBtn.disabled = false;
@@ -422,7 +579,7 @@
     chatForm.addEventListener("submit", function (e) {
         e.preventDefault();
         var text = input.value.trim();
-        if (!text || busy) return;
+        if ((!text && attached.length === 0 && preparing === 0) || busy) return;
         input.value = "";
         send(text);
     });

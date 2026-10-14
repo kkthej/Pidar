@@ -57,6 +57,21 @@ namespace Pidar.Services.Assistant
 
         /// <summary>How many earlier messages of the conversation are sent back to the model for context.</summary>
         public int HistoryMessages { get; set; } = 16;
+
+        /// <summary>Files (PDFs, pictures) that can be attached to one message.</summary>
+        public int MaxFilesPerMessage { get; set; } = 3;
+
+        /// <summary>Largest file accepted (bytes). Pictures are shrunk in the browser before upload.</summary>
+        public long MaxFileBytes { get; set; } = 8 * 1024 * 1024;
+
+        /// <summary>Largest picture sent to the model (bytes).</summary>
+        public long MaxImageBytes { get; set; } = 4 * 1024 * 1024;
+
+        /// <summary>All files of one message together (bytes). They travel base64-encoded (+33%) to the model.</summary>
+        public long MaxTotalFileBytes { get; set; } = 15 * 1024 * 1024;
+
+        /// <summary>Longest PDF accepted (pages). Every page costs tokens, so ask for the relevant part.</summary>
+        public int MaxPdfPages { get; set; } = 30;
     }
 
     /// <summary>The resolved settings, registered as a singleton.</summary>

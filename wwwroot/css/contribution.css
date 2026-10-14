@@ -148,3 +148,15 @@ body.wz-ai-open .wz-ai-toggle { display: none; }
 .wz-history-when { color: var(--bs-secondary-color); font-size: .78rem; white-space: nowrap; }
 .wz-history-change { display: block; margin-top: .1rem; }
 .wz-history-old { text-decoration: line-through; color: var(--bs-secondary-color); }
+
+/* ── Assistant attachments ────────────────────────────────────── */
+.wz-ai-files { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .4rem; }
+.wz-ai-chip {
+    display: inline-flex; align-items: center; gap: .3rem; max-width: 100%;
+    padding: .15rem .3rem .15rem .55rem; border-radius: 1rem; font-size: .8rem;
+    background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color);
+}
+.wz-ai-chip .btn-close { width: .55rem; height: .55rem; padding: .2rem; }
+.btn-close-sm { background-size: .55rem; }
+.wz-ai-msg-files { margin-top: .35rem; font-size: .8rem; opacity: .9; }
+.wz-ai.wz-ai-drop .offcanvas-body { outline: 2px dashed var(--bs-primary); outline-offset: -.4rem; background: var(--bs-primary-bg-subtle); }

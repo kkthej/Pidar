@@ -128,20 +128,39 @@ namespace Pidar.Services.Assistant
 
                 var sb = new StringBuilder();
                 sb.Append("(Test mode — no AI model is connected.) ");
-                sb.Append(accepted == 1
-                    ? "I found 1 answer in your message. "
-                    : $"I found {accepted} answers in your message. ");
+                sb.Append(accepted == 1 ? "I found 1 answer. " : $"I found {accepted} answers. ");
                 sb.Append("Check the suggestions below and click **Accept** to put them in the form.");
                 if (rejected.Count > 0) sb.Append("\n\nI could not use: " + string.Join("; ", rejected));
+
+                // The message that started this turn (the one before the tool call), to mention unread files
+                var started = messages.Count >= 3 ? messages[^3]?.AsObject() : null;
+                var (_, _, scannedNow, imagesNow) = ReadAttachments(started);
+                var notRead = new List<string>();
+                if (imagesNow > 0) notRead.Add(imagesNow == 1 ? "1 picture" : $"{imagesNow} pictures");
+                if (scannedNow > 0) notRead.Add(scannedNow == 1 ? "1 scanned PDF" : $"{scannedNow} scanned PDFs");
+                if (notRead.Count > 0)
+                    sb.Append($"\n\nI could not read {string.Join(" and ", notRead)}: reading pictures, handwriting and scans needs the real AI model (an API key).");
                 return Task.FromResult(TextResponse(sb.ToString()));
             }
 
             var text = LastUserText(last);
+
+            // Attached files: test mode reads the text layer of PDFs; pictures and scans need a real model
+            var (pdfText, pdfCount, scannedPdfs, images) = ReadAttachments(last);
+            if (pdfText.Length > 0) text += "\n\n" + pdfText;
+            var unreadable = new List<string>();
+            if (images > 0) unreadable.Add(images == 1 ? "1 picture" : $"{images} pictures");
+            if (scannedPdfs > 0) unreadable.Add(scannedPdfs == 1 ? "1 scanned PDF" : $"{scannedPdfs} scanned PDFs");
+            var unreadableNote = unreadable.Count == 0 ? "" :
+                $" I could not read {string.Join(" and ", unreadable)}: reading pictures, handwriting and scans needs the real AI model (an API key).";
+
             var proposals = Extract(text);
             if (proposals.Count == 0)
             {
                 return Task.FromResult(TextResponse(
-                    "(Test mode — no AI model is connected.) Tell me about your animals and imaging, for example: " +
+                    "(Test mode — no AI model is connected.)" + unreadableNote +
+                    (pdfCount > scannedPdfs ? " I read the text of your PDF but found none of the simple facts I recognise in test mode." : "") +
+                    " Tell me about your animals and imaging, for example: " +
                     "\"We used 24 female C57BL/6 mice, 8 weeks old, in 3 groups, imaged with MRI of the brain\", " +
                     "or paste your methods section. In test mode I only recognise a few simple facts."));
             }
@@ -184,6 +203,31 @@ namespace Pidar.Services.Assistant
             ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text }),
             ["usage"] = new JsonObject { ["input_tokens"] = 0, ["output_tokens"] = 0 },
         };
+
+        /// <summary>Text of the attached PDFs (text layer only) and how many files could not be read.</summary>
+        private static (string Text, int Pdfs, int ScannedPdfs, int Images) ReadAttachments(JsonObject? message)
+        {
+            if (message?["content"] is not JsonArray blocks) return ("", 0, 0, 0);
+            var texts = new List<string>();
+            int pdfs = 0, scanned = 0, images = 0;
+            foreach (var b in blocks)
+            {
+                switch ((string?)b?["type"])
+                {
+                    case "document":
+                        pdfs++;
+                        var data = (string?)b?["source"]?["data"];
+                        var t = data == null ? "" : AssistantAttachments.ExtractPdfText(Convert.FromBase64String(data), maxPages: 100);
+                        if (t.Length == 0) scanned++;
+                        else texts.Add(t);
+                        break;
+                    case "image":
+                        images++;
+                        break;
+                }
+            }
+            return (string.Join("\n\n", texts), pdfs, scanned, images);
+        }
 
         private static string LastUserText(JsonObject? message)
         {

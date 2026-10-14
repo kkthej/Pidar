@@ -52,6 +52,30 @@ What the assistant can and cannot do:
 The conversation is stored per submission in `assistant_message` (text, suggestions, model, token counts),
 so it continues after reopening the page and reviewers can see how many questions were asked.
 
+### Attached files (PDFs, photos of handwritten notes)
+
+The paperclip button, drag-and-drop onto the panel, or pasting a picture adds up to 3 files to a message:
+PDFs (papers, protocols) and pictures (JPEG, PNG, WebP, GIF).
+
+- **In the browser** pictures are re-encoded as JPEG with a 1600 px long edge (enough to read handwriting;
+  a phone photo goes from several MB to a few hundred KB). This also turns iPhone HEIC photos into JPEG in
+  browsers that can open them; otherwise the person is asked to export a JPEG.
+- **On the server** each file's real type is read from its first bytes (not its name), and sizes are checked.
+  PDFs must open (no password) and have at most 30 pages (`MaxPdfPages`).
+- The files go to Claude as `document` (PDF) and `image` blocks of **that one message only**. They are not
+  stored anywhere: the conversation keeps "📎 methods.pdf (6 pages)", and what Claude read lives on in its
+  reply and suggestions. Later messages do not re-send them (each PDF page costs tokens every time), so the
+  assistant asks for the file again if a later question needs it.
+- The last file block carries `cache_control`, so the second round of the tool loop reads it from the
+  prompt cache instead of paying for it again.
+- The prompt tells Claude to say where each value came from ("methods, p. 3"), to quote what it read in
+  handwriting, and not to guess illegible digits or units but ask instead.
+- **Test mode** reads the text layer of PDFs (with PdfPig) and runs its simple rules on it. Pictures and
+  scanned PDFs need the real model; test mode says so.
+
+Note: files may contain names, affiliations or other personal details that cannot be filtered out like the
+form fields. The panel says that files are sent to the AI service; the privacy notice should too.
+
 ### Running it locally
 
 **Test mode (no API key needed).** In Development, with no key configured, the assistant runs in test mode:
@@ -62,6 +86,9 @@ same tool loop a real model uses. Try:
 > We used 24 female C57BL/6 mice, 8 weeks old, in 3 groups, imaged with MRI of the brain. Tumour model.
 
 A yellow "Test mode" badge shows in the panel header.
+
+The PdfPig package is new: with the dev container (which runs `dotnet watch run --no-restore` on the mounted
+folder) restore it once with `docker exec PidarWeb dotnet restore`, then restart the container.
 
 **With Claude.** Set the API key, then restart:
 
@@ -86,6 +113,11 @@ ASSISTANT_API_KEY=sk-ant-...
 | `MessagesPerDay` | `150` | per user, counted in `assistant_message` |
 | `MaxMessageLength` | `20000` | characters (room for a pasted methods section) |
 | `HistoryMessages` | `16` | earlier messages sent back for context |
+| `MaxFilesPerMessage` | `3` | attachments per message |
+| `MaxFileBytes` | `8 MB` | per file |
+| `MaxImageBytes` | `4 MB` | per picture after shrinking |
+| `MaxTotalFileBytes` | `15 MB` | all files of one message |
+| `MaxPdfPages` | `30` | per PDF |
 
 Without a key the assistant is **off in Production**, so deploying this change alone does not expose it.
 
@@ -107,4 +139,5 @@ Without a key the assistant is **off in Production**, so deploying this change a
 | `Services/Assistant/AssistantModels.cs` | Anthropic API client and the test-mode model |
 | `Services/Assistant/AssistantSettings.cs` | configuration, registration, rate limit |
 | `Controllers/AssistantController.cs` | `POST /Submissions/{id}/Assistant`, `GET …/Assistant/History` |
-| `wwwroot/js/contribution-assistant.js` | panel, Accept/Dismiss, source marks, `_sources` |
+| `Services/Assistant/AssistantAttachments.cs` | checking uploads, PDF page count and text (PdfPig) |
+| `wwwroot/js/contribution-assistant.js` | panel, Accept/Dismiss, source marks, `_sources`, attachments |
