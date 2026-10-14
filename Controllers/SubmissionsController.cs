@@ -6,6 +6,7 @@ using Pidar.Areas.Identity.Data;
 using Pidar.Data;
 using Pidar.Infrastructure;
 using Pidar.Models.Submissions;
+using Pidar.Services.Assistant;
 using Pidar.Services.Submissions;
 
 namespace Pidar.Controllers
@@ -26,6 +27,8 @@ namespace Pidar.Controllers
         private readonly PidarDbContext _db;
         private readonly SubmissionService _service;
         private readonly SubmissionNotifier _notifier;
+        private readonly SubmissionHistory _history;
+        private readonly AssistantSettings _assistant;
         private readonly UserManager<PidarUser> _users;
         private readonly ILogger<SubmissionsController> _logger;
 
@@ -33,12 +36,16 @@ namespace Pidar.Controllers
             PidarDbContext db,
             SubmissionService service,
             SubmissionNotifier notifier,
+            SubmissionHistory history,
+            AssistantSettings assistant,
             UserManager<PidarUser> users,
             ILogger<SubmissionsController> logger)
         {
             _db = db;
             _service = service;
             _notifier = notifier;
+            _history = history;
+            _assistant = assistant;
             _users = users;
             _logger = logger;
         }
@@ -46,6 +53,7 @@ namespace Pidar.Controllers
         private string CurrentUserId => _users.GetUserId(User) ?? "";
         private string CurrentEmail => User.Identity?.Name ?? "";
         private bool IsEditor => AppRoles.IsEditor(User);
+        private Actor CurrentActor => new(CurrentUserId, CurrentEmail);
 
         private string Absolute(string action, object? values = null) =>
             Url.Action(action, "Submissions", values, Request.Scheme) ?? "";
@@ -103,6 +111,9 @@ namespace Pidar.Controllers
                 Progress = SubmissionService.Progress(answers),
                 Issues = check ? SubmissionService.Validate(answers) : null,
                 ActiveStep = check ? reviewStep : Math.Clamp(step ?? s.CurrentStep, 0, reviewStep),
+                UnconfirmedSources = await _history.UnconfirmedSourcesAsync(s.Id),
+                AssistantMode = _assistant.Mode,
+                AssistantOptions = _assistant.Options,
             });
         }
 
@@ -118,7 +129,7 @@ namespace Pidar.Controllers
                 return WantsJson() ? Conflict(new { ok = false, message = "This submission was already sent and can no longer be changed." })
                                    : RedirectToAction(nameof(Details), new { id });
 
-            await _service.SaveAsync(s, Request.Form, step);
+            await _service.SaveAsync(s, Request.Form, step, CurrentActor);
 
             if (WantsJson())
             {
@@ -146,7 +157,7 @@ namespace Pidar.Controllers
             if (!SubmissionStatus.IsEditableByOwner(s.Status))
                 return RedirectToAction(nameof(Details), new { id });
 
-            await _service.SaveAsync(s, Request.Form, ContributionForm.Steps.Count);
+            await _service.SaveAsync(s, Request.Form, ContributionForm.Steps.Count, CurrentActor);
 
             var issues = SubmissionService.Validate(SubmissionService.ReadAnswers(s));
             if (issues.Count > 0)
@@ -160,6 +171,7 @@ namespace Pidar.Controllers
             s.Status = SubmissionStatus.Submitted;
             s.SubmittedAt = DateTime.UtcNow;
             s.UpdatedAt = s.SubmittedAt.Value;
+            _history.AddEvent(s.Id, CurrentActor, SubmissionChangeKind.Submitted);
             await _db.SaveChangesAsync();
             _logger.LogInformation("{Email} submitted submission {Id}", CurrentEmail, id);
 
@@ -182,6 +194,7 @@ namespace Pidar.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            await _history.ForgetDraftContentAsync(s.Id, CurrentActor);
             _db.DatasetSubmissions.Remove(s);
             await _db.SaveChangesAsync();
             TempData["Message"] = "The draft was deleted.";
@@ -210,6 +223,9 @@ namespace Pidar.Controllers
                 Issues = SubmissionService.Validate(answers),
                 IsOwner = isOwner,
                 CanReview = IsEditor && s.Status == SubmissionStatus.Submitted,
+                History = await _history.ListAsync(s.Id),
+                UnconfirmedSources = await _history.UnconfirmedSourcesAsync(s.Id),
+                AssistantMessageCount = await _db.AssistantMessages.CountAsync(m => m.SubmissionId == s.Id && m.Role == AssistantRole.User),
             });
         }
 
@@ -265,6 +281,7 @@ namespace Pidar.Controllers
             }
 
             var displayId = await _db.Datasets.Where(d => d.DatasetId == datasetId).Select(d => d.DisplayId).FirstOrDefaultAsync();
+            await _history.LogEventAsync(id, CurrentActor, SubmissionChangeKind.Approved, $"published as dataset {displayId}");
             var datasetLink = Url.Action("Details", "Datasets", new { displayId }, Request.Scheme) ?? "";
             await _notifier.ApprovedAsync(s, datasetLink);
 
@@ -308,6 +325,9 @@ namespace Pidar.Controllers
             s.ReviewedBy = CurrentEmail;
             s.ReviewedAt = DateTime.UtcNow;
             s.UpdatedAt = s.ReviewedAt.Value;
+            _history.AddEvent(s.Id, CurrentActor,
+                newStatus == SubmissionStatus.NeedsRevision ? SubmissionChangeKind.ChangesRequested : SubmissionChangeKind.Rejected,
+                s.ReviewerComment);
             await _db.SaveChangesAsync();
             _logger.LogInformation("{Reviewer} set submission {Id} to {Status}", CurrentEmail, id, newStatus);
 
@@ -347,6 +367,15 @@ namespace Pidar.Controllers
         /// <summary>0..Steps.Count-1 for a form step, Steps.Count for "Review & submit".</summary>
         public int ActiveStep { get; init; }
 
+        /// <summary>Answers filled by the assistant or the Excel import and not changed by hand since: path → source.</summary>
+        public Dictionary<string, string> UnconfirmedSources { get; init; } = new();
+
+        /// <summary>Whether (and how) the contribution assistant is offered on this page.</summary>
+        public AssistantMode AssistantMode { get; init; } = AssistantMode.Off;
+
+        /// <summary>Limits shown to the assistant panel (files per message, file size).</summary>
+        public AssistantOptions? AssistantOptions { get; init; }
+
         public string? Value(string path) => Answers.TryGetValue(path, out var v) ? v : null;
     }
 
@@ -357,6 +386,15 @@ namespace Pidar.Controllers
         public List<SubmissionIssue> Issues { get; init; } = new();
         public bool IsOwner { get; init; }
         public bool CanReview { get; init; }
+
+        /// <summary>History of the submission, newest first.</summary>
+        public List<SubmissionChange> History { get; init; } = new();
+
+        /// <summary>Answers filled by the assistant or the Excel import and not changed by hand since: path → source.</summary>
+        public Dictionary<string, string> UnconfirmedSources { get; init; } = new();
+
+        /// <summary>How many questions the provider asked the assistant for this submission.</summary>
+        public int AssistantMessageCount { get; init; }
 
         public string? Value(string path) => Answers.TryGetValue(path, out var v) ? v : null;
     }

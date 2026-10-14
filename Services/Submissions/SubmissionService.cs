@@ -28,14 +28,23 @@ namespace Pidar.Services.Submissions
     {
         private readonly PidarDbContext _db;
         private readonly OntologyIndexService _ontologyIndex;
+        private readonly SubmissionHistory _history;
         private readonly ILogger<SubmissionService> _logger;
 
         private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
 
-        public SubmissionService(PidarDbContext db, OntologyIndexService ontologyIndex, ILogger<SubmissionService> logger)
+        /// <summary>
+        /// Hidden form value posted by the wizard: JSON { "Section.Property": "assistant" | "import" } for answers
+        /// that were filled by the assistant or the Excel import and not changed by hand since.
+        /// Only used to label the history; it never changes what is stored.
+        /// </summary>
+        public const string SourcesKey = "_sources";
+
+        public SubmissionService(PidarDbContext db, OntologyIndexService ontologyIndex, SubmissionHistory history, ILogger<SubmissionService> logger)
         {
             _db = db;
             _ontologyIndex = ontologyIndex;
+            _history = history;
             _logger = logger;
         }
 
@@ -107,6 +116,10 @@ namespace Pidar.Services.Submissions
 
             _db.DatasetSubmissions.Add(s);
             await _db.SaveChangesAsync();
+
+            // the id exists only now
+            await _history.LogEventAsync(s.Id, new Actor(ownerUserId, ownerEmail), SubmissionChangeKind.Created,
+                copyFrom != null ? $"copy of submission {copyFrom.Id}" : null);
             return s;
         }
 
@@ -114,10 +127,12 @@ namespace Pidar.Services.Submissions
         /// Stores the posted answers. Only names of the form are read (anything else posted is ignored),
         /// values are trimmed and cut to <see cref="ContributionForm.MaxValueLength"/>.
         /// A field that is posted empty is cleared; a field that is not posted is left as it was.
+        /// Every changed answer is recorded in the history with <paramref name="actor"/> and its source.
         /// </summary>
-        public async Task SaveAsync(DatasetSubmission s, IFormCollection form, int? step)
+        public async Task SaveAsync(DatasetSubmission s, IFormCollection form, int? step, Actor actor)
         {
             var answers = ReadAnswers(s);
+            var before = new Dictionary<string, string>(answers, StringComparer.Ordinal);
 
             foreach (var path in ContributionForm.FieldsByPath.Keys.Append(ContributionForm.CommentKey))
             {
@@ -130,7 +145,31 @@ namespace Pidar.Services.Submissions
             WriteAnswers(s, answers);
             if (step is >= 0 && step <= ContributionForm.Steps.Count) s.CurrentStep = step.Value;
             s.UpdatedAt = DateTime.UtcNow;
+
+            await _history.RecordEditsAsync(s.Id, actor, before, ReadAnswers(s), ReadSources(form));
             await _db.SaveChangesAsync();
+        }
+
+        /// <summary>The posted <see cref="SourcesKey"/>: only known fields and the sources a browser may claim.</summary>
+        private static Dictionary<string, string> ReadSources(IFormCollection form)
+        {
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (!form.TryGetValue(SourcesKey, out var raw) || string.IsNullOrWhiteSpace(raw)) return result;
+            try
+            {
+                var map = JsonSerializer.Deserialize<Dictionary<string, string>>(raw.ToString(), JsonOptions);
+                if (map == null) return result;
+                foreach (var (path, source) in map)
+                {
+                    if (ContributionForm.FieldsByPath.ContainsKey(path) && ValueSource.IsClientClaimable(source))
+                        result[path] = source;
+                }
+            }
+            catch (JsonException)
+            {
+                // a broken value only loses the labels, never the answers
+            }
+            return result;
         }
 
         private static string Clean(string? value)

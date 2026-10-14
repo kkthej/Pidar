@@ -155,6 +155,13 @@
                                     else
                                     {
                                         <span class="wz-pre">@ShowValue(f, v)</span>
+                                        @if (Model.UnconfirmedSources.TryGetValue(f.Path, out var src))
+                                        {
+                                            <span class="wz-src wz-src-badge-@src" title="This answer was not changed by hand after it was filled in">
+                                                <i class="bi @(src == ValueSource.Assistant ? "bi-stars" : "bi-file-earmark-excel")"></i>
+                                                @(src == ValueSource.Assistant ? "Suggested by the assistant" : "From the Excel file")
+                                            </span>
+                                        }
                                         @if (isMissing)
                                         {
                                             <span class="small text-danger ms-1">@Model.Issues.First(x => x.Path == f.Path).Message</span>
@@ -168,9 +175,80 @@
             </div>
         </div>
     }
+
+    <!-- ── History: who changed what ── -->
+    @if (Model.History.Count > 0)
+    {
+        var assisted = Model.UnconfirmedSources.Count(x => x.Value == ValueSource.Assistant);
+        var imported = Model.UnconfirmedSources.Count(x => x.Value == ValueSource.Import);
+        <details class="card mb-3" open="@(Model.IsOwner ? null : "open")">
+            <summary class="card-header fw-bold">
+                <i class="bi bi-clock-history"></i> History
+                <span class="fw-normal small text-muted ms-1">
+                    @Model.History.Count(h => h.Kind == SubmissionChangeKind.Edited) answer change(s)
+                    @if (Model.AssistantMessageCount > 0)
+                    {
+                        <text> · @Model.AssistantMessageCount question(s) to the assistant</text>
+                    }
+                    @if (assisted > 0)
+                    {
+                        <text> · @assisted answer(s) as suggested by the assistant</text>
+                    }
+                    @if (imported > 0)
+                    {
+                        <text> · @imported from the Excel file</text>
+                    }
+                </span>
+            </summary>
+            <div class="card-body">
+                <ul class="wz-history">
+                    @foreach (var h in Model.History)
+                    {
+                        <li>
+                            <i class="bi @SubmissionChangeKind.Icon(h.Kind) wz-history-icon"></i>
+                            <div class="flex-grow-1">
+                                <div>
+                                    <strong>@h.UserEmail</strong>
+                                    @if (h.Kind == SubmissionChangeKind.Edited && h.FieldPath != null)
+                                    {
+                                        var label = ContributionForm.FieldsByPath.TryGetValue(h.FieldPath, out var hf) ? hf.Label : h.FieldPath;
+                                        <text> @(h.OldValue == null ? "answered" : h.NewValue == null ? "cleared" : "changed") <em>@label</em></text>
+                                        @if (h.Source is ValueSource.Assistant or ValueSource.Import)
+                                        {
+                                            <span class="wz-src wz-src-badge-@h.Source">@ValueSource.Label(h.Source)</span>
+                                        }
+                                        <span class="wz-history-change small">
+                                            @if (h.OldValue != null)
+                                            {
+                                                <span class="wz-history-old">@Short(h.OldValue)</span>
+                                                <text> → </text>
+                                            }
+                                            <span>@(h.NewValue == null ? "(empty)" : Short(h.NewValue))</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <text> @SubmissionChangeKind.Label(h.Kind)</text>
+                                        @if (!string.IsNullOrWhiteSpace(h.Note))
+                                        {
+                                            <span class="wz-history-change small text-muted wz-pre">@Short(h.Note)</span>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                            <span class="wz-history-when" title="UTC">@h.At.ToString("yyyy-MM-dd HH:mm")</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </details>
+    }
 </div>
 
 @functions {
+    private static string Short(string value) =>
+        value.Length > 160 ? value[..157] + "…" : value;
+
     // Choice / Multi answers are shown with their labels (e.g. DUO codes with their names)
     private static string ShowValue(FormField f, string value)
     {

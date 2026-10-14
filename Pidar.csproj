@@ -53,6 +53,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="QuestPDF" Version="2025.1.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
+    <!-- PDF page count / text layer for files attached to the contribution assistant -->
+    <PackageReference Include="PdfPig" Version="0.1.9" />
 
     <Watch Include="**/*" Exclude="**/.git/**;**/.vs/**;**/.vscode/**;**/bin/**;**/obj/**;&#xD;&#xA;                    **/node_modules/**;**/packages/**;**/logs/**;*.user;&#xD;&#xA;                    appsettings.*.json;.env;.env.local" />
   </ItemGroup>

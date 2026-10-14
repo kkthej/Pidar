@@ -36,6 +36,12 @@ namespace Pidar.Data
         // a dataset is only created from one when an Admin/Curator approves it.
         public DbSet<DatasetSubmission> DatasetSubmissions { get; set; } = null!;
 
+        // Who changed what in a submission (field edits with their source, status changes)
+        public DbSet<SubmissionChange> SubmissionChanges { get; set; } = null!;
+
+        // Conversation with the contribution assistant, per submission
+        public DbSet<AssistantMessage> AssistantMessages { get; set; } = null!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -141,6 +147,45 @@ namespace Pidar.Data
 
                 entity.HasIndex(e => e.Status)
                     .HasDatabaseName("ix_dataset_submission_status");
+            });
+
+            modelBuilder.Entity<SubmissionChange>(entity =>
+            {
+                entity.ToTable("submission_change");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.UserId).HasColumnType("text").IsRequired();
+                entity.Property(e => e.UserEmail).HasColumnType("text").IsRequired();
+                entity.Property(e => e.Kind).HasColumnType("text").IsRequired();
+                entity.Property(e => e.FieldPath).HasColumnType("text");
+                entity.Property(e => e.OldValue).HasColumnType("text");
+                entity.Property(e => e.NewValue).HasColumnType("text");
+                entity.Property(e => e.Source).HasColumnType("text");
+                entity.Property(e => e.Note).HasColumnType("text");
+
+                entity.HasIndex(e => e.SubmissionId)
+                    .HasDatabaseName("ix_submission_change_submission_id");
+            });
+
+            modelBuilder.Entity<AssistantMessage>(entity =>
+            {
+                entity.ToTable("assistant_message");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.UserId).HasColumnType("text").IsRequired();
+                entity.Property(e => e.Role).HasColumnType("text").IsRequired();
+                entity.Property(e => e.Text).HasColumnType("text").IsRequired();
+                entity.Property(e => e.ProposalsJson).HasColumnType("jsonb");
+                entity.Property(e => e.Model).HasColumnType("text");
+
+                entity.HasIndex(e => e.SubmissionId)
+                    .HasDatabaseName("ix_assistant_message_submission_id");
+
+                // daily limit per user: count of the user's messages in the last 24 h
+                entity.HasIndex(e => new { e.UserId, e.CreatedAt })
+                    .HasDatabaseName("ix_assistant_message_user_created");
             });
 
         }
