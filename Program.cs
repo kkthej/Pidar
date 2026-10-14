@@ -14,6 +14,7 @@ using Pidar.Infrastructure;
 using Pidar.Integration;
 using Pidar.Jobs;
 using Pidar.Services;
+using Pidar.Services.Assistant;
 using Pidar.Services.Xnat;
 using System.IO;
 using System.Net.Http.Headers;
@@ -119,6 +120,9 @@ builder.Services.AddScoped<DatasetXnatSyncJob>();
 // Contributions from data providers (Contribute page → Submissions)
 builder.Services.AddScoped<Pidar.Services.Submissions.SubmissionService>();
 builder.Services.AddScoped<Pidar.Services.Submissions.SubmissionNotifier>();
+builder.Services.AddScoped<Pidar.Services.Submissions.SubmissionHistory>();
+// Contribution assistant on the form ("Assistant" config section; test mode in Development without an API key)
+builder.Services.AddContributionAssistant(builder.Configuration, builder.Environment);
 
 
 
@@ -246,6 +250,8 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+// Per-user limits on the contribution assistant (after authentication: partitioned by user id)
+app.UseRateLimiter();
 
 // Protect /hangfire route before dashboard middleware
 app.Use(async (context, next) =>

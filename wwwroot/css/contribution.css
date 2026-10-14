@@ -85,3 +85,66 @@
 .wz-view-group-title { font-weight: 600; font-size: .9rem; margin-bottom: .5rem; border-bottom: 1px solid var(--bs-border-color-translucent); padding-bottom: .25rem; }
 .wz-missing { background: var(--bs-warning-bg-subtle); border-radius: .25rem; }
 .wz-review-panel { border-color: var(--bs-primary-border-subtle); background: var(--bs-primary-bg-subtle); }
+
+/* ── Where an answer came from (contribution-assistant.js) ───────── */
+.wz-src {
+    display: inline-flex; align-items: center; gap: .25rem;
+    margin-left: .5rem; padding: .05rem .45rem; border-radius: 1rem;
+    font-size: .72rem; font-weight: 500; vertical-align: middle; white-space: nowrap;
+}
+.wz-src-badge-assistant { background: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); border: 1px solid var(--bs-warning-border-subtle); }
+.wz-src-badge-import { background: var(--bs-success-bg-subtle); color: var(--bs-success-text-emphasis); border: 1px solid var(--bs-success-border-subtle); }
+.wz-field.wz-src-assistant { border-left: 3px solid var(--bs-warning); padding-left: .6rem; }
+.wz-field.wz-src-import { border-left: 3px solid var(--bs-success-border-subtle); padding-left: .6rem; }
+
+/* ── Contribution assistant panel ─────────────────────────────── */
+.wz-ai-toggle {
+    position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 1030;
+    border-radius: 2rem; padding: .6rem 1.1rem;
+    box-shadow: 0 .5rem 1.25rem rgba(13, 110, 253, .3);
+}
+body.wz-ai-open .wz-ai-toggle { display: none; }
+.wz-ai.offcanvas-end { width: 420px; max-width: 100vw; }
+.wz-ai .offcanvas-header { border-bottom: 1px solid var(--bs-border-color); }
+.wz-ai-body { display: flex; flex-direction: column; gap: .75rem; padding: .75rem; }
+.wz-ai-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: .5rem; padding-right: .25rem; }
+.wz-ai-msg { padding: .55rem .75rem; border-radius: .75rem; max-width: 92%; overflow-wrap: anywhere; font-size: .925rem; }
+.wz-ai-bot { background: var(--bs-tertiary-bg); align-self: flex-start; border-bottom-left-radius: .2rem; }
+.wz-ai-user { background: var(--bs-primary); color: #fff; align-self: flex-end; border-bottom-right-radius: .2rem; white-space: pre-wrap; }
+.wz-ai-error { background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); }
+.wz-ai-sep { align-self: center; font-size: .75rem; color: var(--bs-secondary-color); }
+.wz-ai-typing span:not(.visually-hidden) {
+    display: inline-block; width: .45rem; height: .45rem; margin: 0 .1rem; border-radius: 50%;
+    background: var(--bs-secondary-color); animation: wz-ai-blink 1.2s infinite both;
+}
+.wz-ai-typing span:nth-child(2) { animation-delay: .2s; }
+.wz-ai-typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes wz-ai-blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+
+.wz-ai-proposals { align-self: stretch; border: 1px solid var(--bs-warning-border-subtle); border-radius: .75rem; padding: .5rem; background: var(--bs-body-bg); }
+.wz-ai-proposals.wz-ai-old { border-color: var(--bs-border-color); opacity: .8; }
+.wz-ai-proposals-head { font-size: .8rem; font-weight: 600; margin-bottom: .35rem; }
+.wz-ai-prop { border-top: 1px solid var(--bs-border-color-translucent); padding: .45rem .15rem; }
+.wz-ai-prop:first-of-type { border-top: 0; }
+.wz-ai-prop-where { font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary-color); }
+.wz-ai-prop-label { font-weight: 600; font-size: .875rem; }
+.wz-ai-prop-value { white-space: pre-wrap; font-size: .9rem; }
+.wz-ai-prop-current { font-size: .78rem; color: var(--bs-secondary-color); text-decoration: line-through; }
+.wz-ai-prop-reason { font-size: .78rem; color: var(--bs-secondary-color); font-style: italic; }
+.wz-ai-prop-actions { display: flex; gap: .4rem; margin-top: .35rem; }
+.wz-ai-prop-done { opacity: .7; }
+.wz-ai-form textarea { resize: vertical; min-height: 4.5rem; }
+
+/* wide screens: the panel sits beside the form instead of over it */
+@media (min-width: 1200px) {
+    body.wz-ai-open .wz-page { margin-right: 440px; margin-left: 1rem; }
+}
+
+/* ── History (Views/Submissions/Details.cshtml) ───────────────── */
+.wz-history { list-style: none; margin: 0; padding: 0; }
+.wz-history > li { display: flex; gap: .6rem; padding: .45rem 0; border-top: 1px solid var(--bs-border-color-translucent); font-size: .875rem; }
+.wz-history > li:first-child { border-top: 0; }
+.wz-history-icon { color: var(--bs-secondary-color); width: 1.1rem; flex: 0 0 auto; }
+.wz-history-when { color: var(--bs-secondary-color); font-size: .78rem; white-space: nowrap; }
+.wz-history-change { display: block; margin-top: .1rem; }
+.wz-history-old { text-decoration: line-through; color: var(--bs-secondary-color); }

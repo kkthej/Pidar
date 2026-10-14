@@ -14,6 +14,9 @@
       - Xnat__User=${Xnat__User}
       - Xnat__Pass=${Xnat__Pass}
       - Xnat__BaseUrl=${Xnat__BaseUrl}
+      # Contribution assistant: no key → test mode in Development, off elsewhere (see docs/contribution-assistant.md)
+      - Assistant__ApiKey=${ASSISTANT_API_KEY:-}
+      - Assistant__Provider=${ASSISTANT_PROVIDER:-auto}
       - DOTNET_USE_POLLING_FILE_WATCHER=1
 
       # ----------------------------
