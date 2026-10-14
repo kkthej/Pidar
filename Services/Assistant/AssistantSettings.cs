@@ -43,8 +43,8 @@ namespace Pidar.Services.Assistant
 
         public string BaseUrl { get; set; } = "https://api.anthropic.com/";
 
-        /// <summary>Longest reply the model may write, per round.</summary>
-        public int MaxTokens { get; set; } = 1500;
+        /// <summary>Longest reply the model may write, per round (a batch of ~15 suggestions needs ~1,500).</summary>
+        public int MaxTokens { get; set; } = 4096;
 
         /// <summary>Messages one user may send per minute (all submissions together).</summary>
         public int RequestsPerMinute { get; set; } = 10;

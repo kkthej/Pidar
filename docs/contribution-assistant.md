@@ -108,7 +108,7 @@ ASSISTANT_API_KEY=sk-ant-...
 | `Provider` | `auto` | `auto`: Anthropic if `ApiKey` is set, else test mode in Development, else off. Or `anthropic`, `mock`, `off` |
 | `ApiKey` | — | never commit it |
 | `Model` | `claude-haiku-5-5` | any Claude model id |
-| `MaxTokens` | `1500` | per model round |
+| `MaxTokens` | `4096` | per model round (suggestions come in batches of ~15 per call) |
 | `RequestsPerMinute` | `10` | per user (rate limiter) |
 | `MessagesPerDay` | `150` | per user, counted in `assistant_message` |
 | `MaxMessageLength` | `20000` | characters (room for a pasted methods section) |

@@ -44,7 +44,7 @@ namespace Pidar.Services.Assistant
     /// </summary>
     public sealed class ContributionAssistant
     {
-        private const int MaxToolRounds = 6;
+        private const int MaxToolRounds = 10;
 
         private readonly PidarDbContext _db;
         private readonly IAssistantModel _model;
@@ -140,7 +140,15 @@ namespace Pidar.Services.Assistant
                     }
                 }
 
-                if ((string?)response["stop_reason"] != "tool_use" || toolResults.Count == 0) break;
+                var stop = (string?)response["stop_reason"];
+                if (stop == "max_tokens" && toolResults.Count == 0)
+                {
+                    // Cut off mid-reply: keep what is usable and say so
+                    if (text.Length > 0) text.Append("\n\n");
+                    text.Append("(My answer was cut short. Ask me to continue and I will go on from here.)");
+                    break;
+                }
+                if (stop != "tool_use" || toolResults.Count == 0) break;
 
                 // Continue the turn: the model's message (with its tool calls) and our results
                 messages.Add(new JsonObject { ["role"] = "assistant", ["content"] = content.DeepClone() });
@@ -298,6 +306,8 @@ namespace Pidar.Services.Assistant
                 - Only suggest what the person told you or what is clearly stated in text they gave you. Never guess
                   or invent values (no made-up numbers, dates, scanner models, doses, grant numbers). If something is
                   unclear, ask. A short "reason" with each suggestion says where it came from.
+                - Suggest at most about 15 answers per propose_answers call; for a long document, call it again
+                  (e.g. once per section) until everything it clearly answers is covered.
                 - Use the exact field paths from the form description. For fields with options, use one of the option
                   values exactly (or free text only where "other allowed" is shown). Multiple choices: comma-separated.
                 - Work section by section, starting with the section the person has open. Ask at most 3 questions at a
