@@ -37,7 +37,7 @@
 
     <div id="xnat-map" role="region" aria-label="Globe showing the XNAT instances connected to PIDAR"></div>
     <div id="xnat-map-nodes" class="xnat-map-nodes" aria-label="Jump to an XNAT instance"></div>
-    <p class="map-hint">Drag to rotate the globe &nbsp;·&nbsp; Ctrl + scroll (⌘ + scroll on Mac) to zoom &nbsp;·&nbsp; Click a node for details</p>
+    <p class="map-hint">Drag to rotate the globe &nbsp;·&nbsp; Ctrl + scroll (⌘ + scroll on Mac) to zoom &nbsp;·&nbsp; Click a beacon for details</p>
 
     @if (!Model.Any())
     {
@@ -89,7 +89,6 @@
         const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
         const COUNTRIES_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json";
         const BLUE = "#1a6ebd";
-        const GREY = "#9aa5b1";
 
         const nodes = instances.filter(function (i) {
             return Number.isFinite(i.lat) && Number.isFinite(i.lng);
@@ -163,11 +162,14 @@
         let map = null;
         let popup = null;
         let openKey = null;     // instance whose popup is currently open
+        const beacons = new Map();  // instance key -> { el, height } of its 3D beacon
 
         function setActiveChip(key) {
             nodesEl.querySelectorAll(".xnat-node-chip").forEach(function (chip) {
                 chip.setAttribute("aria-pressed", chip.dataset.key === key ? "true" : "false");
             });
+            document.querySelectorAll(".xnat-beacon").forEach(function (el) { el.classList.remove("is-active"); });
+            if (key && beacons.has(key)) beacons.get(key).el.classList.add("is-active");
         }
 
         nodes.forEach(function (inst) {
@@ -253,56 +255,11 @@
             map.setProjection({ type: "globe" });
             map.setSky({ "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 1, 7, 0] });
 
-            map.addSource("xnat-nodes", {
-                type: "geojson",
-                promoteId: "key",
-                data: {
-                    type: "FeatureCollection",
-                    features: nodes.map(function (i) {
-                        return {
-                            type: "Feature",
-                            geometry: { type: "Point", coordinates: [i.lng, i.lat] },
-                            properties: { key: i.key, count: i.count }
-                        };
-                    })
-                }
-            });
-
-            // Circle size grows with the number of public projects
-            const baseRadius = ["interpolate", ["linear"], ["get", "count"], 0, 6, 1, 8, 10, 13, 50, 20];
-            const hoverBoost = ["case", ["boolean", ["feature-state", "hover"], false], 3, 0];
-            const nodeColor = ["case", [">", ["get", "count"], 0], BLUE, GREY];
-
-            map.addLayer({
-                id: "xnat-nodes-halo",
-                type: "circle",
-                source: "xnat-nodes",
-                paint: {
-                    "circle-radius": ["+", baseRadius, 7],
-                    "circle-color": nodeColor,
-                    "circle-opacity": 0.18,
-                    "circle-pitch-alignment": "map"
-                }
-            });
-
-            map.addLayer({
-                id: "xnat-nodes",
-                type: "circle",
-                source: "xnat-nodes",
-                paint: {
-                    "circle-radius": ["+", baseRadius, hoverBoost],
-                    "circle-color": nodeColor,
-                    "circle-stroke-color": "#ffffff",
-                    "circle-stroke-width": 2.5,
-                    "circle-pitch-alignment": "map"
-                }
-            });
-
             countriesPromise.then(function (fc) {
                 if (!fc || fc.features.length === 0) return;
                 // Draw below the basemap labels so place names stay readable
                 const firstSymbol = map.getStyle().layers.find(function (l) { return l.type === "symbol"; });
-                const beforeId = firstSymbol ? firstSymbol.id : "xnat-nodes-halo";
+                const beforeId = firstSymbol ? firstSymbol.id : undefined;
                 map.addSource("xnat-countries", { type: "geojson", data: fc });
                 map.addLayer({
                     id: "xnat-countries-fill",
@@ -318,34 +275,64 @@
                 }, beforeId);
             });
 
+        });
+
+        // Fit and place beacons only after the first render, once the globe projection
+        // is actually in effect. Placing them earlier leaves them at stale (flat-map)
+        // positions until the user moves the map.
+        map.once("load", function () {
             fitInitialView();
+            addBeacons();
         });
 
-        // ── Interaction ───────────────────────────────────────────────
-        let hoveredKey = null;
+        // ── 3D beacons (HTML markers: glowing core, light beam, pulsing ground rings) ──
+        const BEACON_HEIGHT = 64;       // px at scale 1; the beam stands this tall
 
-        map.on("mousemove", "xnat-nodes", function (e) {
-            const key = e.features[0].properties.key;
-            if (hoveredKey === key) return;
-            if (hoveredKey) map.setFeatureState({ source: "xnat-nodes", id: hoveredKey }, { hover: false });
-            hoveredKey = key;
-            map.setFeatureState({ source: "xnat-nodes", id: key }, { hover: true });
-            map.getCanvas().style.cursor = "pointer";
-        });
+        // Bigger beacon for instances with more public projects
+        function beaconScale(count) {
+            if (!count) return 0.75;
+            return Math.min(1.35, 0.85 + Math.log10(count) * 0.35);
+        }
 
-        map.on("mouseleave", "xnat-nodes", function () {
-            if (hoveredKey) map.setFeatureState({ source: "xnat-nodes", id: hoveredKey }, { hover: false });
-            hoveredKey = null;
-            map.getCanvas().style.cursor = "";
-        });
+        function addBeacons() {
+            nodes.forEach(function (inst) {
+                const scale = beaconScale(inst.count);
 
-        map.on("click", "xnat-nodes", function (e) {
-            const inst = byKey.get(e.features[0].properties.key);
-            if (inst) openPopup(inst);
-        });
+                const el = document.createElement("button");
+                el.type = "button";
+                el.className = "xnat-beacon" + (inst.count > 0 ? "" : " is-empty");
+                el.style.setProperty("--s", scale);
+                el.setAttribute("aria-label", inst.name + ", " + projectsText(inst.count));
+                el.innerHTML =
+                    '<span class="xnat-beacon-glow"></span>' +
+                    '<span class="xnat-beacon-ring"></span>' +
+                    '<span class="xnat-beacon-ring xnat-beacon-ring--late"></span>' +
+                    '<span class="xnat-beacon-beam"></span>' +
+                    '<span class="xnat-beacon-core"></span>';
+
+                el.addEventListener("click", function (e) {
+                    e.stopPropagation();        // don't let the map treat it as a background click
+                    openPopup(inst);
+                });
+
+                new maplibregl.Marker({
+                    element: el,
+                    anchor: "bottom",           // beam base sits exactly on the coordinates
+                    pitchAlignment: "viewport",
+                    rotationAlignment: "viewport",
+                    opacityWhenCovered: "0"     // hide beacons on the far side of the globe
+                })
+                    .setLngLat([inst.lng, inst.lat])
+                    .addTo(map);
+
+                beacons.set(inst.key, { el: el, height: BEACON_HEIGHT * scale });
+            });
+        }
 
         function openPopup(inst) {
             if (!inst) return;
+            const beacon = beacons.get(inst.key);
+            popup.setOffset(beacon ? beacon.height + 6 : 14);
             popup.setLngLat([inst.lng, inst.lat]).setDOMContent(buildPopup(inst)).addTo(map);
             openKey = inst.key;     // after addTo: re-adding an open popup fires "close" first
             setActiveChip(inst.key);
@@ -373,7 +360,8 @@
             } else {
                 const bounds = new maplibregl.LngLatBounds();
                 focus.forEach(function (i) { bounds.extend([i.lng, i.lat]); });
-                map.fitBounds(bounds, { padding: 70, maxZoom: 5, animate: false });
+                // extra top padding so the beams of the northernmost beacons stay in view
+                map.fitBounds(bounds, { padding: { top: 100, bottom: 50, left: 70, right: 70 }, maxZoom: 5, animate: false });
             }
         }
 
