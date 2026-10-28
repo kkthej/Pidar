@@ -2,8 +2,9 @@
 @using System.Text.Json
 @using Pidar.Models.Xnat
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 
 <div class="container py-4">
     <div class="xnat-header">
@@ -32,12 +33,11 @@
             count = projectCountByKey.TryGetValue(x.Key, out var c) ? c : 0
         })
         );
-
-        var cartoKeyJson = JsonSerializer.Serialize((string)(ViewBag.CartoApiKey ?? ""));
     }
 
-    <div id="xnat-map"></div>
-    <p class="map-hint">🖱 Scroll to zoom &nbsp;·&nbsp; Drag to pan &nbsp;·&nbsp; Click a pin for details</p>
+    <div id="xnat-map" role="region" aria-label="Globe showing the XNAT instances connected to PIDAR"></div>
+    <div id="xnat-map-nodes" class="xnat-map-nodes" aria-label="Jump to an XNAT instance"></div>
+    <p class="map-hint">Drag to rotate the globe &nbsp;·&nbsp; Ctrl + scroll (⌘ + scroll on Mac) to zoom &nbsp;·&nbsp; Click a node for details</p>
 
     @if (!Model.Any())
     {
@@ -50,7 +50,7 @@
         @foreach (var group in Model
             .GroupBy(x => new { x.InstanceKey, x.InstanceName, x.InstanceBaseUrl }))
         {
-            <h4 class="xnat-instance-title">@group.Key.InstanceName</h4>
+            <h4 class="xnat-instance-title" id="xnat-inst-@group.Key.InstanceKey">@group.Key.InstanceName</h4>
 
             <div class="row g-3 xnat-project-row">
                 @foreach (var p in group)
@@ -78,89 +78,40 @@
     }
 </div>
 
-<!-- ── Map ─────────────────────────────────────────────────────────── -->
+<!-- ── Map (MapLibre GL globe, OpenFreeMap vector tiles, no API key) ───── -->
 <script>
     (function () {
         const instances = @Html.Raw(mapInstancesJson);
-        const cartoKey = @Html.Raw(cartoKeyJson);
         const mapEl = document.getElementById("xnat-map");
+        const nodesEl = document.getElementById("xnat-map-nodes");
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        // Don't zoom out so far that a wide map shows several copies of the world
-        const minZoom = Math.max(1, Math.floor(Math.log2(mapEl.clientWidth / 256)));
+        const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+        const COUNTRIES_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json";
+        const BLUE = "#1a6ebd";
+        const GREY = "#9aa5b1";
 
-        const map = L.map(mapEl, {
-            scrollWheelZoom: true,
-            worldCopyJump: true,
-            minZoom: minZoom,
-            maxBounds: [[-85, -540], [85, 540]],   // no panning past the poles
-            maxBoundsViscosity: 1.0
+        const nodes = instances.filter(function (i) {
+            return Number.isFinite(i.lat) && Number.isFinite(i.lng);
         });
+        const byKey = new Map(nodes.map(function (i) { return [i.key, i]; }));
 
-        // CARTO with key if configured, otherwise keyless OpenStreetMap
-        if (cartoKey) {
-            L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=" + encodeURIComponent(cartoKey), {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                subdomains: "abcd",
-                maxZoom: 18
-            }).addTo(map);
-        } else {
-            L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 18
-            }).addTo(map);
+        // Filled by the summaries script once it knows which cards have PIDAR metadata
+        let metadataCounts = null;
+
+        // ── Popup content ─────────────────────────────────────────────
+        function projectsText(n) {
+            return n === 1 ? "1 public project" : n + " public projects";
         }
 
-        // ── Country highlight ─────────────────────────────────────────
-        // Bounding-box lookup: lat range, lng range → ISO-A3 code.
-        // Add an entry here whenever an instance is added in a new country.
-        const countryBoxes = [
-            { lat: [36, 47],   lng: [6, 18],    iso: "ITA" },  // Italy
-            { lat: [-44, -10], lng: [113, 154], iso: "AUS" }   // Australia
-        ];
-
-        function guessCountry(lat, lng) {
-            for (const c of countryBoxes) {
-                if (lat >= c.lat[0] && lat <= c.lat[1] &&
-                    lng >= c.lng[0] && lng <= c.lng[1]) return c.iso;
-            }
-            return null;
+        function sectionFor(key) {
+            return document.getElementById("xnat-inst-" + key);
         }
 
-        const validInstances = instances.filter(function (i) {
-            return typeof i.lat === "number" && typeof i.lng === "number";
-        });
-
-        const toHighlight = new Set(
-            validInstances.map(function (i) { return guessCountry(i.lat, i.lng); }).filter(Boolean)
-        );
-
-        if (toHighlight.size > 0) {
-            fetch("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
-                .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
-                .then(function (geojson) {
-                    L.geoJSON(geojson, {
-                        filter: function (f) { return toHighlight.has(f.properties.ISO_A3); },
-                        style: {
-                            fillColor: "#1a6ebd",
-                            fillOpacity: 0.15,
-                            color: "#1a6ebd",
-                            weight: 1.5,
-                            opacity: 0.5
-                        },
-                        interactive: false
-                    }).addTo(map);
-                })
-                .catch(function (err) { console.warn("[XNAT map] country outlines unavailable:", err); });
+        function scrollToSection(key) {
+            const section = sectionFor(key);
+            if (section) section.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
         }
-
-        // ── Markers ───────────────────────────────────────────────────
-        const pinIcon = L.divIcon({
-            className: "xnat-pin",
-            html: '<div class="xnat-pin-inner"><div class="xnat-pin-dot"></div><div class="xnat-pin-pulse"></div></div>',
-            iconSize: [22, 22],
-            iconAnchor: [11, 11],
-            popupAnchor: [0, -14]
-        });
 
         function buildPopup(inst) {
             const root = document.createElement("div");
@@ -169,10 +120,32 @@
             const title = document.createElement("div");
             title.className = "xnat-popup-title";
             title.textContent = inst.name;
+            root.append(title);
 
             const count = document.createElement("div");
             count.className = "xnat-popup-count";
-            count.textContent = "📁 " + (inst.count === 1 ? "1 public project" : inst.count + " public projects");
+            count.textContent = inst.count > 0 ? projectsText(inst.count) : "No public projects reachable right now";
+            root.append(count);
+
+            if (metadataCounts && inst.count > 0) {
+                const n = metadataCounts[inst.key] || 0;
+                const meta = document.createElement("div");
+                meta.className = "xnat-popup-count";
+                meta.textContent = n + " with PIDAR metadata";
+                root.append(meta);
+            }
+
+            const actions = document.createElement("div");
+            actions.className = "xnat-popup-actions";
+
+            if (sectionFor(inst.key)) {
+                const jump = document.createElement("button");
+                jump.type = "button";
+                jump.className = "xnat-popup-link xnat-popup-jump";
+                jump.textContent = "Show projects ↓";
+                jump.addEventListener("click", function () { scrollToSection(inst.key); });
+                actions.append(jump);
+            }
 
             const link = document.createElement("a");
             link.className = "xnat-popup-link";
@@ -180,24 +153,259 @@
             link.target = "_blank";
             link.rel = "noopener";
             link.textContent = "Open XNAT instance ↗";
+            actions.append(link);
 
-            root.append(title, count, link);
+            root.append(actions);
             return root;
         }
 
-        const markers = validInstances.map(function (inst) {
-            return L.marker([inst.lat, inst.lng], { icon: pinIcon })
-                .addTo(map)
-                .bindPopup(buildPopup(inst));
+        // ── Node chips under the map (also the fallback if the map can't load) ──
+        let map = null;
+        let popup = null;
+        let openKey = null;     // instance whose popup is currently open
+
+        function setActiveChip(key) {
+            nodesEl.querySelectorAll(".xnat-node-chip").forEach(function (chip) {
+                chip.setAttribute("aria-pressed", chip.dataset.key === key ? "true" : "false");
+            });
+        }
+
+        nodes.forEach(function (inst) {
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "xnat-node-chip" + (inst.count > 0 ? "" : " is-empty");
+            chip.dataset.key = inst.key;
+            chip.setAttribute("aria-pressed", "false");
+
+            const dot = document.createElement("span");
+            dot.className = "xnat-node-chip-dot";
+            dot.setAttribute("aria-hidden", "true");
+
+            const name = document.createElement("span");
+            name.textContent = inst.name;
+
+            const badge = document.createElement("span");
+            badge.className = "xnat-node-chip-count";
+            badge.textContent = inst.count;
+            badge.title = projectsText(inst.count);
+
+            chip.append(dot, name, badge);
+            chip.addEventListener("click", function () {
+                if (map) flyToNode(inst);
+                else scrollToSection(inst.key);
+            });
+            nodesEl.append(chip);
         });
 
-        // Auto-fit to show all markers
-        if (markers.length === 1) {
-            map.setView(markers[0].getLatLng(), 6);
-        } else if (markers.length > 1) {
-            map.fitBounds(L.featureGroup(markers).getBounds(), { padding: [60, 60], maxZoom: 8 });
-        } else {
-            map.setView([20, 10], minZoom);
+        window.addEventListener("xnat:summaries-ready", function (e) {
+            metadataCounts = e.detail || {};
+            // Refresh the open popup so it picks up the metadata count
+            if (map && openKey) openPopup(byKey.get(openKey));
+        });
+
+        if (typeof maplibregl === "undefined") {
+            showMapUnavailable();
+            return;
+        }
+
+        try {
+            map = new maplibregl.Map({
+                container: mapEl,
+                style: STYLE_URL,
+                center: [10, 45],
+                zoom: 2,
+                renderWorldCopies: false,
+                cooperativeGestures: true,          // page scroll isn't hijacked by the map
+                attributionControl: { compact: true }
+            });
+        } catch (err) {
+            console.warn("[XNAT map] MapLibre could not start (WebGL unavailable?):", err);
+            map = null;
+            showMapUnavailable();
+            return;
+        }
+
+        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+        map.addControl(new maplibregl.GlobeControl(), "top-right");
+
+        popup = new maplibregl.Popup({ offset: 14, maxWidth: "300px" });
+        popup.on("close", function () { openKey = null; setActiveChip(null); });
+
+        // Countries that host an instance get a light fill. Found by point-in-polygon,
+        // so a new instance in a new country needs no code change.
+        const countriesPromise = (typeof topojson === "undefined" || nodes.length === 0)
+            ? Promise.resolve(null)
+            : fetch(COUNTRIES_URL)
+                .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+                .then(function (topo) {
+                    const all = topojson.feature(topo, topo.objects.countries).features;
+                    const hits = all.filter(function (f) {
+                        return nodes.some(function (n) { return featureContains(f, n.lng, n.lat); });
+                    });
+                    return { type: "FeatureCollection", features: hits };
+                })
+                .catch(function (err) {
+                    console.warn("[XNAT map] country outlines unavailable:", err);
+                    return null;
+                });
+
+        map.once("style.load", function () {
+            map.setProjection({ type: "globe" });
+            map.setSky({ "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 5, 1, 7, 0] });
+
+            map.addSource("xnat-nodes", {
+                type: "geojson",
+                promoteId: "key",
+                data: {
+                    type: "FeatureCollection",
+                    features: nodes.map(function (i) {
+                        return {
+                            type: "Feature",
+                            geometry: { type: "Point", coordinates: [i.lng, i.lat] },
+                            properties: { key: i.key, count: i.count }
+                        };
+                    })
+                }
+            });
+
+            // Circle size grows with the number of public projects
+            const baseRadius = ["interpolate", ["linear"], ["get", "count"], 0, 6, 1, 8, 10, 13, 50, 20];
+            const hoverBoost = ["case", ["boolean", ["feature-state", "hover"], false], 3, 0];
+            const nodeColor = ["case", [">", ["get", "count"], 0], BLUE, GREY];
+
+            map.addLayer({
+                id: "xnat-nodes-halo",
+                type: "circle",
+                source: "xnat-nodes",
+                paint: {
+                    "circle-radius": ["+", baseRadius, 7],
+                    "circle-color": nodeColor,
+                    "circle-opacity": 0.18,
+                    "circle-pitch-alignment": "map"
+                }
+            });
+
+            map.addLayer({
+                id: "xnat-nodes",
+                type: "circle",
+                source: "xnat-nodes",
+                paint: {
+                    "circle-radius": ["+", baseRadius, hoverBoost],
+                    "circle-color": nodeColor,
+                    "circle-stroke-color": "#ffffff",
+                    "circle-stroke-width": 2.5,
+                    "circle-pitch-alignment": "map"
+                }
+            });
+
+            countriesPromise.then(function (fc) {
+                if (!fc || fc.features.length === 0) return;
+                // Draw below the basemap labels so place names stay readable
+                const firstSymbol = map.getStyle().layers.find(function (l) { return l.type === "symbol"; });
+                const beforeId = firstSymbol ? firstSymbol.id : "xnat-nodes-halo";
+                map.addSource("xnat-countries", { type: "geojson", data: fc });
+                map.addLayer({
+                    id: "xnat-countries-fill",
+                    type: "fill",
+                    source: "xnat-countries",
+                    paint: { "fill-color": BLUE, "fill-opacity": 0.12 }
+                }, beforeId);
+                map.addLayer({
+                    id: "xnat-countries-line",
+                    type: "line",
+                    source: "xnat-countries",
+                    paint: { "line-color": BLUE, "line-opacity": 0.45, "line-width": 1 }
+                }, beforeId);
+            });
+
+            fitInitialView();
+        });
+
+        // ── Interaction ───────────────────────────────────────────────
+        let hoveredKey = null;
+
+        map.on("mousemove", "xnat-nodes", function (e) {
+            const key = e.features[0].properties.key;
+            if (hoveredKey === key) return;
+            if (hoveredKey) map.setFeatureState({ source: "xnat-nodes", id: hoveredKey }, { hover: false });
+            hoveredKey = key;
+            map.setFeatureState({ source: "xnat-nodes", id: key }, { hover: true });
+            map.getCanvas().style.cursor = "pointer";
+        });
+
+        map.on("mouseleave", "xnat-nodes", function () {
+            if (hoveredKey) map.setFeatureState({ source: "xnat-nodes", id: hoveredKey }, { hover: false });
+            hoveredKey = null;
+            map.getCanvas().style.cursor = "";
+        });
+
+        map.on("click", "xnat-nodes", function (e) {
+            const inst = byKey.get(e.features[0].properties.key);
+            if (inst) openPopup(inst);
+        });
+
+        function openPopup(inst) {
+            if (!inst) return;
+            popup.setLngLat([inst.lng, inst.lat]).setDOMContent(buildPopup(inst)).addTo(map);
+            openKey = inst.key;     // after addTo: re-adding an open popup fires "close" first
+            setActiveChip(inst.key);
+        }
+
+        function flyToNode(inst) {
+            const target = { center: [inst.lng, inst.lat], zoom: Math.max(map.getZoom(), 4.5) };
+            map.once("moveend", function () { openPopup(inst); });
+            if (reduceMotion) map.jumpTo(target);
+            else map.flyTo(Object.assign({ duration: 2200, essential: false }, target));
+        }
+
+        // Open on the European cluster: on a globe, Australia is on the far side anyway,
+        // and the chips below the map fly there in one click.
+        function fitInitialView() {
+            const europe = nodes.filter(function (i) {
+                return i.lng > -30 && i.lng < 50 && i.lat > 30 && i.lat < 72;
+            });
+            const focus = europe.length > 0 ? europe : nodes;
+
+            if (focus.length === 0) {
+                map.jumpTo({ center: [10, 30], zoom: 1.5 });
+            } else if (focus.length === 1) {
+                map.jumpTo({ center: [focus[0].lng, focus[0].lat], zoom: 4 });
+            } else {
+                const bounds = new maplibregl.LngLatBounds();
+                focus.forEach(function (i) { bounds.extend([i.lng, i.lat]); });
+                map.fitBounds(bounds, { padding: 70, maxZoom: 5, animate: false });
+            }
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────
+        function ringContains(ring, x, y) {
+            let inside = false;
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+                if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+            }
+            return inside;
+        }
+
+        function polygonContains(rings, x, y) {
+            if (!ringContains(rings[0], x, y)) return false;
+            for (let k = 1; k < rings.length; k++) {
+                if (ringContains(rings[k], x, y)) return false;   // inside a hole
+            }
+            return true;
+        }
+
+        function featureContains(f, x, y) {
+            const g = f.geometry;
+            if (!g) return false;
+            if (g.type === "Polygon") return polygonContains(g.coordinates, x, y);
+            if (g.type === "MultiPolygon") return g.coordinates.some(function (p) { return polygonContains(p, x, y); });
+            return false;
+        }
+
+        function showMapUnavailable() {
+            mapEl.classList.add("is-unavailable");
+            mapEl.textContent = "The interactive map can't be shown in this browser. Use the institute buttons below to jump to their projects.";
         }
     })();
 </script>
@@ -276,5 +484,13 @@
                 row.remove();
             }
         });
+
+        // Tell the map how many visible cards (projects with PIDAR metadata) each instance has
+        const visible = {};
+        document.querySelectorAll(".xnat-summary[data-instance-key]").forEach(function (el) {
+            const key = el.dataset.instanceKey;
+            visible[key] = (visible[key] || 0) + 1;
+        });
+        window.dispatchEvent(new CustomEvent("xnat:summaries-ready", { detail: visible }));
     })();
 </script>

@@ -445,19 +445,37 @@ body.login-page {
         min-width: 0;
     }
 
-/* isolation: Leaflet controls use z-index 1000 — keep them below the fixed navbar */
+/* isolation: keep the map's controls and popups below the fixed navbar */
 #xnat-map {
-    height: 420px;
+    height: 460px;
     border-radius: 12px;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    background: #eef1f4;
+    background: radial-gradient(circle at 50% 45%, #f4f7fa 0%, #dde5ee 100%);
     isolation: isolate;
+    overflow: hidden;
 }
 
-    #xnat-map .leaflet-popup-content-wrapper {
+    #xnat-map.is-unavailable {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        text-align: center;
+        color: var(--bs-secondary-color);
+        height: auto;
+        min-height: 120px;
+    }
+
+    #xnat-map .maplibregl-popup-content {
         border-radius: 10px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        padding: 12px 14px;
+    }
+
+    #xnat-map .maplibregl-popup-close-button {
+        font-size: 1.1rem;
+        padding: 0 6px;
     }
 
 .map-hint {
@@ -467,80 +485,95 @@ body.login-page {
     margin-bottom: 1.5rem;
 }
 
-/* Map pin (Leaflet divIcon) */
-.xnat-pin {
-    background: none;
-    border: none;
+/* Instance chips under the map: legend + "fly to" buttons */
+.xnat-map-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-.xnat-pin-inner {
-    position: relative;
-    width: 22px;
-    height: 22px;
+.xnat-node-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.4rem 0.3rem 0.7rem;
+    border: 1px solid #d5dde6;
+    border-radius: 999px;
+    background: #fff;
+    color: #1a3a5c;
+    font-size: 0.85em;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.xnat-pin-dot {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 16px;
-    height: 16px;
+    .xnat-node-chip:hover {
+        border-color: #1a6ebd;
+    }
+
+    .xnat-node-chip:focus-visible {
+        outline: 2px solid #1a6ebd;
+        outline-offset: 2px;
+    }
+
+    .xnat-node-chip[aria-pressed="true"] {
+        border-color: #1a6ebd;
+        box-shadow: 0 0 0 2px rgba(26, 110, 189, 0.25);
+    }
+
+.xnat-node-chip-dot {
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: #1a6ebd;
-    border: 3px solid #fff;
-    box-shadow: 0 0 0 2px #1a6ebd, 0 2px 8px rgba(0, 0, 0, 0.4);
+    flex: none;
 }
 
-.xnat-pin-pulse {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: rgba(26, 110, 189, 0.25);
-    animation: xnat-pulse 2s ease-out infinite;
+.xnat-node-chip.is-empty .xnat-node-chip-dot {
+    background: #9aa5b1;
 }
 
-@keyframes xnat-pulse {
-    0% {
-        transform: scale(1);
-        opacity: 0.6;
-    }
-
-    70% {
-        transform: scale(2.2);
-        opacity: 0;
-    }
-
-    100% {
-        transform: scale(2.2);
-        opacity: 0;
-    }
+.xnat-node-chip-count {
+    min-width: 1.6em;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: #eaf2fb;
+    color: #1a6ebd;
+    font-weight: 600;
+    text-align: center;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .xnat-pin-pulse {
-        animation: none;
-    }
+.xnat-node-chip.is-empty .xnat-node-chip-count {
+    background: #eef0f2;
+    color: #6c757d;
 }
 
 /* Map popup */
 .xnat-popup {
     min-width: 200px;
-    padding: 4px 2px;
+    padding: 2px 0;
 }
 
 .xnat-popup-title {
     font-weight: 700;
     color: #1a3a5c;
     margin-bottom: 4px;
+    padding-right: 14px; /* room for the close button */
 }
 
 .xnat-popup-count {
     font-size: 0.82em;
     color: #555;
-    margin-bottom: 6px;
+    margin-bottom: 2px;
+}
+
+.xnat-popup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 6px;
 }
 
 .xnat-popup-link,
@@ -549,9 +582,18 @@ body.login-page {
     color: #1a6ebd;
 }
 
+button.xnat-popup-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 /* Project cards */
 .xnat-instance-title {
     margin-top: 1.5rem;
+    scroll-margin-top: calc(56px + var(--session-bar-height, 0px) + 1rem);
 }
 
 .xnat-summary {
@@ -567,13 +609,14 @@ body.login-page {
 /* Mobile: match the site's edge-to-edge layout */
 @media (max-width: 576px) {
     #xnat-map {
-        height: 340px;
+        height: 380px;
         border-radius: 0;
         box-shadow: none;
     }
 
     .xnat-header,
-    .xnat-instance-title {
+    .xnat-instance-title,
+    .xnat-map-nodes {
         padding: 0 0.75rem;
     }
 }
