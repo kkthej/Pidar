@@ -9,6 +9,8 @@
       - "9090:80" # PIDAR exposed to host
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      # Detailed error pages with stack traces: only on your own machine (set it in your local .env)
+      - ShowDetailedErrors=${PIDAR_SHOW_DETAILED_ERRORS:-false}
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - ConnectionStrings__DefaultConnection=${CONNECTIONSTRINGS__DEFAULTCONNECTION}
       - Xnat__User=${Xnat__User}

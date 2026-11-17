@@ -144,32 +144,6 @@ namespace Pidar.Controllers
             return Ok(summary);
         }
 
-        // -------------------------
-        // ERROR HANDLER
-        // -------------------------
-        [HttpGet]
-        [Route("Error/{statusCode?}")]
-        public IActionResult Error(int? statusCode = null)
-        {
-            var model = new ErrorViewModel
-            {
-                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
-            };
-
-            var feature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
-
-            if (feature?.Error != null)
-            {
-                model.ErrorMessage = feature.Error.Message;
-                _logger.LogError(feature.Error, "Unhandled exception occurred.");
-            }
-
-            if (statusCode.HasValue)
-                model.ErrorMessage ??= $"Status Code: {statusCode}";
-
-            return View(model);
-        }
-
         // --------------------------------------------------------------
         // COUNT ALL DISTINCT METADATA FIELDS (ACROSS ALL 11 SUB TABLES)
         // --------------------------------------------------------------
