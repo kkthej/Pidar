@@ -121,21 +121,9 @@ namespace Pidar.Controllers
         // ===============================================================
         // SEARCH FORM
         // ===============================================================
+        // The search box lives on the dataset list; /Datasets/Search had no view of its own (500 error).
         [Route("Search")]
-        public async Task<IActionResult> ShowSearchForm(int pageNumber = 1)
-        {
-            const int pageSize = 10;
-
-            var query = _context.Datasets
-                .IncludeAll()
-                .AsNoTracking()
-                .OrderBy(x => x.DisplayId);
-
-            var paginated = await PaginatedList<Dataset>
-                .CreateAsync(query, pageNumber, pageSize);
-
-            return View(paginated);
-        }
+        public IActionResult ShowSearchForm() => RedirectToAction(nameof(Index));
 
         // ===============================================================
         // SEARCH SUGGESTIONS (autocomplete) — GET /Datasets/Suggest?field=organ&q=mam

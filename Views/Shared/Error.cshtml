@@ -14,7 +14,7 @@
 @if (!string.IsNullOrEmpty(errorModel.ErrorMessage))
 {
         <p class="alert alert-danger">
-            <strong>Error Details:</strong> @errorModel.ErrorMessage
+            @errorModel.ErrorMessage
         </p>
 }
 
@@ -22,13 +22,5 @@
 {
         <p>
             <strong>Request ID:</strong> <code>@errorModel.RequestId</code>
-        </p>
-}
-
-@if (Context.Request.Headers["X-Requested-With"] != "XMLHttpRequest")
-{
-        <h3>Development Mode</h3>
-        <p>
-            Swapping to <strong>Development</strong> environment will display more detailed information.
         </p>
 }

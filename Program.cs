@@ -227,16 +227,24 @@ await StartupJobs.RunAsync(app.Services);
 
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment() || app.Environment.IsStaging() || app.Environment.IsProduction())
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Error pages. The live server also runs with ASPNETCORE_ENVIRONMENT=Development, where ASP.NET
+// would show visitors the full exception (stack trace, query, cookies, headers). So the friendly
+// /Error page is used everywhere, and the detailed page only when ShowDetailedErrors is true —
+// set it on your own machine (e.g. PIDAR_SHOW_DETAILED_ERRORS=true in your local .env), never on the server.
+// Exceptions are still written to the log either way.
+var showDetailedErrors = app.Environment.IsDevelopment()
+                         && app.Configuration.GetValue<bool>("ShowDetailedErrors");
+if (showDetailedErrors)
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
     app.UseMigrationsEndPoint();
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    // Runs inside the framework's developer exception page, so it catches the exception first.
+    app.UseExceptionHandler("/Error");
 }
 
 

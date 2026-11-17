@@ -137,7 +137,9 @@ public sealed class OntologySearchService
 
     /// <summary>The few columns used for suggestions, loaded in one small query.</summary>
     public sealed record FieldRow(int DatasetId, string? Species, string? DiseaseCategory, string? DiseaseModel,
-                                  string? OrganOrTissue, string? ImagingModality, string? ImagingSubModality);
+                                  string? OrganOrTissue, string? ImagingModality, string? ImagingSubModality,
+                                  string? Strain, string? ImagingCoverage, string? ImagingTarget,
+                                  string? ContrastChemical, string? ContrastCommercial, string? ContrastOrRadioisotope);
 
     private static (PropertyInfo, PropertyInfo) Col(string section, string field)
     {
@@ -152,6 +154,12 @@ public sealed class OntologySearchService
     private static readonly Func<FieldRow, string?> GetOrgan = r => r.OrganOrTissue;
     private static readonly Func<FieldRow, string?> GetModality = r => r.ImagingModality;
     private static readonly Func<FieldRow, string?> GetSubModality = r => r.ImagingSubModality;
+    private static readonly Func<FieldRow, string?> GetStrain = r => r.Strain;
+    private static readonly Func<FieldRow, string?> GetCoverage = r => r.ImagingCoverage;
+    private static readonly Func<FieldRow, string?> GetTarget = r => r.ImagingTarget;
+    private static readonly Func<FieldRow, string?> GetContrastChemical = r => r.ContrastChemical;
+    private static readonly Func<FieldRow, string?> GetContrastCommercial = r => r.ContrastCommercial;
+    private static readonly Func<FieldRow, string?> GetContrastOrRadioisotope = r => r.ContrastOrRadioisotope;
 
     public static readonly SearchField[] Fields =
     {
@@ -166,15 +174,33 @@ public sealed class OntologySearchService
         new("species", "Species", "e.g. mice, rats",
             new[] { Col("InVivo", "Species") }, new[] { "NcitSpecies" },
             new[] { GetSpecies }),
+        new("strain", "Strain", "e.g. Balb/c, C57BL/6, nude",
+            new[] { Col("InVivo", "Strain") }, new[] { "EfoStrain" },
+            new[] { GetStrain }),
         new("category", "Main Disease Category", "e.g. Disease of metabolism",
             new[] { Col("InVivo", "DiseaseCategory") }, new[] { "DoidDiseaseCategory" },
             new[] { GetCategory }),
         new("disease", "Specific Disease Model", "e.g. breast cancer",
             new[] { Col("InVivo", "DiseaseModel") }, new[] { "DoidDiseaseModel" },
             new[] { GetDisease }),
+        // Organ / Tissue: the studied organ AND the body region that was imaged (imaging coverage)
         new("organ", "Organ / Tissue", "e.g. mammary gland, brain",
-            new[] { Col("InVivo", "OrganOrTissue") }, new[] { "UberonOrganOrTissue" },
-            new[] { GetOrgan }),
+            new[] { Col("InVivo", "OrganOrTissue"), Col("StudyComponent", "ImagingCoverage") },
+            new[] { "UberonOrganOrTissue", "UberonImagingCoverage" },
+            new[] { GetOrgan, GetCoverage }),
+        // Imaging Target: what the imaging looks at — anatomy, a tumour, a receptor, a process ("CXCR4", "glucose metabolism")
+        new("target", "Imaging Target", "e.g. tumor, CXCR4, glucose metabolism",
+            new[] { Col("StudyComponent", "ImagingTarget") }, Array.Empty<string>(),
+            new[] { GetTarget }),
+        new("contrast", "Contrast Agent / Tracer", "e.g. FDG, gadolinium, iopamidol",
+            new[]
+            {
+                Col("Procedures", "ContrastAgentChemicalDrug"),
+                Col("Procedures", "ContrastAgentCommercialDrug"),
+                Col("Procedures", "ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule"),
+            },
+            new[] { "ChebiContrastAgent" },
+            new[] { GetContrastChemical, GetContrastCommercial, GetContrastOrRadioisotope }),
     };
 
     public static SearchField GetField(string? key) =>
@@ -279,7 +305,13 @@ public sealed class OntologySearchService
                     d.InVivo != null ? d.InVivo.DiseaseModel : null,
                     d.InVivo != null ? d.InVivo.OrganOrTissue : null,
                     d.StudyComponent != null ? d.StudyComponent.ImagingModality : null,
-                    d.StudyComponent != null ? d.StudyComponent.ImagingSubModality : null))
+                    d.StudyComponent != null ? d.StudyComponent.ImagingSubModality : null,
+                    d.InVivo != null ? d.InVivo.Strain : null,
+                    d.StudyComponent != null ? d.StudyComponent.ImagingCoverage : null,
+                    d.StudyComponent != null ? d.StudyComponent.ImagingTarget : null,
+                    d.Procedures != null ? d.Procedures.ContrastAgentChemicalDrug : null,
+                    d.Procedures != null ? d.Procedures.ContrastAgentCommercialDrug : null,
+                    d.Procedures != null ? d.Procedures.ContrastAgentOrRadioIsotopeOrChallengeWithGasMolecule : null))
                 .ToListAsync();
 
             // accessor → field label ("Species", "Organ / Tissue", ...) for the hint
